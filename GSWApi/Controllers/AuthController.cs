@@ -35,7 +35,7 @@ namespace GSWApi.Controllers
             if (!result.Succeeded)
                 return BadRequest(result.Errors);
 
-            await _userManager.AddToRoleAsync(user, "User");
+            //await _userManager.AddToRoleAsync(user, "User");
             return Ok("User registered.");
         }
 
@@ -48,10 +48,12 @@ namespace GSWApi.Controllers
             var result = await _signInManager.CheckPasswordSignInAsync(user, dto.Password, false);
             if (!result.Succeeded) return Unauthorized();
 
-            var roles = await _userManager.GetRolesAsync(user);
-            var token = _tokenGenerator.GenerateToken(user, roles);
+            //var roles = await _userManager.GetRolesAsync(user);
+            //var token = _tokenGenerator.GenerateToken(user, roles);
+
+            var token = _tokenGenerator.GenerateToken(user);
             return Ok(new { Token = token });
         }
     }
 }
-}
+

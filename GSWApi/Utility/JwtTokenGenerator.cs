@@ -17,18 +17,42 @@ namespace GSWApi.Utility
             _config = config;
         }
 
-        public string GenerateToken(IdentityUser user, IList<string> roles)
+        //public string GenerateToken(IdentityUser user, IList<string> roles)
+        //{
+        //    var claims = new List<Claim>
+        //{
+        //    new Claim(ClaimTypes.NameIdentifier, user.Id),
+        //    new Claim(ClaimTypes.Name, user.UserName)
+        //};
+
+        //    foreach (var role in roles)
+        //    {
+        //        claims.Add(new Claim(ClaimTypes.Role, role));
+        //    }
+
+        //    var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["JwtSettings:Secret"]));
+        //    var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+        //    var expires = DateTime.UtcNow.AddMinutes(Convert.ToDouble(_config["JwtSettings:ExpiryMinutes"]));
+
+        //    var token = new JwtSecurityToken(
+        //        issuer: _config["JwtSettings:Issuer"],
+        //        audience: _config["JwtSettings:Audience"],
+        //        claims: claims,
+        //        expires: expires,
+        //        signingCredentials: creds);
+
+        //    return new JwtSecurityTokenHandler().WriteToken(token);
+        //}
+
+
+
+        public string GenerateToken(IdentityUser user)
         {
             var claims = new List<Claim>
-        {
-            new Claim(ClaimTypes.NameIdentifier, user.Id),
-            new Claim(ClaimTypes.Name, user.UserName)
-        };
-
-            foreach (var role in roles)
-            {
-                claims.Add(new Claim(ClaimTypes.Role, role));
-            }
+    {
+        new Claim(ClaimTypes.NameIdentifier, user.Id),
+        new Claim(ClaimTypes.Name, user.UserName)
+    };
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["JwtSettings:Secret"]));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -43,5 +67,6 @@ namespace GSWApi.Utility
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
+
     }
 }
