@@ -20,7 +20,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="NewFolder\" />
+    <Folder Include="IRepository\" />
+    <Folder Include="Repository\" />
+    <Folder Include="Services\" />
   </ItemGroup>
 
 </Project>

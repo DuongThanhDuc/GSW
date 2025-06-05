@@ -3,13 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 
 namespace BusinessModel.Model
 {
-    public class DBContext: IdentityDbContext
+    public class DBContext : IdentityDbContext
     {
 
         public DBContext()
@@ -38,12 +39,13 @@ namespace BusinessModel.Model
         public DbSet<StoreOrderDetail> Store_OrderDetails { get; set; }
         public DbSet<StoreRefundRequest> Store_RefundRequests { get; set; }
         public DbSet<StoreTransaction> Store_Transactions { get; set; }
+        public DbSet<StoreCart> Store_Cart { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
-            // Optional: Add constraints or indexes if needed
+            // Constraints
             modelBuilder.Entity<SystemTag>()
                 .Property(t => t.CreatedAt)
                 .HasDefaultValueSql("GETDATE()");
@@ -91,6 +93,135 @@ namespace BusinessModel.Model
             modelBuilder.Entity<StoreTransaction>()
                 .Property(t => t.TransactionDate)
                 .HasDefaultValueSql("GETDATE()");
+
+
+            // Seeding Datas
+
+            // ROLES
+            modelBuilder.Entity<IdentityRole>().HasData(
+      new IdentityRole
+      {
+          Id = "b7b9181c-ff61-4d8f-8f6d-5edb3a6d3a11",
+          Name = "Admin",
+          NormalizedName = "ADMIN"
+      },
+      new IdentityRole
+      {
+          Id = "0f6781b2-4564-4bb3-8d85-92e4c194a2cb",
+          Name = "Staff",
+          NormalizedName = "STAFF"
+      },
+      new IdentityRole
+      {
+          Id = "26e5f054-e9fd-489f-891f-cf2b57fa9a1c",
+          Name = "User",
+          NormalizedName = "USER"
+      }
+      );
+
+            //Admin User
+            var adminUserId = Guid.NewGuid().ToString();
+            var hasher = new PasswordHasher<IdentityUser>();
+
+            var adminUser = new IdentityUser
+            {
+                Id = adminUserId,
+                UserName = "admin",
+                NormalizedUserName = "ADMIN",
+                Email = "admin@gameshop.com",
+                NormalizedEmail = "ADMIN@GAMESHOP.COM",
+                EmailConfirmed = true,
+                SecurityStamp = Guid.NewGuid().ToString(),
+                PasswordHash = hasher.HashPassword(null!, "AdminPassword@123")
+            };
+
+            modelBuilder.Entity<IdentityUser>().HasData(adminUser);
+
+            modelBuilder.Entity<IdentityUserRole<string>>().HasData(
+                new IdentityUserRole<string>
+                {
+                    UserId = adminUserId,
+                    RoleId = "b7b9181c-ff61-4d8f-8f6d-5edb3a6d3a11"
+                }
+            );
+
+            //System Tag
+            modelBuilder.Entity<SystemTag>().HasData(
+    new SystemTag
+    {
+        ID = 1,
+        TagName = "Action",
+        CreatedAt = DateTime.UtcNow,
+        CreatedBy = adminUserId
+    },
+    new SystemTag
+    {
+        ID = 2,
+        TagName = "Adventure",
+        CreatedAt = DateTime.UtcNow,
+        CreatedBy = adminUserId
+    },
+    new SystemTag
+    {
+        ID = 3,
+        TagName = "Multiplayer",
+        CreatedAt = DateTime.UtcNow,
+        CreatedBy = adminUserId
+    },
+    new SystemTag
+    {
+        ID = 4,
+        TagName = "Indie",
+        CreatedAt = DateTime.UtcNow,
+        CreatedBy = adminUserId
+    },
+    new SystemTag
+    {
+        ID = 5,
+        TagName = "Strategy",
+        CreatedAt = DateTime.UtcNow,
+        CreatedBy = adminUserId
+    }
+);
+
+
+            modelBuilder.Entity<SystemCategory>().HasData(
+    new SystemCategory
+    {
+        ID = 1,
+        CategoryName = "RPG",
+        CreatedAt = DateTime.UtcNow,
+       CreatedBy = adminUserId
+    },
+    new SystemCategory
+    {
+        ID = 2,
+        CategoryName = "FPS",
+        CreatedAt = DateTime.UtcNow,
+       CreatedBy = adminUserId
+    },
+    new SystemCategory
+    {
+        ID = 3,
+        CategoryName = "Puzzle",
+        CreatedAt = DateTime.UtcNow,
+       CreatedBy = adminUserId
+    },
+    new SystemCategory
+    {
+        ID = 4,
+        CategoryName = "Simulation",
+        CreatedAt = DateTime.UtcNow,
+       CreatedBy = adminUserId
+    },
+    new SystemCategory
+    {
+        ID = 5,
+        CategoryName = "Horror",
+        CreatedAt = DateTime.UtcNow,
+       CreatedBy = adminUserId
+    }
+);
         }
     }
 }
