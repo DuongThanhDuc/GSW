@@ -36,7 +36,17 @@ namespace GSWApi.Controllers
                 return BadRequest(result.Errors);
 
             await _userManager.AddToRoleAsync(user, "User");
-            return Ok("User registered.");
+            return Ok(new
+            {
+                Message = "User registered successfully.",
+                User = new
+                {
+                    user.Id,
+                    user.UserName,
+                    user.Email,
+                    user.PhoneNumber
+                }
+            });
         }
 
         [HttpPost("login")]
@@ -52,7 +62,13 @@ namespace GSWApi.Controllers
             var token = _tokenGenerator.GenerateToken(user, roles);
 
             //var token = _tokenGenerator.GenerateToken(user);
-            return Ok(new { Token = token });
+            return Ok(new
+            {
+                Token = token,
+                UserId = user.Id,
+                Username = user.UserName,
+                Roles = roles
+            });
         }
     }
 }
