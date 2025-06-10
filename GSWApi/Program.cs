@@ -5,6 +5,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using GSWApi.Utility;
+using DataAccess.Repository.IRepository;
+using Repository.Repository.IRepository;
+using Repository.Repository;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,6 +17,10 @@ builder.Services.AddDbContext<DBContext>(options =>
 builder.Services.AddIdentity<IdentityUser, IdentityRole>()
     .AddEntityFrameworkStores<DBContext>()
     .AddDefaultTokenProviders();
+
+builder.Services.AddScoped<IGamesCategoryRepository, GamesCategoryRepository>();
+builder.Services.AddScoped<IGamesTagRepository, GamesTagRepository>();
+
 
 builder.Services.AddSingleton<EmailService>();
 
