@@ -15,6 +15,8 @@ builder.Services.AddIdentity<IdentityUser, IdentityRole>()
     .AddEntityFrameworkStores<DBContext>()
     .AddDefaultTokenProviders();
 
+builder.Services.AddSingleton<EmailService>();
+
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 var secretKey = Encoding.ASCII.GetBytes(jwtSettings["Secret"]);
 
