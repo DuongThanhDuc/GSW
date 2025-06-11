@@ -6,10 +6,6 @@ using System.Threading.Tasks;
 
 namespace DataAccess.DTOs
 {
-<<<<<<< HEAD
-    internal class GamesTagDTO
-    {
-=======
     public class GamesTagDTO
     {
         public int ID { get; set; }
@@ -33,6 +29,5 @@ namespace DataAccess.DTOs
         public int GameID { get; set; }
         public int TagID { get; set; }
         public string CreatedBy { get; set; }
->>>>>>> e9e4cdd33d584c08d63708a04f28beba8bea32eb
     }
 }
