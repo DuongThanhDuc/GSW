@@ -6,7 +6,33 @@ using System.Threading.Tasks;
 
 namespace DataAccess.DTOs
 {
+<<<<<<< HEAD
     internal class GamesCategoryDTO
     {
+=======
+    public class GamesCategoryDTO
+    {
+        public int ID { get; set; }
+        public int GameID { get; set; }
+        public int CategoryID { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public string CreatedBy { get; set; }
+        public string? GameName { get; set; }
+        public string? CategoryName { get; set; }
+    }
+
+    public class CreateGamesCategoryDTO
+    {
+        public int GameID { get; set; }
+        public int CategoryID { get; set; }
+        public string CreatedBy { get; set; }
+    }
+
+    public class UpdateGamesCategoryDTO
+    {
+        public int GameID { get; set; }
+        public int CategoryID { get; set; }
+        public string CreatedBy { get; set; }
+>>>>>>> e9e4cdd33d584c08d63708a04f28beba8bea32eb
     }
 }
