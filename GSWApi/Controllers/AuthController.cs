@@ -78,16 +78,43 @@ namespace GSWApi.Controllers
         public async Task<IActionResult> VerifyLoginOtp([FromBody] VerifyOtpDto dto)
         {
             var user = await _userManager.FindByEmailAsync(dto.Email);
-            if (user == null) return BadRequest("Không tìm thấy tài khoản");
+            if (user == null)
+            {
+                return BadRequest(new
+                {
+                    success = false,
+                    message = "Không tìm thấy tài khoản"
+                });
+            }
 
             if (OtpManager.VerifyOtp(dto.Email, dto.Otp))
             {
-                var roles = await _userManager.GetRolesAsync(user); // Lấy role từ Identity
-                var token = _tokenGenerator.GenerateToken(user, roles); // Truyền đủ 2 tham số
-                return Ok(new { Token = token });
+                var roles = await _userManager.GetRolesAsync(user);
+                var token = _tokenGenerator.GenerateToken(user, roles);
+
+                return Ok(new
+                {
+                    success = true,
+                    data = new[]
+                    {
+                new
+                {
+                    token,
+                    username = user.UserName,
+                    email = user.Email,
+                    roles = roles
+                }
             }
-            return BadRequest("OTP sai hoặc hết hạn!");
+                });
+            }
+
+            return BadRequest(new
+            {
+                success = false,
+                message = "OTP sai hoặc hết hạn!"
+            });
         }
+
 
     }
 }
