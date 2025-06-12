@@ -19,40 +19,61 @@ namespace GSWApi.Controllers.User
 
         // GET: api/cart
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<CartDTO>>> GetAll()
+        public async Task<IActionResult> GetAll()
         {
             var carts = await _cartRepository.GetAllAsync();
-            return Ok(carts);
+            return Ok(new
+            {
+                success = true,
+                data = carts
+            });
         }
 
         // GET: api/cart/{id}
         [HttpGet("{id}")]
-        public async Task<ActionResult<CartDTO>> GetById(int id)
+        public async Task<IActionResult> GetById(int id)
         {
             var cart = await _cartRepository.GetByIdAsync(id);
-            if (cart == null) return NotFound();
+            if (cart == null)
+                return NotFound(new { success = false, message = "Cart not found." });
 
-            return Ok(cart);
+            return Ok(new
+            {
+                success = true,
+                data = cart
+            });
         }
 
         // POST: api/cart
         [HttpPost]
-        public async Task<ActionResult<CartDTO>> Create(CartDTO dto)
+        public async Task<IActionResult> Create(CartDTO dto)
         {
             var createdCart = await _cartRepository.CreateAsync(dto);
-            return CreatedAtAction(nameof(GetById), new { id = createdCart.ID }, createdCart);
+            return Ok(new
+            {
+                success = true,
+                message = "Cart created successfully.",
+                data = createdCart
+            });
         }
 
         // PUT: api/cart/{id}
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, CartDTO dto)
         {
-            if (id != dto.ID) return BadRequest("ID mismatch.");
+            if (id != dto.ID)
+                return BadRequest(new { success = false, message = "ID mismatch." });
 
             var success = await _cartRepository.UpdateAsync(dto);
-            if (!success) return NotFound();
+            if (!success)
+                return NotFound(new { success = false, message = "Cart not found." });
 
-            return NoContent();
+            return Ok(new
+            {
+                success = true,
+                message = "Cart updated successfully.",
+                data = dto
+            });
         }
 
         // DELETE: api/cart/{id}
@@ -60,9 +81,15 @@ namespace GSWApi.Controllers.User
         public async Task<IActionResult> Delete(int id)
         {
             var success = await _cartRepository.DeleteAsync(id);
-            if (!success) return NotFound();
+            if (!success)
+                return NotFound(new { success = false, message = "Cart not found." });
 
-            return NoContent();
+            return Ok(new
+            {
+                success = true,
+                message = "Cart deleted successfully.",
+                data = new { id }
+            });
         }
     }
 }

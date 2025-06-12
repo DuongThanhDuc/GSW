@@ -30,14 +30,21 @@ namespace GSWApi.Controllers.Games
                 GameName = x.Game?.Title,
                 CategoryName = x.Category?.CategoryName
             });
-            return Ok(result);
+
+            return Ok(new
+            {
+                success = true,
+                data = result
+            });
         }
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
             var x = await _repo.GetByIdAsync(id);
-            if (x == null) return NotFound();
+            if (x == null)
+                return NotFound(new { success = false, message = "GamesCategory not found." });
+
             var dto = new GamesCategoryDTO
             {
                 ID = x.ID,
@@ -48,7 +55,12 @@ namespace GSWApi.Controllers.Games
                 GameName = x.Game?.Title,
                 CategoryName = x.Category?.CategoryName
             };
-            return Ok(dto);
+
+            return Ok(new
+            {
+                success = true,
+                data = dto
+            });
         }
 
         [HttpPost]
@@ -61,8 +73,15 @@ namespace GSWApi.Controllers.Games
                 CreatedBy = dto.CreatedBy,
                 CreatedAt = DateTime.Now
             };
+
             var created = await _repo.AddAsync(entity);
-            return CreatedAtAction(nameof(GetById), new { id = created.ID }, created);
+
+            return Ok(new
+            {
+                success = true,
+                message = "GamesCategory created successfully.",
+                data = created
+            });
         }
 
         [HttpPut("{id}")]
@@ -74,17 +93,32 @@ namespace GSWApi.Controllers.Games
                 CategoryID = dto.CategoryID,
                 CreatedBy = dto.CreatedBy
             };
+
             var updated = await _repo.UpdateAsync(id, entity);
-            if (updated == null) return NotFound();
-            return Ok(updated);
+            if (updated == null)
+                return NotFound(new { success = false, message = "GamesCategory not found." });
+
+            return Ok(new
+            {
+                success = true,
+                message = "GamesCategory updated successfully.",
+                data = updated
+            });
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
             var success = await _repo.DeleteAsync(id);
-            if (!success) return NotFound();
-            return NoContent();
+            if (!success)
+                return NotFound(new { success = false, message = "GamesCategory not found." });
+
+            return Ok(new
+            {
+                success = true,
+                message = "GamesCategory deleted successfully.",
+                data = new { id }
+            });
         }
     }
 }

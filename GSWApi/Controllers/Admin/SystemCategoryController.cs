@@ -10,7 +10,7 @@ namespace GSWApi.Controllers.Admin
     [ApiController]
     public class SystemCategoryController : ControllerBase
     {
-        private readonly ISystemCategoryRepository _categoryRepo;
+   private readonly ISystemCategoryRepository _categoryRepo;
 
         public SystemCategoryController(ISystemCategoryRepository categoryRepo)
         {
@@ -19,70 +19,97 @@ namespace GSWApi.Controllers.Admin
 
         // GET: admin/systemcategory
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<SystemCategory>>> GetAll()
+        public async Task<IActionResult> GetAll()
         {
             var categories = await _categoryRepo.GetAllAsync();
-            return Ok(categories);
+            return Ok(new
+            {
+                success = true,
+                data = categories
+            });
         }
 
         // GET: admin/systemcategory/id/5
         [HttpGet("id/{id}")]
-        public async Task<ActionResult<SystemCategory>> GetById(int id)
+        public async Task<IActionResult> GetById(int id)
         {
             var category = await _categoryRepo.GetByIdAsync(id);
             if (category == null)
-                return NotFound();
+                return NotFound(new { success = false, message = "Category not found." });
 
-            return Ok(category);
+            return Ok(new
+            {
+                success = true,
+                data = category
+            });
         }
 
         // GET: admin/systemcategory/name/{name}
         [HttpGet("name/{name}")]
-        public async Task<ActionResult<SystemCategory>> GetByName(string name)
+        public async Task<IActionResult> GetByName(string name)
         {
             var category = await _categoryRepo.GetByNameAsync(name);
             if (category == null)
-                return NotFound();
+                return NotFound(new { success = false, message = "Category not found." });
 
-            return Ok(category);
+            return Ok(new
+            {
+                success = true,
+                data = category
+            });
         }
 
         // POST: admin/systemcategory
         [HttpPost]
-        public async Task<ActionResult> Create([FromBody] SystemCategory category)
+        public async Task<IActionResult> Create([FromBody] SystemCategory category)
         {
             await _categoryRepo.AddAsync(category);
-            return CreatedAtAction(nameof(GetById), new { id = category.ID }, category);
+            return Ok(new
+            {
+                success = true,
+                message = "Category created successfully.",
+                data = category
+            });
         }
 
         // PUT: admin/systemcategory/{id}
         [HttpPut("{id}")]
-        public async Task<ActionResult> Update(int id, [FromBody] SystemCategory updatedCategory)
+        public async Task<IActionResult> Update(int id, [FromBody] SystemCategory updatedCategory)
         {
             if (id != updatedCategory.ID)
-                return BadRequest("ID mismatch");
+                return BadRequest(new { success = false, message = "ID mismatch." });
 
             var existing = await _categoryRepo.GetByIdAsync(id);
             if (existing == null)
-                return NotFound();
+                return NotFound(new { success = false, message = "Category not found." });
 
             existing.CategoryName = updatedCategory.CategoryName;
             existing.CreatedBy = updatedCategory.CreatedBy;
 
             await _categoryRepo.UpdateAsync(existing);
-            return NoContent();
+            return Ok(new
+            {
+                success = true,
+                message = "Category updated successfully.",
+                data = existing
+            });
         }
 
         // DELETE: admin/systemcategory/{id}
         [HttpDelete("{id}")]
-        public async Task<ActionResult> Delete(int id)
+        public async Task<IActionResult> Delete(int id)
         {
             var existing = await _categoryRepo.GetByIdAsync(id);
             if (existing == null)
-                return NotFound();
+                return NotFound(new { success = false, message = "Category not found." });
 
             await _categoryRepo.DeleteAsync(id);
-            return NoContent();
+            return Ok(new
+            {
+                success = true,
+                message = "Category deleted successfully.",
+                data = new { id }
+            });
         }
     }
 }
