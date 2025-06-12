@@ -27,10 +27,18 @@ namespace GSWApi.Controllers.Admin
         }
 
         //GET: admin/user/{id}
-        [HttpGet("{id}")]
-        public async Task<ActionResult<IdentityUser>> GetUserByID(string ID)
+        [HttpGet("id/{id}")]
+        public async Task<ActionResult<IdentityUser>> GetUserByID(string id)
         {
-            var user = await _userManager.FindByIdAsync(ID);
+            Console.WriteLine($"GetUserByID called with: {id}");
+
+            if (string.IsNullOrEmpty(id))
+            {
+                return BadRequest("ID is required!");
+            }
+
+            var user = await _userManager.FindByIdAsync(id);
+
             if (user == null)
             {
                 return NotFound();
@@ -38,56 +46,62 @@ namespace GSWApi.Controllers.Admin
             return Ok(user);
         }
 
-        //GET admin/user/{name}
-        [HttpGet("{name}")]
-        public async Task<ActionResult<IdentityUser>> GetUserByName(string Name)
-        {
-            if (Name == null)
-            {
-                return BadRequest("Username is required!");
-            }
 
-            var user = await _userManager.FindByNameAsync(Name);
+        //GET admin/user/{name}
+        [HttpGet("name/{name}")]
+        public async Task<ActionResult<IdentityUser>> GetUserByName(string name)
+        {
+            Console.WriteLine($"GetUserByName called with: {name}");
+            var user = await _userManager.FindByNameAsync(name);
             if (user == null)
             {
+                Console.WriteLine("User not found.");
                 return NotFound();
             }
+            Console.WriteLine("User found.");
             return Ok(user);
         }
 
         //GET admin/user/{email}
-        [HttpGet("{email}")]
-        public async Task<ActionResult<IdentityUser>> GetUserByEmail(string Email)
+        [HttpGet("email/{email}")]
+        public async Task<ActionResult<IdentityUser>> GetUserByEmail(string email)
         {
-            if (Email == null)
+
+            if (string.IsNullOrEmpty(email))
             {
                 return BadRequest("Email is required!");
             }
 
-            var user = await _userManager.FindByEmailAsync(Email);
+            var user = await _userManager.FindByEmailAsync(email);
+
             if (user == null)
             {
                 return NotFound();
             }
+
             return Ok(user);
         }
 
         //GET admin/user/{phone}
-        [HttpGet("{phone}")]
-        public async Task<ActionResult<IdentityUser>> GetUserByPhone(string Phone)
+        [HttpGet("phone/{phone}")]
+        public async Task<ActionResult<IdentityUser>> GetUserByPhone(string phone)
         {
-            if (Phone == null)
+
+            if (string.IsNullOrEmpty(phone))
             {
                 return BadRequest("Phone number is required!");
             }
 
-            var user = await _userManager.Users.FirstOrDefaultAsync(u => u.PhoneNumber == Phone);
+            var user = await _userManager.Users.FirstOrDefaultAsync(u => u.PhoneNumber == phone);
+
             if (user == null)
             {
                 return NotFound();
             }
+
             return Ok(user);
         }
+
 
         //POST: admin/user 
         [HttpPost]

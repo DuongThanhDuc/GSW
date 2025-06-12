@@ -8,6 +8,7 @@ using GSWApi.Utility;
 using DataAccess.Repository.IRepository;
 using Repository.Repository.IRepository;
 using Repository.Repository;
+using DataAccess.Repository;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,6 +21,8 @@ builder.Services.AddIdentity<IdentityUser, IdentityRole>()
 
 builder.Services.AddScoped<IGamesCategoryRepository, GamesCategoryRepository>();
 builder.Services.AddScoped<IGamesTagRepository, GamesTagRepository>();
+builder.Services.AddScoped<IGamesInfoRepository, GamesInfoRepository>();
+builder.Services.AddScoped<IStoreCartRepository, StoreCartRepository>();
 
 
 builder.Services.AddSingleton<EmailService>();

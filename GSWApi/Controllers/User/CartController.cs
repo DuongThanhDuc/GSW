@@ -1,6 +1,5 @@
 ﻿using DataAccess.DTOs;
-using DataAccess.IRepository;
-using DataAccess.Repository;
+using DataAccess.Repository.IRepository;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System.Threading.Tasks;

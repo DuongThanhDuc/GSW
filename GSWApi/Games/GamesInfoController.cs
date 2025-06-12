@@ -1,6 +1,6 @@
 ﻿using BusinessModel.Model;
 using DataAccess.DTOs;
-using DataAccess.Repository;
+using DataAccess.Repository.IRepository;
 using Microsoft.AspNetCore.Mvc;
 
 namespace GSWApi.Games
@@ -9,9 +9,9 @@ namespace GSWApi.Games
     [ApiController]
     public class GamesInfoController : ControllerBase
     {
-        private readonly GamesInfoRepository _repository;
+        private readonly IGamesInfoRepository _repository;
 
-        public GamesInfoController(GamesInfoRepository repository)
+        public GamesInfoController(IGamesInfoRepository repository)
         {
             _repository = repository;
         }
