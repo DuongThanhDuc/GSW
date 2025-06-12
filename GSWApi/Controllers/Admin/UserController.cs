@@ -9,7 +9,7 @@ namespace GSWApi.Controllers.Admin
 {
     [Route("admin/[controller]")]
     [ApiController]
-    public class UserController : Controller
+    public class UserController : ControllerBase
     {
         private readonly UserManager<IdentityUser> _userManager;
 
@@ -51,14 +51,11 @@ namespace GSWApi.Controllers.Admin
         [HttpGet("name/{name}")]
         public async Task<ActionResult<IdentityUser>> GetUserByName(string name)
         {
-            Console.WriteLine($"GetUserByName called with: {name}");
             var user = await _userManager.FindByNameAsync(name);
             if (user == null)
             {
-                Console.WriteLine("User not found.");
                 return NotFound();
             }
-            Console.WriteLine("User found.");
             return Ok(user);
         }
 
