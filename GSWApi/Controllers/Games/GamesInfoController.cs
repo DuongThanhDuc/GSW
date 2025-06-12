@@ -3,7 +3,7 @@ using DataAccess.DTOs;
 using DataAccess.Repository.IRepository;
 using Microsoft.AspNetCore.Mvc;
 
-namespace GSWApi.Games
+namespace GSWApi.Controllers.Games
 {
     [Route("api/[controller]")]
     [ApiController]

@@ -1,17 +1,17 @@
 ﻿using BusinessModel.Model;
 using DataAccess.DTOs;
-using DataAccess.Repository.IRepository;
 using Microsoft.AspNetCore.Mvc;
+using Repository.Repository.IRepository;
 
-namespace GSWApi.Controllers
+namespace GSWApi.Controllers.Games
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class GamesTagController : ControllerBase
+    public class GamesCategoryController : ControllerBase
     {
-        private readonly IGamesTagRepository _repo;
+        private readonly IGamesCategoryRepository _repo;
 
-        public GamesTagController(IGamesTagRepository repo)
+        public GamesCategoryController(IGamesCategoryRepository repo)
         {
             _repo = repo;
         }
@@ -20,15 +20,15 @@ namespace GSWApi.Controllers
         public async Task<IActionResult> GetAll()
         {
             var items = await _repo.GetAllAsync();
-            var result = items.Select(x => new GamesTagDTO
+            var result = items.Select(x => new GamesCategoryDTO
             {
                 ID = x.ID,
                 GameID = x.GameID,
-                TagID = x.TagID,
+                CategoryID = x.CategoryID,
                 CreatedAt = x.CreatedAt,
                 CreatedBy = x.CreatedBy,
                 GameName = x.Game?.Title,
-                TagName = x.Tag?.TagName
+                CategoryName = x.Category?.CategoryName
             });
             return Ok(result);
         }
@@ -38,26 +38,26 @@ namespace GSWApi.Controllers
         {
             var x = await _repo.GetByIdAsync(id);
             if (x == null) return NotFound();
-            var dto = new GamesTagDTO
+            var dto = new GamesCategoryDTO
             {
                 ID = x.ID,
                 GameID = x.GameID,
-                TagID = x.TagID,
+                CategoryID = x.CategoryID,
                 CreatedAt = x.CreatedAt,
                 CreatedBy = x.CreatedBy,
                 GameName = x.Game?.Title,
-                TagName = x.Tag?.TagName
+                CategoryName = x.Category?.CategoryName
             };
             return Ok(dto);
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] CreateGamesTagDTO dto)
+        public async Task<IActionResult> Create([FromBody] CreateGamesCategoryDTO dto)
         {
-            var entity = new GamesTag
+            var entity = new GamesCategory
             {
                 GameID = dto.GameID,
-                TagID = dto.TagID,
+                CategoryID = dto.CategoryID,
                 CreatedBy = dto.CreatedBy,
                 CreatedAt = DateTime.Now
             };
@@ -66,12 +66,12 @@ namespace GSWApi.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, [FromBody] UpdateGamesTagDTO dto)
+        public async Task<IActionResult> Update(int id, [FromBody] UpdateGamesCategoryDTO dto)
         {
-            var entity = new GamesTag
+            var entity = new GamesCategory
             {
                 GameID = dto.GameID,
-                TagID = dto.TagID,
+                CategoryID = dto.CategoryID,
                 CreatedBy = dto.CreatedBy
             };
             var updated = await _repo.UpdateAsync(id, entity);
