@@ -16,7 +16,7 @@ namespace DataAccess.DTOs
         public string DeveloperId { get; set; }
         public string InstallerFilePath { get; set; }
         public string CoverImagePath { get; set; }
-        public string Status { get; set; } ;
+        public string Status { get; set; } 
         public string CreatedBy { get; set; }
 
     }

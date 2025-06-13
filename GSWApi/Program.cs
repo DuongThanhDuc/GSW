@@ -5,6 +5,10 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using GSWApi.Utility;
+using DataAccess.Repository.IRepository;
+using Repository.Repository.IRepository;
+using Repository.Repository;
+using DataAccess.Repository;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,6 +18,16 @@ builder.Services.AddDbContext<DBContext>(options =>
 builder.Services.AddIdentity<IdentityUser, IdentityRole>()
     .AddEntityFrameworkStores<DBContext>()
     .AddDefaultTokenProviders();
+
+builder.Services.AddScoped<IGamesCategoryRepository, GamesCategoryRepository>();
+builder.Services.AddScoped<IGamesTagRepository, GamesTagRepository>();
+builder.Services.AddScoped<IGamesInfoRepository, GamesInfoRepository>();
+builder.Services.AddScoped<IStoreCartRepository, StoreCartRepository>();
+builder.Services.AddScoped<ISystemCategoryRepository, SystemCategoryRepository>();
+builder.Services.AddScoped<ISystemTagRepository, SystemTagRepository>();
+
+
+builder.Services.AddSingleton<EmailService>();
 
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 var secretKey = Encoding.ASCII.GetBytes(jwtSettings["Secret"]);

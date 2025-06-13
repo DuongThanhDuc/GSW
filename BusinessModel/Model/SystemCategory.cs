@@ -11,7 +11,6 @@ namespace BusinessModel.Model
         public int ID { get; set; }
         public string CategoryName { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.Now;
-
         public string CreatedBy { get; set; }
     }
 }

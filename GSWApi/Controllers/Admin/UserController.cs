@@ -9,7 +9,7 @@ namespace GSWApi.Controllers.Admin
 {
     [Route("admin/[controller]")]
     [ApiController]
-    public class UserController : Controller
+    public class UserController : ControllerBase
     {
         private readonly UserManager<IdentityUser> _userManager;
 
@@ -18,127 +18,110 @@ namespace GSWApi.Controllers.Admin
             _userManager = userManager;
         }
 
-        //GET: admin/user
+        // GET: admin/user
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<IdentityUser>>> GetAllUsers()
+        public async Task<IActionResult> GetAllUsers()
         {
-            var users = await _userManager.Users.ToListAsync();
-            return Ok(users);
+            var users = await _userManager.Users
+                .Select(u => new { u.Id, u.UserName, u.Email, u.PhoneNumber })
+                .ToListAsync();
+
+            return Ok(new { success = true, data = users });
         }
 
-        //GET: admin/user/{id}
-        [HttpGet("{id}")]
-        public async Task<ActionResult<IdentityUser>> GetUserByID(string ID)
+        // GET: admin/user/id/{id}
+        [HttpGet("id/{id}")]
+        public async Task<IActionResult> GetUserByID(string id)
         {
-            var user = await _userManager.FindByIdAsync(ID);
+            if (string.IsNullOrEmpty(id))
+                return BadRequest(new { success = false, message = "ID is required!" });
+
+            var user = await _userManager.FindByIdAsync(id);
             if (user == null)
-            {
-                return NotFound();
-            }
-            return Ok(user);
+                return NotFound(new { success = false, message = "User not found." });
+
+            return Ok(new { success = true, data = new[] { new { user.Id, user.UserName, user.Email, user.PhoneNumber } } });
         }
 
-        //GET admin/user/{name}
-        [HttpGet("{name}")]
-        public async Task<ActionResult<IdentityUser>> GetUserByName(string Name)
+        // GET: admin/user/name/{name}
+        [HttpGet("name/{name}")]
+        public async Task<IActionResult> GetUserByName(string name)
         {
-            if (Name == null)
-            {
-                return BadRequest("Username is required!");
-            }
-
-            var user = await _userManager.FindByNameAsync(Name);
+            var user = await _userManager.FindByNameAsync(name);
             if (user == null)
-            {
-                return NotFound();
-            }
-            return Ok(user);
+                return NotFound(new { success = false, message = "User not found." });
+
+            return Ok(new { success = true, data = new[] { new { user.Id, user.UserName, user.Email, user.PhoneNumber } } });
         }
 
-        //GET admin/user/{email}
-        [HttpGet("{email}")]
-        public async Task<ActionResult<IdentityUser>> GetUserByEmail(string Email)
+        // GET: admin/user/email/{email}
+        [HttpGet("email/{email}")]
+        public async Task<IActionResult> GetUserByEmail(string email)
         {
-            if (Email == null)
-            {
-                return BadRequest("Email is required!");
-            }
+            if (string.IsNullOrEmpty(email))
+                return BadRequest(new { success = false, message = "Email is required!" });
 
-            var user = await _userManager.FindByEmailAsync(Email);
+            var user = await _userManager.FindByEmailAsync(email);
             if (user == null)
-            {
-                return NotFound();
-            }
-            return Ok(user);
+                return NotFound(new { success = false, message = "User not found." });
+
+            return Ok(new { success = true, data = new[] { new { user.Id, user.UserName, user.Email, user.PhoneNumber } } });
         }
 
-        //GET admin/user/{phone}
-        [HttpGet("{phone}")]
-        public async Task<ActionResult<IdentityUser>> GetUserByPhone(string Phone)
+        // GET: admin/user/phone/{phone}
+        [HttpGet("phone/{phone}")]
+        public async Task<IActionResult> GetUserByPhone(string phone)
         {
-            if (Phone == null)
-            {
-                return BadRequest("Phone number is required!");
-            }
+            if (string.IsNullOrEmpty(phone))
+                return BadRequest(new { success = false, message = "Phone is required!" });
 
-            var user = await _userManager.Users.FirstOrDefaultAsync(u => u.PhoneNumber == Phone);
+            var user = await _userManager.Users.FirstOrDefaultAsync(u => u.PhoneNumber == phone);
             if (user == null)
-            {
-                return NotFound();
-            }
-            return Ok(user);
+                return NotFound(new { success = false, message = "User not found." });
+
+            return Ok(new { success = true, data = new[] { new { user.Id, user.UserName, user.Email, user.PhoneNumber } } });
         }
 
-        //POST: admin/user 
-        [HttpPost]
-        public async Task<ActionResult> CreateUser([FromBody] UserDTO dto)
-        {
-            var user = new IdentityUser
-            {
-                UserName = dto.Username,
-                Email = dto.Email,
-                PhoneNumber = dto.Phone
-            };
-
-            var result = await _userManager.CreateAsync(user, dto.Password);
-            if (!result.Succeeded)
-                return BadRequest(result.Errors);
-
-            if (!string.IsNullOrEmpty(dto.Role))
-                await _userManager.AddToRoleAsync(user, dto.Role);
-
-            return CreatedAtAction(nameof(GetUserByID), new { id = user.Id }, user);
-        }
-
-        //PUT: admin/user/{id}
+        // PUT: admin/user/{id}
         [HttpPut("{id}")]
-        public async Task<ActionResult> UpdateUser(string id, [FromBody] UserUpdateDTO dto)
+        public async Task<IActionResult> UpdateUser(string id, [FromBody] UserUpdateDTO dto)
         {
             var user = await _userManager.FindByIdAsync(id);
             if (user == null)
-                return NotFound();
+                return NotFound(new { success = false, message = "User not found." });
 
-            // Update username
             user.UserName = dto.Username ?? user.UserName;
 
             var updateResult = await _userManager.UpdateAsync(user);
             if (!updateResult.Succeeded)
-                return BadRequest(updateResult.Errors);
+                return BadRequest(new { success = false, errors = updateResult.Errors });
 
-            // Update role (remove current and add new one)
             if (!string.IsNullOrEmpty(dto.Role))
             {
                 var currentRoles = await _userManager.GetRolesAsync(user);
                 var removeResult = await _userManager.RemoveFromRolesAsync(user, currentRoles);
                 if (!removeResult.Succeeded)
-                    return BadRequest(removeResult.Errors);
+                    return BadRequest(new { success = false, errors = removeResult.Errors });
 
                 var addResult = await _userManager.AddToRoleAsync(user, dto.Role);
                 if (!addResult.Succeeded)
-                    return BadRequest(addResult.Errors);
+                    return BadRequest(new { success = false, errors = addResult.Errors });
             }
 
-            return NoContent();
+            var updatedRoles = await _userManager.GetRolesAsync(user);
+            return Ok(new
+            {
+                success = true,
+                data = new[] {
+            new {
+                user.Id,
+                user.UserName,
+                user.Email,
+                user.PhoneNumber,
+                Roles = updatedRoles
+            }
+        }
+            });
         }
 
         // DELETE: admin/user/{id}
@@ -147,13 +130,13 @@ namespace GSWApi.Controllers.Admin
         {
             var user = await _userManager.FindByIdAsync(id);
             if (user == null)
-                return NotFound();
+                return NotFound(new { success = false, message = "User not found." });
 
             var result = await _userManager.DeleteAsync(user);
             if (!result.Succeeded)
-                return BadRequest(result.Errors);
+                return BadRequest(new { success = false, errors = result.Errors });
 
-            return NoContent();
+            return Ok(new { success = true, data = new[] { new { user.Id, message = "User deleted." } } });
         }
     }
 }

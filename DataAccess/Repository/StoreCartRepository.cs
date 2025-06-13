@@ -1,5 +1,6 @@
 ﻿using BusinessModel.Model;
 using DataAccess.DTOs;
+using DataAccess.Repository.IRepository;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -9,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace DataAccess.Repository
 {
-    public class StoreCartRepository
+    public class StoreCartRepository : IStoreCartRepository
     {
         private readonly DBContext _context;
 
