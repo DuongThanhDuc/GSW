@@ -25,11 +25,13 @@ namespace GSWApi.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterDTO dto)
         {
-            var user = new IdentityUser { UserName = dto.Username, Email = dto.Email, EmailConfirmed = false };
+            var user = new IdentityUser { UserName = dto.Username, Email = dto.Email, PhoneNumber= dto.PhoneNumber, EmailConfirmed = false };
             var result = await _userManager.CreateAsync(user, dto.Password);
 
             if (!result.Succeeded)
                 return BadRequest(result.Errors);
+
+            await _userManager.AddToRoleAsync(user, "User");
 
             // Sinh OTP, gửi mail
             var otp = OtpManager.GenerateOtp(dto.Email);
