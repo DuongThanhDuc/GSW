@@ -102,6 +102,7 @@ namespace GSWApi.Controllers
                 new
                 {
                     token,
+                    userid = user.Id,
                     username = user.UserName,
                     email = user.Email,
                     roles = roles
