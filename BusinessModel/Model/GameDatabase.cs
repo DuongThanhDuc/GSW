@@ -6,18 +6,13 @@ using System.Threading.Tasks;
 
 namespace BusinessModel.Model
 {
-    public class GamesTag
+    public  class GameDatabase
     {
-        public int ID { get; set; }
-
-        public int GameID { get; set; }
+        public int Id { get; set; }
+        public int GameId { get; set; }
         public GamesInfo Game { get; set; }
-
-        public int TagID { get; set; }
-        public SystemTag Tag { get; set; } 
-
+        public string GameFilePathURL { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
-        public string CreatedBy { get; set; }
     }
 }

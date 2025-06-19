@@ -25,7 +25,6 @@ namespace DataAccess.Repository
             return await _context.Games_Info.ToListAsync();
         }
 
-        // Return the original model
         public async Task<GamesInfo?> GetByIdAsyncOriginal(int id)
         {
             return await _context.Games_Info.FindAsync(id);
@@ -42,9 +41,10 @@ namespace DataAccess.Repository
                     Price = g.Price,
                     Genre = g.Genre,
                     DeveloperId = g.DeveloperId,
-                    InstallerFilePath = g.InstallerFilePath,
-                    CoverImagePath = g.CoverImagePath,
+                    InstallerFileID = g.InstallerFileID,
+                    CoverImageID = g.CoverImageID,
                     Status = g.Status,
+                    CreatedAt = g.CreatedAt,
                     CreatedBy = g.CreatedBy
                 }).ToListAsync();
         }
@@ -62,9 +62,10 @@ namespace DataAccess.Repository
                 Price = game.Price,
                 Genre = game.Genre,
                 DeveloperId = game.DeveloperId,
-                InstallerFilePath = game.InstallerFilePath,
-                CoverImagePath = game.CoverImagePath,
+                InstallerFileID = game.InstallerFileID,
+                CoverImageID = game.CoverImageID,
                 Status = game.Status,
+                CreatedAt = game.CreatedAt,
                 CreatedBy = game.CreatedBy
             };
         }
@@ -78,10 +79,11 @@ namespace DataAccess.Repository
                 Price = dto.Price,
                 Genre = dto.Genre,
                 DeveloperId = dto.DeveloperId,
-                InstallerFilePath = dto.InstallerFilePath,
-                CoverImagePath = dto.CoverImagePath,
+                InstallerFileID = dto.InstallerFileID,
+                CoverImageID = dto.CoverImageID,
                 Status = dto.Status,
-                CreatedBy = dto.CreatedBy
+                CreatedBy = dto.CreatedBy,
+                CreatedAt = dto.CreatedAt
             };
 
             _context.Games_Info.Add(game);
@@ -101,10 +103,11 @@ namespace DataAccess.Repository
             game.Price = dto.Price;
             game.Genre = dto.Genre;
             game.DeveloperId = dto.DeveloperId;
-            game.InstallerFilePath = dto.InstallerFilePath;
-            game.CoverImagePath = dto.CoverImagePath;
+            game.InstallerFileID = dto.InstallerFileID;
+            game.CoverImageID = dto.CoverImageID;
             game.Status = dto.Status;
             game.CreatedBy = dto.CreatedBy;
+            game.CreatedAt = dto.CreatedAt;
 
             _context.Games_Info.Update(game);
             await _context.SaveChangesAsync();
