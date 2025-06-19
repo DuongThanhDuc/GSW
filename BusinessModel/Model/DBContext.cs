@@ -40,6 +40,8 @@ namespace BusinessModel.Model
         public DbSet<StoreRefundRequest> Store_RefundRequests { get; set; }
         public DbSet<StoreTransaction> Store_Transactions { get; set; }
         public DbSet<StoreCart> Store_Cart { get; set; }
+        public DbSet<SystemMedia> System_Media { get; set; }
+        public DbSet<GameDatabase> Game_Database { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -57,6 +59,20 @@ namespace BusinessModel.Model
             modelBuilder.Entity<GamesInfo>()
                 .Property(g => g.CreatedAt)
                 .HasDefaultValueSql("GETDATE()");
+
+            modelBuilder.Entity<SystemMedia>()
+                .Property(m => m.CreatedAt)
+                .HasDefaultValueSql("GETDATE()");
+
+            modelBuilder.Entity<GameDatabase>(entity =>
+            {
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETDATE()");
+
+                entity.HasOne(e => e.Game)
+                      .WithMany()
+                      .HasForeignKey(e => e.GameId)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
 
             modelBuilder.Entity<GamesCategory>()
                 .Property(gc => gc.CreatedAt)

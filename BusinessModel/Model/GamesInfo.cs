@@ -18,8 +18,8 @@ namespace BusinessModel.Model
 
         public DateTime? ReleaseDate { get; set; }
 
-        public string InstallerFilePath { get; set; }
-        public string CoverImagePath { get; set; }
+        public int InstallerFileID { get; set; }
+        public int CoverImageID { get; set; }
         public string Status { get; set; } = "Pending";
 
         public DateTime CreatedAt { get; set; } = DateTime.Now;
