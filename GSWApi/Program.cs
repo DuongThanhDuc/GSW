@@ -9,6 +9,7 @@ using DataAccess.Repository.IRepository;
 using Repository.Repository.IRepository;
 using Repository.Repository;
 using DataAccess.Repository;
+using CloudinaryDotNet;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,6 +27,17 @@ builder.Services.AddScoped<IStoreCartRepository, StoreCartRepository>();
 builder.Services.AddScoped<ISystemCategoryRepository, SystemCategoryRepository>();
 builder.Services.AddScoped<ISystemTagRepository, SystemTagRepository>();
 
+
+var cloudinarySettings = builder.Configuration.GetSection("CloudinarySettings").Get<CloudinarySettings>();
+
+var account = new Account(
+    cloudinarySettings.CloudName,
+    cloudinarySettings.ApiKey,
+    cloudinarySettings.ApiSecret
+);
+
+var cloudinary = new Cloudinary(account);
+builder.Services.AddSingleton(cloudinary);
 
 builder.Services.AddSingleton<EmailService>();
 
