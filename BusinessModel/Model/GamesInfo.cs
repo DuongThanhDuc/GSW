@@ -17,7 +17,6 @@ namespace BusinessModel.Model
         public string DeveloperId { get; set; }
 
         public DateTime? ReleaseDate { get; set; }
-
         public int InstallerFileID { get; set; }
         public int CoverImageID { get; set; }
         public string Status { get; set; } = "Pending";
