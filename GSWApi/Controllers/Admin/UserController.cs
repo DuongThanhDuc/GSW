@@ -22,11 +22,23 @@ namespace GSWApi.Controllers.Admin
         [HttpGet]
         public async Task<IActionResult> GetAllUsers()
         {
-            var users = await _userManager.Users
-                .Select(u => new { u.Id, u.UserName, u.Email, u.PhoneNumber })
-                .ToListAsync();
+            var users = await _userManager.Users.ToListAsync();
+            var userList = new List<object>();
 
-            return Ok(new { success = true, data = users });
+            foreach (var user in users)
+            {
+                var roles = await _userManager.GetRolesAsync(user);
+                userList.Add(new
+                {
+                    user.Id,
+                    user.UserName,
+                    user.Email,
+                    user.PhoneNumber,
+                    Roles = roles
+                });
+            }
+
+            return Ok(new { success = true, data = userList });
         }
 
         // GET: admin/user/id/{id}
@@ -40,7 +52,22 @@ namespace GSWApi.Controllers.Admin
             if (user == null)
                 return NotFound(new { success = false, message = "User not found." });
 
-            return Ok(new { success = true, data = new[] { new { user.Id, user.UserName, user.Email, user.PhoneNumber } } });
+            var roles = await _userManager.GetRolesAsync(user);
+
+            return Ok(new
+            {
+                success = true,
+                data = new[]
+                {
+                    new {
+                        user.Id,
+                        user.UserName,
+                        user.Email,
+                        user.PhoneNumber,
+                        Roles = roles
+                    }
+                }
+            });
         }
 
         // GET: admin/user/name/{name}
@@ -51,7 +78,22 @@ namespace GSWApi.Controllers.Admin
             if (user == null)
                 return NotFound(new { success = false, message = "User not found." });
 
-            return Ok(new { success = true, data = new[] { new { user.Id, user.UserName, user.Email, user.PhoneNumber } } });
+            var roles = await _userManager.GetRolesAsync(user);
+
+            return Ok(new
+            {
+                success = true,
+                data = new[]
+                {
+                    new {
+                        user.Id,
+                        user.UserName,
+                        user.Email,
+                        user.PhoneNumber,
+                        Roles = roles
+                    }
+                }
+            });
         }
 
         // GET: admin/user/email/{email}
@@ -65,7 +107,22 @@ namespace GSWApi.Controllers.Admin
             if (user == null)
                 return NotFound(new { success = false, message = "User not found." });
 
-            return Ok(new { success = true, data = new[] { new { user.Id, user.UserName, user.Email, user.PhoneNumber } } });
+            var roles = await _userManager.GetRolesAsync(user);
+
+            return Ok(new
+            {
+                success = true,
+                data = new[]
+                {
+                    new {
+                        user.Id,
+                        user.UserName,
+                        user.Email,
+                        user.PhoneNumber,
+                        Roles = roles
+                    }
+                }
+            });
         }
 
         // GET: admin/user/phone/{phone}
@@ -79,7 +136,22 @@ namespace GSWApi.Controllers.Admin
             if (user == null)
                 return NotFound(new { success = false, message = "User not found." });
 
-            return Ok(new { success = true, data = new[] { new { user.Id, user.UserName, user.Email, user.PhoneNumber } } });
+            var roles = await _userManager.GetRolesAsync(user);
+
+            return Ok(new
+            {
+                success = true,
+                data = new[]
+                {
+                    new {
+                        user.Id,
+                        user.UserName,
+                        user.Email,
+                        user.PhoneNumber,
+                        Roles = roles
+                    }
+                }
+            });
         }
 
         // PUT: admin/user/{id}
