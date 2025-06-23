@@ -1,5 +1,4 @@
-﻿using BusinessModel.Model;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -15,11 +14,9 @@ namespace DataAccess.DTOs
         public decimal Price { get; set; }
         public string Genre { get; set; }
         public string DeveloperId { get; set; }
-        public DateTime? ReleaseDate { get; set; }
-        public int InstallerFileID { get; set; }
-        public int CoverImageID { get; set; }
-        public string Status { get; set; } = "Pending";
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public string InstallerFilePath { get; set; }
+        public string CoverImagePath { get; set; }
+        public string Status { get; set; }
         public string CreatedBy { get; set; }
 
     }

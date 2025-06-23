@@ -72,11 +72,8 @@ namespace GSWApi.Controllers.Games
 
         // POST: api/GamesInfo
         [HttpPost]
-        public async Task<IActionResult> CreateGame([FromBody] GamesInfoDTO dto)
+        public async Task<IActionResult> CreateGame(GamesInfoDTO dto)
         {
-            if (dto == null)
-                return BadRequest(new { success = false, message = "Invalid game data." });
-
             var createdGame = await _repository.CreateAsync(dto);
             return Ok(new
             {
@@ -88,13 +85,13 @@ namespace GSWApi.Controllers.Games
 
         // PUT: api/GamesInfo/5
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateGame(int id, [FromBody] GamesInfoDTO dto)
+        public async Task<IActionResult> UpdateGame(int id, GamesInfoDTO dto)
         {
-            if (dto == null || id != dto.ID)
-                return BadRequest(new { success = false, message = "ID mismatch or invalid data." });
+            if (id != dto.ID)
+                return BadRequest(new { success = false, message = "ID mismatch." });
 
-            var updated = await _repository.UpdateAsync(dto);
-            if (!updated)
+            var success = await _repository.UpdateAsync(dto);
+            if (!success)
                 return NotFound(new { success = false, message = "Game not found." });
 
             return Ok(new
@@ -109,8 +106,8 @@ namespace GSWApi.Controllers.Games
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteGame(int id)
         {
-            var deleted = await _repository.DeleteAsync(id);
-            if (!deleted)
+            var success = await _repository.DeleteAsync(id);
+            if (!success)
                 return NotFound(new { success = false, message = "Game not found." });
 
             return Ok(new
