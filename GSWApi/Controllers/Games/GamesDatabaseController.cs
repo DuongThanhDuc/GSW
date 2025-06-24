@@ -1,7 +1,9 @@
 ﻿using DataAccess.DTOs;
 using DataAccess.Repository.IRepository;
 using Google.Apis.Auth.OAuth2;
-using Google.Cloud.Storage.V1;
+using Google.Apis.Drive.v3;
+using Google.Apis.Drive.v3.Data;
+using Google.Apis.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace GSWApi.Controllers.Games
@@ -12,11 +14,24 @@ namespace GSWApi.Controllers.Games
     {
         private readonly IGamesDatabaseRepository _repository;
         private readonly IConfiguration _config;
+        private readonly DriveService _driveService;
+        private readonly string _driveFolderId;
 
         public GamesDatabaseController(IGamesDatabaseRepository repository, IConfiguration config)
         {
             _repository = repository;
             _config = config;
+
+            var credential = GoogleCredential.FromFile(_config["GoogleDrive:CredentialFile"])
+                .CreateScoped(DriveService.Scope.Drive);
+
+            _driveService = new DriveService(new BaseClientService.Initializer
+            {
+                HttpClientInitializer = credential,
+                ApplicationName = "GSW Upload"
+            });
+
+            _driveFolderId = _config["GoogleDrive:FolderId"];
         }
 
         [HttpPost("upload")]
@@ -27,28 +42,39 @@ namespace GSWApi.Controllers.Games
 
             try
             {
-                // Setup Google Cloud Storage
-                var bucketName = _config["GoogleCloud:BucketName"];
-                var credentialPath = _config["GoogleCloud:CredentialFile"];
-
-                var storageClient = await StorageClient.CreateAsync(
-                    GoogleCredential.FromFile(credentialPath)
-                );
-
                 var fileName = $"{Guid.NewGuid()}_{file.FileName}";
 
+                var fileMetadata = new Google.Apis.Drive.v3.Data.File
+                {
+                    Name = fileName,
+                    Parents = new List<string> { _driveFolderId }
+                };
+
+                FilesResource.CreateMediaUpload request;
                 using (var stream = file.OpenReadStream())
                 {
-                    await storageClient.UploadObjectAsync(bucketName, fileName, file.ContentType, stream);
+                    request = _driveService.Files.Create(fileMetadata, stream, file.ContentType);
+                    request.Fields = "id, webViewLink, webContentLink";
+                    await request.UploadAsync();
                 }
 
-                string publicUrl = $"https://storage.googleapis.com/{bucketName}/{fileName}";
+                var uploadedFile = request.ResponseBody;
 
-                // Save URL to DB
+                // Make the file public
+                var permission = new Permission
+                {
+                    Role = "reader",
+                    Type = "anyone"
+                };
+                await _driveService.Permissions.Create(permission, uploadedFile.Id).ExecuteAsync();
+
+                string publicLink = uploadedFile.WebContentLink;
+
+                // Save to DB
                 var dto = new GamesDatabaseDTO
                 {
                     GameId = gameId,
-                    GameFilePathURL = publicUrl
+                    GameFilePathURL = publicLink
                 };
 
                 var saved = await _repository.CreateAsync(dto);
@@ -56,7 +82,7 @@ namespace GSWApi.Controllers.Games
                 return Ok(new
                 {
                     success = true,
-                    message = "Game file uploaded and saved.",
+                    message = "Game uploaded to Google Drive and saved.",
                     data = saved
                 });
             }
