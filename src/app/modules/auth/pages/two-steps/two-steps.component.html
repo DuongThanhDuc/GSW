@@ -1,0 +1,28 @@
+<form class="my-10 space-y-6" (ngSubmit)="onSubmit()">
+  <div class="text-center">
+    <h2 class="text-foreground mb-1 text-3xl font-semibold">Two Step Verification</h2>
+    <p class="text-muted-foreground text-sm">Enter the verification code we sent to</p>
+    <div class="text-muted-foreground mt-2 text-lg">{{email}}</div>
+  </div>
+
+  <div class="grid grid-cols-6">
+    <!-- Loop through the inputs array and bind each input to a corresponding value in 'inputValues' -->
+    <!-- <input
+      *ngFor="let input of inputs; let i = index"
+      [(ngModel)]="inputValues[i]"
+      (change)="onchange(i)"
+      name="hihi"
+      maxlength="1"
+      placeholder=""
+      class="border-border bg-background text-muted-foreground focus:border-primary h-10 w-10 rounded-md border text-center outline-hidden sm:h-14 sm:w-14"
+    /> -->
+      <ng-otp-input #ngOtpInput (onInputChange)="onOtpChange($event)" [config]="config"></ng-otp-input>
+  </div>
+
+  <!-- Submit Button -->
+  <div>
+    <app-button full impact="bold" tone="primary" shape="rounded" size="medium">
+      Submit
+    </app-button>
+  </div>
+</form>

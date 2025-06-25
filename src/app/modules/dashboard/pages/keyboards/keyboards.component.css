@@ -1,0 +1,148 @@
+/* src/app/modules/dashboard/pages/keyboards/keyboards.component.css */
+
+:host {
+  --steam-blue: #66c0f4;
+  --steam-gray: #8f98a0;
+  --steam-light-gray: #c7d5e0;
+  --steam-dark-blue: #1b2838;
+  --steam-mid-blue: #2a475e;
+  --steam-border-color: rgba(102, 192, 244, 0.2);
+  --steam-green: #a0cf00;
+}
+
+.keyboards-container {
+  width: 100%;
+}
+
+.keyboards-header {
+  padding: 60px 20px 40px;
+  text-align: center;
+  background-image: url('https://store.akamai.steamstatic.com/public/images/v6/app/points_shop_events_hero_bg.png');
+  background-position: center center;
+  background-repeat: no-repeat;
+  background-color: #1a2a3a;
+}
+
+.keyboards-title {
+  font-size: 3rem;
+  font-weight: 300;
+  color: white;
+  letter-spacing: 2px;
+}
+
+.keyboards-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 20px;
+}
+
+.grid-title {
+  font-size: 1.2rem;
+  font-weight: 400;
+  color: white;
+  letter-spacing: 1px;
+}
+
+.grid-subtitle {
+  font-size: 0.9rem;
+  color: var(--steam-gray);
+  margin-top: 5px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid var(--steam-border-color);
+  margin-bottom: 30px;
+}
+
+.keyboards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.keyboard-card {
+  background: linear-gradient(135deg, #203044, #182331);
+  border-radius: 4px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.keyboard-card:hover {
+  border-color: var(--steam-blue);
+  transform: translateY(-3px);
+}
+
+.image-container {
+  position: relative;
+  background-color: rgba(0,0,0,0.2);
+  padding: 20px;
+}
+
+.keyboard-image {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 3px;
+}
+
+.icon-overlay {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  background-color: rgba(0, 0, 0, 0.5);
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--steam-light-gray);
+}
+
+.steam-deck-icon {
+  top: 8px;
+  left: 8px;
+}
+
+.keyboard-type-icon {
+  top: 8px;
+  right: 8px;
+}
+
+.info-container {
+  padding: 15px;
+}
+
+.keyboard-title {
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: white;
+  margin: 0 0 5px 0;
+}
+
+.keyboard-type {
+  font-size: 0.8rem;
+  color: var(--steam-gray);
+  margin-bottom: 15px;
+}
+
+.price-section {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.checkmark-icon {
+  width: 20px;
+  height: 20px;
+  color: var(--steam-green);
+}
+
+.points-value {
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: white;
+}
+
+.points-icon {
+  width: 15px; 
+  height: 15px;
+}

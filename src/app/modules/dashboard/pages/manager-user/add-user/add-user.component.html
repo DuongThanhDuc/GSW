@@ -1,0 +1,99 @@
+<div class="p-8 bg-gray-100 rounded-lg shadow-md">
+  <div class="flex justify-between items-center mb-6">
+      <form (ngSubmit)="addUser()" #userForm="ngForm" class="w-full bg-gray-200 p-6 rounded-lg shadow-md">
+
+        <!-- Row 1 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+          <!-- Tên đăng nhập -->
+          <div>
+            <label class="block mb-2 text-lg font-semibold text-gray-800">Tên đăng nhập</label>
+            <input
+              type="text"
+              name="username"
+              style="color:black;background-color: white;"
+              [(ngModel)]="userdetail.UserName"
+              required
+              disabled
+              #username="ngModel"
+              class="w-full bg-white-100 p-5 text-lg rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              [class.border-red-500]="username.invalid && username.touched"
+            />
+            <div *ngIf="username.invalid && username.touched" class="text-red-500 text-sm mt-2">
+              Tên đăng nhập là bắt buộc.
+            </div>
+          </div>
+
+          <!-- Email -->
+          <div>
+            <label class="block mb-2 text-lg font-semibold text-gray-800">Email</label>
+            <input
+              type="email"
+              name="email"
+              [(ngModel)]="userdetail.Email"
+              required
+              disabled
+              #email="ngModel"
+              style="color:black;background-color: white;"
+              class="w-full bg-white-100 p-5 text-lg rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              [class.border-red-500]="email.invalid && email.touched"
+            />
+            <div *ngIf="email.invalid && email.touched" class="text-red-500 text-sm mt-2">
+              Vui lòng nhập email hợp lệ.
+            </div>
+          </div>
+
+          <!-- Số điện thoại -->
+          <div>
+            <label class="block mb-2 text-lg font-semibold text-gray-800">Số điện thoại</label>
+            <input
+              type="text"
+              name="phone"
+              [(ngModel)]="userdetail.PhoneNumber"
+              required
+              disabled
+              #phone="ngModel"
+              style="color:black;background-color: white;"
+              class="w-full bg-white-100 p-5 text-lg rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              [class.border-red-500]="phone.invalid && phone.touched"
+            />
+            <div *ngIf="phone.invalid && phone.touched" class="text-red-500 text-sm mt-2">
+              Vui lòng nhập số điện thoại hợp lệ.
+            </div>
+          </div>
+        </div>
+
+
+          <!-- Vai trò -->
+          <div>
+            <label class="block mb-2 text-lg font-semibold text-white-800">Vai trò</label>
+            <select
+              name="role"
+              [(ngModel)]="userdetail.Role"
+              required
+              #role="ngModel"
+              style="color:black;background-color: white;"
+              class="w-full bg-white-100 p-5 text-xl rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="User">User</option>
+              <option value="Admin">Admin</option>
+              <option value="Staff">Staff</option>
+
+            </select>
+            <div *ngIf="role.invalid && role.touched" class="text-red-500 text-sm mt-2">
+              Vai trò là bắt buộc.
+            </div>
+          </div>
+
+        <!-- Submit -->
+        <div class="mb-20">  </div>
+      <button
+  type="submit"
+  [disabled]="userForm.invalid"
+  class="px-6 py-2 text-base bg-blue-500 text-white rounded-md hover:bg-blue-600 transition duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+>
+Lưu
+</button>
+      </form>
+    </div>
+
+</div>

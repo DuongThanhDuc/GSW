@@ -1,0 +1,24 @@
+
+<div class="nft-page-container">
+    <app-nft-header></app-nft-header>
+
+      <app-featured-carousel 
+    *ngIf="!isLoading && featuredGames.length > 0"
+    [games]="featuredGames">
+  </app-featured-carousel>
+
+  <app-community-recommends></app-community-recommends>
+
+  <app-category-browser></app-category-browser>
+
+  <app-because-you-played></app-because-you-played>
+  
+
+  <div class="keep-scrolling">
+    <div class="scroll-icon"></div>
+    <p>Keep scrolling for more recommendations</p>
+    <span>Below you'll find a variety of titles that you may be interested in from categories across Steam</span>
+  </div>
+</div>
+<!-- <app-table></app-table> -->
+ <!-- <app-table-action></app-table-action> -->
