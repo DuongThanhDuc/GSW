@@ -10,6 +10,7 @@ using Repository.Repository.IRepository;
 using Repository.Repository;
 using DataAccess.Repository;
 using CloudinaryDotNet;
+using DataAccess.Repository.Data.Repository;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,7 +27,8 @@ builder.Services.AddScoped<IGamesInfoRepository, GamesInfoRepository>();
 builder.Services.AddScoped<IStoreCartRepository, StoreCartRepository>();
 builder.Services.AddScoped<ISystemCategoryRepository, SystemCategoryRepository>();
 builder.Services.AddScoped<ISystemTagRepository, SystemTagRepository>();
-
+builder.Services.AddScoped<IGamesMediaRepository, GamesMediaRepository>();
+builder.Services.AddScoped<IStoreRefundRequestRepository, StoreRefundRequestRepository>();
 
 var cloudinarySettings = builder.Configuration.GetSection("CloudinarySettings").Get<CloudinarySettings>();
 
