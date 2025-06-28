@@ -29,6 +29,9 @@ builder.Services.AddScoped<ISystemCategoryRepository, SystemCategoryRepository>(
 builder.Services.AddScoped<ISystemTagRepository, SystemTagRepository>();
 builder.Services.AddScoped<IGamesMediaRepository, GamesMediaRepository>();
 builder.Services.AddScoped<IStoreRefundRequestRepository, StoreRefundRequestRepository>();
+builder.Services.AddScoped<IGamesReviewRepository, GamesReviewRepository>();
+
+
 
 var cloudinarySettings = builder.Configuration.GetSection("CloudinarySettings").Get<CloudinarySettings>();
 
