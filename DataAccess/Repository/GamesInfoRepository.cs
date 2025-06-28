@@ -45,6 +45,7 @@ namespace DataAccess.Repository
                     InstallerFilePath = g.InstallerFilePath,
                     CoverImagePath = g.CoverImagePath,
                     Status = g.Status,
+                    IsActive = g.IsActive,
                     CreatedBy = g.CreatedBy
                 }).ToListAsync();
         }
@@ -65,6 +66,7 @@ namespace DataAccess.Repository
                 InstallerFilePath = game.InstallerFilePath,
                 CoverImagePath = game.CoverImagePath,
                 Status = game.Status,
+                IsActive = game.IsActive,
                 CreatedBy = game.CreatedBy
             };
         }
@@ -81,6 +83,7 @@ namespace DataAccess.Repository
                 InstallerFilePath = dto.InstallerFilePath,
                 CoverImagePath = dto.CoverImagePath,
                 Status = dto.Status,
+                IsActive = dto.IsActive,
                 CreatedBy = dto.CreatedBy
             };
 
@@ -104,6 +107,7 @@ namespace DataAccess.Repository
             game.InstallerFilePath = dto.InstallerFilePath;
             game.CoverImagePath = dto.CoverImagePath;
             game.Status = dto.Status;
+            game.IsActive = dto.IsActive;
             game.CreatedBy = dto.CreatedBy;
 
             _context.Games_Info.Update(game);
@@ -120,8 +124,33 @@ namespace DataAccess.Repository
             await _context.SaveChangesAsync();
             return true;
         }
+        public async Task<bool> SetActiveStatusAsync(int id, bool isActive)
+        {
+            var game = await _context.Games_Info.FindAsync(id);
+            if (game == null) return false;
+            game.IsActive = isActive;
+            _context.Games_Info.Update(game);
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> UpdateStatusAsync(int id, string status)
+        {
+            var game = await _context.Games_Info.FindAsync(id);
+            if (game == null) return false;
+            game.Status = status;
+            _context.Games_Info.Update(game);
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task UpdateAsync(GamesInfo game)
+        {
+            _context.Games_Info.Update(game);
+            await _context.SaveChangesAsync();
+        }
     }
 
-
+   
 }
 

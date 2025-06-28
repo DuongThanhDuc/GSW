@@ -21,7 +21,7 @@ namespace BusinessModel.Model
         public string InstallerFilePath { get; set; }
         public string CoverImagePath { get; set; }
         public string Status { get; set; } = "Pending";
-
+        public bool IsActive { get; set; } = true;
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
         public string CreatedBy { get; set; }

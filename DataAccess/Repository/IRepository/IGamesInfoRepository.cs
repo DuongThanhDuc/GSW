@@ -17,5 +17,9 @@ namespace DataAccess.Repository.IRepository
         Task<GamesInfoDTO> CreateAsync(GamesInfoDTO dto);
         Task<bool> UpdateAsync(GamesInfoDTO dto);
         Task<bool> DeleteAsync(int id);
+        Task<bool> SetActiveStatusAsync(int id, bool isActive);
+        Task<bool> UpdateStatusAsync(int id, string status);
+        Task UpdateAsync(GamesInfo game);
+
     }
 }
