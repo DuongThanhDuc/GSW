@@ -210,5 +210,35 @@ namespace GSWApi.Controllers.Admin
 
             return Ok(new { success = true, data = new[] { new { user.Id, message = "User deleted." } } });
         }
+
+        // POST: admin/user/lock/{id}
+        [HttpPost("lock/{id}")]
+        public async Task<IActionResult> LockUser(string id)
+        {
+            var user = await _userManager.FindByIdAsync(id);
+            if (user == null)
+                return NotFound(new { success = false, message = "User not found." });
+
+            await _userManager.SetLockoutEnabledAsync(user, true);
+            // Set thời điểm khóa tới rất xa (vô thời hạn)
+            await _userManager.SetLockoutEndDateAsync(user, DateTimeOffset.MaxValue);
+
+            return Ok(new { success = true, message = "User has been locked." });
+        }
+
+        // POST: admin/user/unlock/{id}
+        [HttpPost("unlock/{id}")]
+        public async Task<IActionResult> UnlockUser(string id)
+        {
+            var user = await _userManager.FindByIdAsync(id);
+            if (user == null)
+                return NotFound(new { success = false, message = "User not found." });
+
+            // Set LockoutEnd = null để mở khóa
+            await _userManager.SetLockoutEndDateAsync(user, null);
+
+            return Ok(new { success = true, message = "User has been unlocked." });
+        }
+
     }
 }
