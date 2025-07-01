@@ -118,6 +118,41 @@ namespace GSWApi.Controllers.Games
             });
         }
 
+        // Kích hoạt game
+        [HttpPost("{id}/active")]
+        public async Task<IActionResult> ActiveGame(int id)
+        {
+            var success = await _repository.SetActiveStatusAsync(id, true);
+            if (!success)
+                return NotFound(new { success = false, message = "Game not found." });
+            return Ok(new { success = true, message = "Game activated successfully." });
+        }
+
+        // Vô hiệu hóa game
+        [HttpPost("{id}/deactive")]
+        public async Task<IActionResult> DeactiveGame(int id)
+        {
+            var success = await _repository.SetActiveStatusAsync(id, false);
+            if (!success)
+                return NotFound(new { success = false, message = "Game not found." });
+            return Ok(new { success = true, message = "Game deactivated successfully." });
+        }
+
+        // Đổi status game
+        public class UpdateGameStatusDTO
+        {
+            public string Status { get; set; }
+        }
+
+        [HttpPost("{id}/status")]
+        public async Task<IActionResult> UpdateGameStatus(int id, [FromBody] UpdateGameStatusDTO dto)
+        {
+            var success = await _repository.UpdateStatusAsync(id, dto.Status);
+            if (!success)
+                return NotFound(new { success = false, message = "Game not found." });
+            return Ok(new { success = true, message = $"Game status updated to {dto.Status}." });
+        }
+
 
     }
 }
