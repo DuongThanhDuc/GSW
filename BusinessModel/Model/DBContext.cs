@@ -45,6 +45,8 @@ namespace BusinessModel.Model
 
         public DbSet<GamesMedia> Games_Media { get; set; }
         public DbSet<StoreLibrary> Store_Library { get; set; }
+        public DbSet<SystemTokenRefresh> System_TokenRefreshes { get; set; }
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -152,6 +154,14 @@ namespace BusinessModel.Model
             modelBuilder.Entity<StoreThreadReply>()
                 .Property(r => r.CreatedBy)
                 .IsRequired();
+
+            modelBuilder.Entity<SystemTokenRefresh>()
+                .Property(t => t.CreatedAt)
+                .HasDefaultValueSql("GETDATE()");
+
+            modelBuilder.Entity<SystemTokenRefresh>()
+                .Property(t => t.UpdatedAt)
+                .HasDefaultValueSql("GETDATE()");
 
 
 
