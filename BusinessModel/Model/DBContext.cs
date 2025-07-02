@@ -40,9 +40,13 @@ namespace BusinessModel.Model
         public DbSet<StoreRefundRequest> Store_RefundRequests { get; set; }
         public DbSet<StoreTransaction> Store_Transactions { get; set; }
         public DbSet<StoreCart> Store_Cart { get; set; }
-        
+        public DbSet<StoreThread> Store_Threads { get; set; }
+        public DbSet<StoreThreadReply> Store_ThreadReplies { get; set; }
+
         public DbSet<GamesMedia> Games_Media { get; set; }
         public DbSet<StoreLibrary> Store_Library { get; set; }
+        public DbSet<SystemTokenRefresh> System_TokenRefreshes { get; set; }
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -117,6 +121,49 @@ namespace BusinessModel.Model
             modelBuilder.Entity<StoreTransaction>()
                 .Property(t => t.TransactionDate)
                 .HasDefaultValueSql("GETDATE()");
+            modelBuilder.Entity<StoreThread>()
+                 .Property(t => t.CreatedAt)
+                 .HasDefaultValueSql("GETDATE()");
+            modelBuilder.Entity<StoreThread>()
+                 .Property(t => t.ThreadTitle)
+                 .IsRequired();
+
+            modelBuilder.Entity<StoreThread>()
+                .Property(t => t.ThreadDescription)
+                .IsRequired();
+
+            modelBuilder.Entity<StoreThread>()
+                .Property(t => t.CreatedBy)
+                .IsRequired();
+
+            modelBuilder.Entity<StoreThreadReply>()
+                .Property(r => r.CreatedAt)
+                .HasDefaultValueSql("GETDATE()");
+
+            modelBuilder.Entity<StoreThreadReply>()
+                .HasOne(r => r.StoreThread)
+                .WithMany(t => t.Replies)
+                .HasForeignKey(r => r.ThreadID)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Optional: Add constraints
+            modelBuilder.Entity<StoreThreadReply>()
+                .Property(r => r.ThreadComment)
+                .IsRequired();
+
+            modelBuilder.Entity<StoreThreadReply>()
+                .Property(r => r.CreatedBy)
+                .IsRequired();
+
+            modelBuilder.Entity<SystemTokenRefresh>()
+                .Property(t => t.CreatedAt)
+                .HasDefaultValueSql("GETDATE()");
+
+            modelBuilder.Entity<SystemTokenRefresh>()
+                .Property(t => t.UpdatedAt)
+                .HasDefaultValueSql("GETDATE()");
+
+
 
 
             // Seeding Datas
