@@ -18,7 +18,7 @@ namespace DataAccess.DTOs
         public string CoverImagePath { get; set; }
         public string Status { get; set; }
         public string CreatedBy { get; set; }
-        public bool IsActive { get; set; }     
-
+        public bool IsActive { get; set; }
+        public List<GamesReviewDTO> Reviews { get; set; }
     }
 }
