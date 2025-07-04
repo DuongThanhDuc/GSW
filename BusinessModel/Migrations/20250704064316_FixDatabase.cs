@@ -3,10 +3,12 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
+#pragma warning disable CA1814 // Prefer jagged arrays over multidimensional
+
 namespace BusinessModel.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class FixDatabase : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -65,6 +67,7 @@ namespace BusinessModel.Migrations
                     InstallerFilePath = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     CoverImagePath = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETDATE()"),
                     CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: false)
                 },
@@ -88,6 +91,23 @@ namespace BusinessModel.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Store_Orders", x => x.ID);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Store_Threads",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    ThreadTitle = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ThreadDescription = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    UpvoteCount = table.Column<int>(type: "int", nullable: false),
+                    CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETDATE()")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Store_Threads", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -118,6 +138,23 @@ namespace BusinessModel.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_System_Tags", x => x.ID);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "System_TokenRefreshes",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    UserID = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Token = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    TokenRefresh = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETDATE()"),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETDATE()")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_System_TokenRefreshes", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -227,6 +264,27 @@ namespace BusinessModel.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Games_Media",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    GameId = table.Column<int>(type: "int", nullable: false),
+                    MediaURL = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETDATE()")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Games_Media", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Games_Media_Games_Info_GameId",
+                        column: x => x.GameId,
+                        principalTable: "Games_Info",
+                        principalColumn: "ID",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Games_Reviews",
                 columns: table => new
                 {
@@ -267,6 +325,48 @@ namespace BusinessModel.Migrations
                     table.ForeignKey(
                         name: "FK_Games_Uploads_Games_Info_GameID",
                         column: x => x.GameID,
+                        principalTable: "Games_Info",
+                        principalColumn: "ID",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Store_Cart",
+                columns: table => new
+                {
+                    ID = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    UserID = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    GameID = table.Column<int>(type: "int", nullable: false),
+                    AddedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Store_Cart", x => x.ID);
+                    table.ForeignKey(
+                        name: "FK_Store_Cart_Games_Info_GameID",
+                        column: x => x.GameID,
+                        principalTable: "Games_Info",
+                        principalColumn: "ID",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Store_Library",
+                columns: table => new
+                {
+                    ID = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    UserID = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    GamesID = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETDATE()")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Store_Library", x => x.ID);
+                    table.ForeignKey(
+                        name: "FK_Store_Library_Games_Info_GamesID",
+                        column: x => x.GamesID,
                         principalTable: "Games_Info",
                         principalColumn: "ID",
                         onDelete: ReferentialAction.Cascade);
@@ -346,6 +446,29 @@ namespace BusinessModel.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Store_ThreadReplies",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    ThreadID = table.Column<int>(type: "int", nullable: false),
+                    ThreadComment = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    UpvoteCount = table.Column<int>(type: "int", nullable: false),
+                    CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETDATE()")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Store_ThreadReplies", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Store_ThreadReplies_Store_Threads_ThreadID",
+                        column: x => x.ThreadID,
+                        principalTable: "Store_Threads",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Games_Categories",
                 columns: table => new
                 {
@@ -401,6 +524,50 @@ namespace BusinessModel.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
+            migrationBuilder.InsertData(
+                table: "AspNetRoles",
+                columns: new[] { "Id", "ConcurrencyStamp", "Name", "NormalizedName" },
+                values: new object[,]
+                {
+                    { "0f6781b2-4564-4bb3-8d85-92e4c194a2cb", "f2724334-8b2e-48a2-91db-b39b3726beda", "Staff", "STAFF" },
+                    { "26e5f054-e9fd-489f-891f-cf2b57fa9a1c", "5204f014-a172-4e10-9723-939b3e003a1d", "User", "USER" },
+                    { "b7b9181c-ff61-4d8f-8f6d-5edb3a6d3a11", "c48cd6cb-3a34-4180-9e7f-aeb6f4200e9e", "Admin", "ADMIN" }
+                });
+
+            migrationBuilder.InsertData(
+                table: "AspNetUsers",
+                columns: new[] { "Id", "AccessFailedCount", "ConcurrencyStamp", "Email", "EmailConfirmed", "LockoutEnabled", "LockoutEnd", "NormalizedEmail", "NormalizedUserName", "PasswordHash", "PhoneNumber", "PhoneNumberConfirmed", "SecurityStamp", "TwoFactorEnabled", "UserName" },
+                values: new object[] { "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af", 0, "cf9b559e-b846-4472-a7d2-7ec93836db2b", "admin@gameshop.com", true, false, null, "ADMIN@GAMESHOP.COM", "ADMIN", "AQAAAAEAACcQAAAAEP1ocQ+jlBWl1l7YZgQOkTeu67YyiXBBby3zOH1cohLBZNgjXsw41+k3P1kJnStB2A==", null, false, "5d0a270b-5839-41c4-8ff8-6fbbbf8e120f", false, "admin" });
+
+            migrationBuilder.InsertData(
+                table: "System_Categories",
+                columns: new[] { "ID", "CategoryName", "CreatedAt", "CreatedBy" },
+                values: new object[,]
+                {
+                    { 1, "RPG", new DateTime(2025, 7, 4, 6, 43, 15, 949, DateTimeKind.Utc).AddTicks(9634), "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af" },
+                    { 2, "FPS", new DateTime(2025, 7, 4, 6, 43, 15, 949, DateTimeKind.Utc).AddTicks(9637), "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af" },
+                    { 3, "Puzzle", new DateTime(2025, 7, 4, 6, 43, 15, 949, DateTimeKind.Utc).AddTicks(9638), "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af" },
+                    { 4, "Simulation", new DateTime(2025, 7, 4, 6, 43, 15, 949, DateTimeKind.Utc).AddTicks(9639), "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af" },
+                    { 5, "Horror", new DateTime(2025, 7, 4, 6, 43, 15, 949, DateTimeKind.Utc).AddTicks(9640), "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af" }
+                });
+
+            migrationBuilder.InsertData(
+                table: "System_Tags",
+                columns: new[] { "ID", "CreatedAt", "CreatedBy", "TagName" },
+                values: new object[,]
+                {
+                    { 1, new DateTime(2025, 7, 4, 6, 43, 15, 949, DateTimeKind.Utc).AddTicks(9612), "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af", "Action" },
+                    { 2, new DateTime(2025, 7, 4, 6, 43, 15, 949, DateTimeKind.Utc).AddTicks(9614), "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af", "Adventure" },
+                    { 3, new DateTime(2025, 7, 4, 6, 43, 15, 949, DateTimeKind.Utc).AddTicks(9615), "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af", "Multiplayer" },
+                    { 4, new DateTime(2025, 7, 4, 6, 43, 15, 949, DateTimeKind.Utc).AddTicks(9616), "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af", "Indie" },
+                    { 5, new DateTime(2025, 7, 4, 6, 43, 15, 949, DateTimeKind.Utc).AddTicks(9618), "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af", "Strategy" }
+                });
+
+            migrationBuilder.InsertData(
+                table: "AspNetUserRoles",
+                columns: new[] { "RoleId", "UserId" },
+                values: new object[] { "b7b9181c-ff61-4d8f-8f6d-5edb3a6d3a11", "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af" });
+
             migrationBuilder.CreateIndex(
                 name: "IX_AspNetRoleClaims_RoleId",
                 table: "AspNetRoleClaims",
@@ -451,6 +618,11 @@ namespace BusinessModel.Migrations
                 column: "GameID");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Games_Media_GameId",
+                table: "Games_Media",
+                column: "GameId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Games_Reviews_GameID",
                 table: "Games_Reviews",
                 column: "GameID");
@@ -471,6 +643,16 @@ namespace BusinessModel.Migrations
                 column: "GameID");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Store_Cart_GameID",
+                table: "Store_Cart",
+                column: "GameID");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Store_Library_GamesID",
+                table: "Store_Library",
+                column: "GamesID");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Store_OrderDetails_GameID",
                 table: "Store_OrderDetails",
                 column: "GameID");
@@ -484,6 +666,11 @@ namespace BusinessModel.Migrations
                 name: "IX_Store_RefundRequests_OrderID",
                 table: "Store_RefundRequests",
                 column: "OrderID");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Store_ThreadReplies_ThreadID",
+                table: "Store_ThreadReplies",
+                column: "ThreadID");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Store_Transactions_OrderID",
@@ -513,6 +700,9 @@ namespace BusinessModel.Migrations
                 name: "Games_Categories");
 
             migrationBuilder.DropTable(
+                name: "Games_Media");
+
+            migrationBuilder.DropTable(
                 name: "Games_Reviews");
 
             migrationBuilder.DropTable(
@@ -522,13 +712,25 @@ namespace BusinessModel.Migrations
                 name: "Games_Uploads");
 
             migrationBuilder.DropTable(
+                name: "Store_Cart");
+
+            migrationBuilder.DropTable(
+                name: "Store_Library");
+
+            migrationBuilder.DropTable(
                 name: "Store_OrderDetails");
 
             migrationBuilder.DropTable(
                 name: "Store_RefundRequests");
 
             migrationBuilder.DropTable(
+                name: "Store_ThreadReplies");
+
+            migrationBuilder.DropTable(
                 name: "Store_Transactions");
+
+            migrationBuilder.DropTable(
+                name: "System_TokenRefreshes");
 
             migrationBuilder.DropTable(
                 name: "AspNetRoles");
@@ -544,6 +746,9 @@ namespace BusinessModel.Migrations
 
             migrationBuilder.DropTable(
                 name: "Games_Info");
+
+            migrationBuilder.DropTable(
+                name: "Store_Threads");
 
             migrationBuilder.DropTable(
                 name: "Store_Orders");
