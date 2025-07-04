@@ -191,7 +191,7 @@ namespace BusinessModel.Model
       );
 
             //Admin User
-            var adminUserId = Guid.NewGuid().ToString();
+            var adminUserId = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af";
             var hasher = new PasswordHasher<IdentityUser>();
 
             var adminUser = new IdentityUser
