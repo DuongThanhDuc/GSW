@@ -30,6 +30,8 @@ builder.Services.AddScoped<ISystemTagRepository, SystemTagRepository>();
 builder.Services.AddScoped<IGamesMediaRepository, GamesMediaRepository>();
 builder.Services.AddScoped<IStoreRefundRequestRepository, StoreRefundRequestRepository>();
 builder.Services.AddScoped<IGamesReviewRepository, GamesReviewRepository>();
+builder.Services.AddScoped<IStoreThreadRepository, StoreThreadRepository>();
+builder.Services.AddScoped<IStoreThreadReplyRepository, StoreThreadReplyRepository>();   
 
 
 
