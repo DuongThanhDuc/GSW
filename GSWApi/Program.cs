@@ -32,7 +32,7 @@ builder.Services.AddScoped<IStoreRefundRequestRepository, StoreRefundRequestRepo
 builder.Services.AddScoped<IGamesReviewRepository, GamesReviewRepository>();
 builder.Services.AddScoped<IStoreThreadRepository, StoreThreadRepository>();
 builder.Services.AddScoped<IStoreThreadReplyRepository, StoreThreadReplyRepository>();   
-
+builder.Services.AddScoped<IGamesDiscountRepository, GamesDiscountRepository>();
 
 
 var cloudinarySettings = builder.Configuration.GetSection("CloudinarySettings").Get<CloudinarySettings>();
