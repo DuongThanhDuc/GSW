@@ -1,11 +1,12 @@
 ﻿using BusinessModel.Model;
+using DataAccess.DTOs;
 using DataAccess.Repository.IRepository;
 using Microsoft.AspNetCore.Mvc;
 
 namespace GSWApi.Controllers.Games
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/games/{gameId}/media")]
     public class GamesMediaController : ControllerBase
     {
         private readonly IGamesMediaRepository _repo;
@@ -15,41 +16,33 @@ namespace GSWApi.Controllers.Games
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAll()
+        public IActionResult GetGameInfoWithMedia(int gameId)
         {
-            var data = await _repo.GetAllAsync();
+            var data = _repo.GetGameInfoWithMedia(gameId);
+            if (data == null) return NotFound();
             return Ok(data);
         }
 
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetById(int id)
-        {
-            var item = await _repo.GetByIdAsync(id);
-            if (item == null) return NotFound();
-            return Ok(item);
-        }
-
         [HttpPost]
-        public async Task<IActionResult> Add(GamesMedia dto)
+        public IActionResult AddMedia(int gameId, [FromBody] GamesMediaDTO mediaDto)
         {
-            await _repo.AddAsync(dto);
-            return CreatedAtAction(nameof(GetById), new { id = dto.Id }, dto);
+            _repo.AddMediaToGame(gameId, mediaDto);
+            return Ok(new { message = "Media added." });
         }
 
-        [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, GamesMedia dto)
+        [HttpPut("{mediaId}")]
+        public IActionResult UpdateMedia(int gameId, int mediaId, [FromBody] GamesMediaDTO mediaDto)
         {
-            if (id != dto.Id) return BadRequest();
-            await _repo.UpdateAsync(dto);
-            return NoContent();
+            if (mediaDto.Id != mediaId) return BadRequest();
+            _repo.UpdateMediaInGame(gameId, mediaDto);
+            return Ok(new { message = "Media updated." });
         }
 
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(int id)
+        [HttpDelete("{mediaId}")]
+        public IActionResult DeleteMedia(int gameId, int mediaId)
         {
-            await _repo.DeleteAsync(id);
-            return NoContent();
+            _repo.DeleteMediaFromGame(gameId, mediaId);
+            return Ok(new { message = "Media deleted." });
         }
     }
-
 }
