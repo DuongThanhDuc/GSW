@@ -1,4 +1,5 @@
 ﻿using BusinessModel.Model;
+using DataAccess.DTOs;
 using DataAccess.Repository.IRepository;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -12,36 +13,73 @@ namespace DataAccess.Repository
     public class GamesMediaRepository : IGamesMediaRepository
     {
         private readonly DBContext _context;
+
         public GamesMediaRepository(DBContext context)
         {
             _context = context;
         }
 
-        public async Task<IEnumerable<GamesMedia>> GetAllAsync()
+        // Lấy thông tin game + media
+        public GamesInfoDTO GetGameInfoWithMedia(int gameId)
         {
-            return await _context.Games_Media.ToListAsync();
-        }
-        public async Task<GamesMedia> GetByIdAsync(int id)
-        {
-            return await _context.Games_Media.FindAsync(id);
-        }
-        public async Task AddAsync(GamesMedia gameMedia)
-        {
-            _context.Games_Media.Add(gameMedia);
-            await _context.SaveChangesAsync();
-        }
-        public async Task UpdateAsync(GamesMedia gameMedia)
-        {
-            _context.Games_Media.Update(gameMedia);
-            await _context.SaveChangesAsync();
-        }
-        public async Task DeleteAsync(int id)
-        {
-            var entity = await _context.Games_Media.FindAsync(id);
-            if (entity != null)
+            var game = _context.Games_Info.FirstOrDefault(g => g.ID == gameId);
+            if (game == null) return null;
+
+            // Lấy media liên quan tới game
+            var mediaList = _context.Games_Media
+                                    .Where(m => m.GameId == gameId)
+                                    .ToList();
+
+            return new GamesInfoDTO
             {
-                _context.Games_Media.Remove(entity);
-                await _context.SaveChangesAsync();
+                ID = game.ID,
+                Title = game.Title,
+                Description = game.Description,
+                Price = game.Price,
+                Genre = game.Genre,
+                DeveloperId = game.DeveloperId,
+                InstallerFilePath = game.InstallerFilePath,
+                CoverImagePath = game.CoverImagePath,
+                Status = game.Status,
+                CreatedBy = game.CreatedBy,
+                IsActive = game.IsActive,
+                Media = mediaList.Select(m => new GamesMediaDTO
+                {
+                    Id = m.Id,
+                    GameId = m.GameId,
+                    MediaURL = m.MediaURL
+                }).ToList()
+            };
+        }
+
+        public void AddMediaToGame(int gameId, GamesMediaDTO mediaDto)
+        {
+            var newMedia = new GamesMedia
+            {
+                GameId = gameId,
+                MediaURL = mediaDto.MediaURL
+            };
+            _context.Games_Media.Add(newMedia);
+            _context.SaveChanges();
+        }
+
+        public void UpdateMediaInGame(int gameId, GamesMediaDTO mediaDto)
+        {
+            var media = _context.Games_Media.FirstOrDefault(m => m.Id == mediaDto.Id && m.GameId == gameId);
+            if (media != null)
+            {
+                media.MediaURL = mediaDto.MediaURL;
+                _context.SaveChanges();
+            }
+        }
+
+        public void DeleteMediaFromGame(int gameId, int mediaId)
+        {
+            var media = _context.Games_Media.FirstOrDefault(m => m.Id == mediaId && m.GameId == gameId);
+            if (media != null)
+            {
+                _context.Games_Media.Remove(media);
+                _context.SaveChanges();
             }
         }
     }

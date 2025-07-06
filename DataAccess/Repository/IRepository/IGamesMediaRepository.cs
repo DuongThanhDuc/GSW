@@ -1,4 +1,5 @@
 ﻿using BusinessModel.Model;
+using DataAccess.DTOs;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,11 +10,10 @@ namespace DataAccess.Repository.IRepository
 {
     public interface IGamesMediaRepository
     {
-        Task<IEnumerable<GamesMedia>> GetAllAsync();
-        Task<GamesMedia> GetByIdAsync(int id);
-        Task AddAsync(GamesMedia gameMedia);
-        Task UpdateAsync(GamesMedia gameMedia);
-        Task DeleteAsync(int id);
+        GamesInfoDTO GetGameInfoWithMedia(int gameId);
+        void AddMediaToGame(int gameId, GamesMediaDTO mediaDto);
+        void UpdateMediaInGame(int gameId, GamesMediaDTO mediaDto);
+        void DeleteMediaFromGame(int gameId, int mediaId);
     }
 
 }

@@ -20,5 +20,7 @@ namespace DataAccess.DTOs
         public string CreatedBy { get; set; }
         public bool IsActive { get; set; }
         public List<GamesReviewDTO> Reviews { get; set; }
+        public List<GamesMediaDTO> Media { get; set; }
+
     }
 }
