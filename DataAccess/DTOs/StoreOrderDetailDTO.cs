@@ -7,12 +7,12 @@ using System.Threading.Tasks;
 
 namespace DataAccess.DTOs
 {
-    internal class StoreOrderDetailDTO
+    public class StoreOrderDetailDTO
     {
         public int ID { get; set; }
         public int OrderID { get; set; }
         public int GameID { get; set; }
         public decimal UnitPrice { get; set; }
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public DateTime CreatedAt { get; set; } 
     }
 }

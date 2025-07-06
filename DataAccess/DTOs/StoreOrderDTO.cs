@@ -12,9 +12,9 @@ namespace DataAccess.DTOs
 
         public string UserID { get; set; }
 
-        public DateTime OrderDate { get; set; } = DateTime.Now;
+        public DateTime OrderDate { get; set; } 
         public decimal TotalAmount { get; set; }
         public string Status { get; set; } = "COMPLETED";
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public DateTime CreatedAt { get; set; } 
     }
 }
