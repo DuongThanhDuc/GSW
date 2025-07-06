@@ -34,6 +34,7 @@ namespace DataAccess.Repository
         public async Task<IEnumerable<GamesInfoDTO>> GetAllAsync()
         {
             return await _context.Games_Info
+                .Include(g => g.Reviews) 
                 .Select(g => new GamesInfoDTO
                 {
                     ID = g.ID,
@@ -46,13 +47,25 @@ namespace DataAccess.Repository
                     CoverImagePath = g.CoverImagePath,
                     Status = g.Status,
                     IsActive = g.IsActive,
-                    CreatedBy = g.CreatedBy
+                    CreatedBy = g.CreatedBy,
+                    Reviews = g.Reviews.Select(r => new GamesReviewDTO
+                    {
+                        ID = r.ID,
+                        GameID = r.GameID,
+                        UserID = r.UserID,
+                        StarCount = r.StarCount,
+                        Comment = r.Comment,
+                        CreatedAt = r.CreatedAt
+                    }).ToList()
                 }).ToListAsync();
         }
 
         public async Task<GamesInfoDTO?> GetByIdAsync(int id)
         {
-            var game = await _context.Games_Info.FindAsync(id);
+            var game = await _context.Games_Info
+                .Include(g => g.Reviews)
+                .FirstOrDefaultAsync(g => g.ID == id);
+
             if (game == null) return null;
 
             return new GamesInfoDTO
@@ -67,7 +80,16 @@ namespace DataAccess.Repository
                 CoverImagePath = game.CoverImagePath,
                 Status = game.Status,
                 IsActive = game.IsActive,
-                CreatedBy = game.CreatedBy
+                CreatedBy = game.CreatedBy,
+                Reviews = game.Reviews?.Select(r => new GamesReviewDTO
+                {
+                    ID = r.ID,
+                    GameID = r.GameID,
+                    UserID = r.UserID,
+                    StarCount = r.StarCount,
+                    Comment = r.Comment,
+                    CreatedAt = r.CreatedAt
+                }).ToList()
             };
         }
 

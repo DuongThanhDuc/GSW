@@ -47,6 +47,7 @@ namespace BusinessModel.Model
         public DbSet<StoreLibrary> Store_Library { get; set; }
         public DbSet<SystemTokenRefresh> System_TokenRefreshes { get; set; }
 
+        public DbSet<GamesDiscount> Games_Discount { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
