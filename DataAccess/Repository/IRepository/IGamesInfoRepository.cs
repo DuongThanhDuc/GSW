@@ -21,5 +21,10 @@ namespace DataAccess.Repository.IRepository
         Task<bool> UpdateStatusAsync(int id, string status);
         Task UpdateAsync(GamesInfo game);
 
+        // Discount-related
+        Task<GamesInfoDTO> GetByIdWithDiscountsAsync(int id);
+        Task<IEnumerable<GamesInfoDTO>> GetAllWithDiscountsAsync();
+        Task AddDiscountToGameAsync(int gameId, int discountId);
+        Task RemoveDiscountFromGameAsync(int gameId, int discountId);
     }
 }

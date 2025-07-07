@@ -153,6 +153,35 @@ namespace GSWApi.Controllers.Games
             return Ok(new { success = true, message = $"Game status updated to {dto.Status}." });
         }
 
+        [HttpGet("dto-with-discount")]
+        public async Task<IActionResult> GetAllGamesWithDiscount()
+        {
+            var games = await _repository.GetAllWithDiscountsAsync();
+            return Ok(new { success = true, data = games });
+        }
 
+        [HttpGet("dto-with-discount/{id}")]
+        public async Task<IActionResult> GetGameByIdWithDiscount(int id)
+        {
+            var game = await _repository.GetByIdWithDiscountsAsync(id);
+            if (game == null)
+                return NotFound(new { success = false, message = "Game not found." });
+
+            return Ok(new { success = true, data = game });
+        }
+
+        [HttpPost("{gameId}/add-discount/{discountId}")]
+        public async Task<IActionResult> AddDiscountToGame(int gameId, int discountId)
+        {
+            await _repository.AddDiscountToGameAsync(gameId, discountId);
+            return Ok(new { success = true, message = "Discount added to game." });
+        }
+
+        [HttpPost("{gameId}/remove-discount/{discountId}")]
+        public async Task<IActionResult> RemoveDiscountFromGame(int gameId, int discountId)
+        {
+            await _repository.RemoveDiscountFromGameAsync(gameId, discountId);
+            return Ok(new { success = true, message = "Discount removed from game." });
+        }
     }
 }

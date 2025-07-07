@@ -31,5 +31,6 @@ namespace BusinessModel.Model
         public ICollection<GamesReview> Reviews { get; set; }
         public ICollection<GamesDiscount> Discounts { get; set; }
         public ICollection<GamesMedia> Media { get; set; }
+        public virtual ICollection<GamesInfoDiscount> GamesInfoDiscounts { get; set; }
     }
 }
