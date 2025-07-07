@@ -32,7 +32,6 @@ namespace DataAccess.Repository
         public async Task<IEnumerable<GamesInfoDTO>> GetAllAsync()
         {
             return await _context.Games_Info
-                .Include(g => g.Media)
                 .Select(g => new GamesInfoDTO
                 {
                     ID = g.ID,
@@ -45,18 +44,15 @@ namespace DataAccess.Repository
                     CoverImagePath = g.CoverImagePath,
                     Status = g.Status,
                     IsActive = g.IsActive,
-                    CreatedBy = g.CreatedBy,
-                    Media = g.Media.Select(m => new GamesMediaDTO
-                    {
-                        // Map media fields
-                    }).ToList()
-                }).ToListAsync();
+                    CreatedBy = g.CreatedBy
+                })
+                .ToListAsync();
         }
 
+        // Lấy game dạng DTO theo ID (không có media, không có discount)
         public async Task<GamesInfoDTO?> GetByIdAsync(int id)
         {
             var g = await _context.Games_Info
-                .Include(x => x.Media)
                 .FirstOrDefaultAsync(x => x.ID == id);
             if (g == null) return null;
 
@@ -72,104 +68,11 @@ namespace DataAccess.Repository
                 CoverImagePath = g.CoverImagePath,
                 Status = g.Status,
                 IsActive = g.IsActive,
-                CreatedBy = g.CreatedBy,
-                Media = g.Media.Select(m => new GamesMediaDTO
-                {
-                    // Map media fields
-                }).ToList()
+                CreatedBy = g.CreatedBy
             };
         }
 
-        public async Task<GamesInfoDTO> GetByIdWithDiscountsAsync(int id)
-        {
-            var now = DateTime.Now;
-            var g = await _context.Games_Info
-                .Include(x => x.Media)
-                .Include(x => x.GamesInfoDiscounts)
-                    .ThenInclude(gid => gid.GamesDiscount)
-                .FirstOrDefaultAsync(x => x.ID == id);
-            if (g == null) return null;
-            return new GamesInfoDTO
-            {
-                ID = g.ID,
-                Title = g.Title,
-                Description = g.Description,
-                Price = g.Price,
-                Genre = g.Genre,
-                DeveloperId = g.DeveloperId,
-                InstallerFilePath = g.InstallerFilePath,
-                CoverImagePath = g.CoverImagePath,
-                Status = g.Status,
-                IsActive = g.IsActive,
-                CreatedBy = g.CreatedBy,
-                Media = g.Media.Select(m => new GamesMediaDTO
-                {
-                    // Map media fields
-                }).ToList(),
-                ActiveDiscounts = g.GamesInfoDiscounts
-                    .Where(gid => gid.GamesDiscount.IsActive &&
-                                  gid.GamesDiscount.StartDate <= now &&
-                                  gid.GamesDiscount.EndDate >= now)
-                    .Select(gid => new GamesDiscountDTO
-                    {
-                        Id = gid.GamesDiscount.Id,
-                        Code = gid.GamesDiscount.Code,
-                        Description = gid.GamesDiscount.Description,
-                        Value = gid.GamesDiscount.Value,
-                        IsPercent = gid.GamesDiscount.IsPercent,
-                        StartDate = gid.GamesDiscount.StartDate,
-                        EndDate = gid.GamesDiscount.EndDate,
-                        IsActive = gid.GamesDiscount.IsActive,
-                        CreatedAt = gid.GamesDiscount.CreatedAt
-                    }).ToList()
-            };
-        }
-
-        public async Task<IEnumerable<GamesInfoDTO>> GetAllWithDiscountsAsync()
-        {
-            var now = DateTime.Now;
-            var list = await _context.Games_Info
-                .Include(g => g.Media)
-                .Include(g => g.GamesInfoDiscounts)
-                    .ThenInclude(gid => gid.GamesDiscount)
-                .ToListAsync();
-
-            return list.Select(g => new GamesInfoDTO
-            {
-                ID = g.ID,
-                Title = g.Title,
-                Description = g.Description,
-                Price = g.Price,
-                Genre = g.Genre,
-                DeveloperId = g.DeveloperId,
-                InstallerFilePath = g.InstallerFilePath,
-                CoverImagePath = g.CoverImagePath,
-                Status = g.Status,
-                IsActive = g.IsActive,
-                CreatedBy = g.CreatedBy,
-                Media = g.Media.Select(m => new GamesMediaDTO
-                {
-                    // Map media fields
-                }).ToList(),
-                ActiveDiscounts = g.GamesInfoDiscounts
-                    .Where(gid => gid.GamesDiscount.IsActive &&
-                                  gid.GamesDiscount.StartDate <= now &&
-                                  gid.GamesDiscount.EndDate >= now)
-                    .Select(gid => new GamesDiscountDTO
-                    {
-                        Id = gid.GamesDiscount.Id,
-                        Code = gid.GamesDiscount.Code,
-                        Description = gid.GamesDiscount.Description,
-                        Value = gid.GamesDiscount.Value,
-                        IsPercent = gid.GamesDiscount.IsPercent,
-                        StartDate = gid.GamesDiscount.StartDate,
-                        EndDate = gid.GamesDiscount.EndDate,
-                        IsActive = gid.GamesDiscount.IsActive,
-                        CreatedAt = gid.GamesDiscount.CreatedAt
-                    }).ToList()
-            });
-        }
-
+        // Tạo game mới
         public async Task<GamesInfoDTO> CreateAsync(GamesInfoDTO dto)
         {
             var game = new GamesInfo
@@ -191,6 +94,7 @@ namespace DataAccess.Repository
             return dto;
         }
 
+        // Cập nhật game
         public async Task<bool> UpdateAsync(GamesInfoDTO dto)
         {
             var game = await _context.Games_Info.FindAsync(dto.ID);
@@ -206,11 +110,13 @@ namespace DataAccess.Repository
             game.Status = dto.Status;
             game.IsActive = dto.IsActive;
             game.CreatedBy = dto.CreatedBy;
+
             _context.Games_Info.Update(game);
             await _context.SaveChangesAsync();
             return true;
         }
 
+        // Xóa game
         public async Task<bool> DeleteAsync(int id)
         {
             var game = await _context.Games_Info.FindAsync(id);
@@ -220,6 +126,7 @@ namespace DataAccess.Repository
             return true;
         }
 
+        // Kích hoạt/vô hiệu hóa game
         public async Task<bool> SetActiveStatusAsync(int id, bool isActive)
         {
             var game = await _context.Games_Info.FindAsync(id);
@@ -230,6 +137,7 @@ namespace DataAccess.Repository
             return true;
         }
 
+        // Đổi trạng thái game (Status)
         public async Task<bool> UpdateStatusAsync(int id, string status)
         {
             var game = await _context.Games_Info.FindAsync(id);
@@ -240,37 +148,11 @@ namespace DataAccess.Repository
             return true;
         }
 
+        // Update bằng entity gốc
         public async Task UpdateAsync(GamesInfo game)
         {
             _context.Games_Info.Update(game);
             await _context.SaveChangesAsync();
-        }
-
-        public async Task AddDiscountToGameAsync(int gameId, int discountId)
-        {
-            var exist = await _context.Games_InfoDiscounts
-                .AnyAsync(x => x.GamesInfoId == gameId && x.GamesDiscountId == discountId);
-            if (!exist)
-            {
-                var entity = new GamesInfoDiscount
-                {
-                    GamesInfoId = gameId,
-                    GamesDiscountId = discountId
-                };
-                _context.Games_InfoDiscounts.Add(entity);
-                await _context.SaveChangesAsync();
-            }
-        }
-
-        public async Task RemoveDiscountFromGameAsync(int gameId, int discountId)
-        {
-            var entity = await _context.Games_InfoDiscounts
-                .FirstOrDefaultAsync(x => x.GamesInfoId == gameId && x.GamesDiscountId == discountId);
-            if (entity != null)
-            {
-                _context.Games_InfoDiscounts.Remove(entity);
-                await _context.SaveChangesAsync();
-            }
         }
     }
    

@@ -19,7 +19,7 @@ namespace DataAccess.Repository
             _context = context;
         }
 
-        // Lấy thông tin game + media
+        // Lấy thông tin game 
         public GamesInfoDTO GetGameInfoWithMedia(int gameId)
         {
             var game = _context.Games_Info.FirstOrDefault(g => g.ID == gameId);
@@ -43,12 +43,7 @@ namespace DataAccess.Repository
                 Status = game.Status,
                 CreatedBy = game.CreatedBy,
                 IsActive = game.IsActive,
-                Media = mediaList.Select(m => new GamesMediaDTO
-                {
-                    Id = m.Id,
-                    GameId = m.GameId,
-                    MediaURL = m.MediaURL
-                }).ToList()
+                
             };
         }
 
