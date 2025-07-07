@@ -19,13 +19,11 @@ namespace DataAccess.Repository
             _context = context;
         }
 
-        // Return the original model
         public async Task<IEnumerable<GamesInfo>> GetAllAsyncOriginal()
         {
             return await _context.Games_Info.ToListAsync();
         }
 
-        // Return the original model
         public async Task<GamesInfo?> GetByIdAsyncOriginal(int id)
         {
             return await _context.Games_Info.FindAsync(id);
@@ -34,7 +32,7 @@ namespace DataAccess.Repository
         public async Task<IEnumerable<GamesInfoDTO>> GetAllAsync()
         {
             return await _context.Games_Info
-                .Include(g => g.Reviews) 
+                .Include(g => g.Media)
                 .Select(g => new GamesInfoDTO
                 {
                     ID = g.ID,
@@ -48,49 +46,128 @@ namespace DataAccess.Repository
                     Status = g.Status,
                     IsActive = g.IsActive,
                     CreatedBy = g.CreatedBy,
-                    Reviews = g.Reviews.Select(r => new GamesReviewDTO
+                    Media = g.Media.Select(m => new GamesMediaDTO
                     {
-                        ID = r.ID,
-                        GameID = r.GameID,
-                        UserID = r.UserID,
-                        StarCount = r.StarCount,
-                        Comment = r.Comment,
-                        CreatedAt = r.CreatedAt
+                        // Map media fields
                     }).ToList()
                 }).ToListAsync();
         }
 
         public async Task<GamesInfoDTO?> GetByIdAsync(int id)
         {
-            var game = await _context.Games_Info
-                .Include(g => g.Reviews)
-                .FirstOrDefaultAsync(g => g.ID == id);
-
-            if (game == null) return null;
+            var g = await _context.Games_Info
+                .Include(x => x.Media)
+                .FirstOrDefaultAsync(x => x.ID == id);
+            if (g == null) return null;
 
             return new GamesInfoDTO
             {
-                ID = game.ID,
-                Title = game.Title,
-                Description = game.Description,
-                Price = game.Price,
-                Genre = game.Genre,
-                DeveloperId = game.DeveloperId,
-                InstallerFilePath = game.InstallerFilePath,
-                CoverImagePath = game.CoverImagePath,
-                Status = game.Status,
-                IsActive = game.IsActive,
-                CreatedBy = game.CreatedBy,
-                Reviews = game.Reviews?.Select(r => new GamesReviewDTO
+                ID = g.ID,
+                Title = g.Title,
+                Description = g.Description,
+                Price = g.Price,
+                Genre = g.Genre,
+                DeveloperId = g.DeveloperId,
+                InstallerFilePath = g.InstallerFilePath,
+                CoverImagePath = g.CoverImagePath,
+                Status = g.Status,
+                IsActive = g.IsActive,
+                CreatedBy = g.CreatedBy,
+                Media = g.Media.Select(m => new GamesMediaDTO
                 {
-                    ID = r.ID,
-                    GameID = r.GameID,
-                    UserID = r.UserID,
-                    StarCount = r.StarCount,
-                    Comment = r.Comment,
-                    CreatedAt = r.CreatedAt
+                    // Map media fields
                 }).ToList()
             };
+        }
+
+        public async Task<GamesInfoDTO> GetByIdWithDiscountsAsync(int id)
+        {
+            var now = DateTime.Now;
+            var g = await _context.Games_Info
+                .Include(x => x.Media)
+                .Include(x => x.GamesInfoDiscounts)
+                    .ThenInclude(gid => gid.GamesDiscount)
+                .FirstOrDefaultAsync(x => x.ID == id);
+            if (g == null) return null;
+            return new GamesInfoDTO
+            {
+                ID = g.ID,
+                Title = g.Title,
+                Description = g.Description,
+                Price = g.Price,
+                Genre = g.Genre,
+                DeveloperId = g.DeveloperId,
+                InstallerFilePath = g.InstallerFilePath,
+                CoverImagePath = g.CoverImagePath,
+                Status = g.Status,
+                IsActive = g.IsActive,
+                CreatedBy = g.CreatedBy,
+                Media = g.Media.Select(m => new GamesMediaDTO
+                {
+                    // Map media fields
+                }).ToList(),
+                ActiveDiscounts = g.GamesInfoDiscounts
+                    .Where(gid => gid.GamesDiscount.IsActive &&
+                                  gid.GamesDiscount.StartDate <= now &&
+                                  gid.GamesDiscount.EndDate >= now)
+                    .Select(gid => new GamesDiscountDTO
+                    {
+                        Id = gid.GamesDiscount.Id,
+                        Code = gid.GamesDiscount.Code,
+                        Description = gid.GamesDiscount.Description,
+                        Value = gid.GamesDiscount.Value,
+                        IsPercent = gid.GamesDiscount.IsPercent,
+                        StartDate = gid.GamesDiscount.StartDate,
+                        EndDate = gid.GamesDiscount.EndDate,
+                        IsActive = gid.GamesDiscount.IsActive,
+                        CreatedAt = gid.GamesDiscount.CreatedAt
+                    }).ToList()
+            };
+        }
+
+        public async Task<IEnumerable<GamesInfoDTO>> GetAllWithDiscountsAsync()
+        {
+            var now = DateTime.Now;
+            var list = await _context.Games_Info
+                .Include(g => g.Media)
+                .Include(g => g.GamesInfoDiscounts)
+                    .ThenInclude(gid => gid.GamesDiscount)
+                .ToListAsync();
+
+            return list.Select(g => new GamesInfoDTO
+            {
+                ID = g.ID,
+                Title = g.Title,
+                Description = g.Description,
+                Price = g.Price,
+                Genre = g.Genre,
+                DeveloperId = g.DeveloperId,
+                InstallerFilePath = g.InstallerFilePath,
+                CoverImagePath = g.CoverImagePath,
+                Status = g.Status,
+                IsActive = g.IsActive,
+                CreatedBy = g.CreatedBy,
+                Media = g.Media.Select(m => new GamesMediaDTO
+                {
+                    // Map media fields
+                }).ToList(),
+                ActiveDiscounts = g.GamesInfoDiscounts
+                    .Where(gid => gid.GamesDiscount.IsActive &&
+                                  gid.GamesDiscount.StartDate <= now &&
+                                  gid.GamesDiscount.EndDate >= now)
+                    .Select(gid => new GamesDiscountDTO
+                    {
+                        Id = gid.GamesDiscount.Id,
+                        Code = gid.GamesDiscount.Code,
+                        Description = gid.GamesDiscount.Description,
+                        Value = gid.GamesDiscount.Value,
+                        IsPercent = gid.GamesDiscount.IsPercent,
+                        StartDate = gid.GamesDiscount.StartDate,
+                        EndDate = gid.GamesDiscount.EndDate,
+                        IsActive = gid.GamesDiscount.IsActive,
+                        CreatedAt = gid.GamesDiscount.CreatedAt
+                    }).ToList()
+            });
         }
 
         public async Task<GamesInfoDTO> CreateAsync(GamesInfoDTO dto)
@@ -108,10 +185,8 @@ namespace DataAccess.Repository
                 IsActive = dto.IsActive,
                 CreatedBy = dto.CreatedBy
             };
-
             _context.Games_Info.Add(game);
             await _context.SaveChangesAsync();
-
             dto.ID = game.ID;
             return dto;
         }
@@ -131,7 +206,6 @@ namespace DataAccess.Repository
             game.Status = dto.Status;
             game.IsActive = dto.IsActive;
             game.CreatedBy = dto.CreatedBy;
-
             _context.Games_Info.Update(game);
             await _context.SaveChangesAsync();
             return true;
@@ -141,11 +215,11 @@ namespace DataAccess.Repository
         {
             var game = await _context.Games_Info.FindAsync(id);
             if (game == null) return false;
-
             _context.Games_Info.Remove(game);
             await _context.SaveChangesAsync();
             return true;
         }
+
         public async Task<bool> SetActiveStatusAsync(int id, bool isActive)
         {
             var game = await _context.Games_Info.FindAsync(id);
@@ -171,8 +245,34 @@ namespace DataAccess.Repository
             _context.Games_Info.Update(game);
             await _context.SaveChangesAsync();
         }
-    }
 
+        public async Task AddDiscountToGameAsync(int gameId, int discountId)
+        {
+            var exist = await _context.Games_InfoDiscounts
+                .AnyAsync(x => x.GamesInfoId == gameId && x.GamesDiscountId == discountId);
+            if (!exist)
+            {
+                var entity = new GamesInfoDiscount
+                {
+                    GamesInfoId = gameId,
+                    GamesDiscountId = discountId
+                };
+                _context.Games_InfoDiscounts.Add(entity);
+                await _context.SaveChangesAsync();
+            }
+        }
+
+        public async Task RemoveDiscountFromGameAsync(int gameId, int discountId)
+        {
+            var entity = await _context.Games_InfoDiscounts
+                .FirstOrDefaultAsync(x => x.GamesInfoId == gameId && x.GamesDiscountId == discountId);
+            if (entity != null)
+            {
+                _context.Games_InfoDiscounts.Remove(entity);
+                await _context.SaveChangesAsync();
+            }
+        }
+    }
    
 }
 

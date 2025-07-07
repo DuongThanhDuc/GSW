@@ -49,6 +49,8 @@ namespace BusinessModel.Model
 
         public DbSet<GamesDiscount> Games_Discount { get; set; }
         public DbSet<GamesBanner> Games_Banner { get; set; }
+        public DbSet<GamesInfoDiscount> Games_InfoDiscounts { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -164,6 +166,20 @@ namespace BusinessModel.Model
                 .Property(t => t.UpdatedAt)
                 .HasDefaultValueSql("GETDATE()");
 
+            modelBuilder.Entity<GamesInfoDiscount>()
+    .HasKey(gid => new { gid.GamesInfoId, gid.GamesDiscountId });
+
+            modelBuilder.Entity<GamesInfoDiscount>()
+                .HasOne(gid => gid.GamesInfo)
+                .WithMany(g => g.GamesInfoDiscounts)
+                .HasForeignKey(gid => gid.GamesInfoId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<GamesInfoDiscount>()
+                .HasOne(gid => gid.GamesDiscount)
+                .WithMany(d => d.GamesInfoDiscounts)
+                .HasForeignKey(gid => gid.GamesDiscountId)
+                .OnDelete(DeleteBehavior.Cascade);
 
 
 
