@@ -59,6 +59,43 @@ namespace DataAccess.Repository
         {
             return _context.Games_Discount.Any(x => x.Code == code && (!ignoreId.HasValue || x.Id != ignoreId));
         }
+
+        // NEW: Get discount theo game
+        public IEnumerable<GamesDiscount> GetByGameId(int gameId)
+        {
+            var discountIds = _context.Games_InfoDiscounts
+                .Where(x => x.GamesInfoId == gameId)
+                .Select(x => x.GamesDiscountId)
+                .ToList();
+
+            return _context.Games_Discount
+                .Where(d => discountIds.Contains(d.Id))
+                .OrderByDescending(x => x.CreatedAt)
+                .ToList();
+        }
+
+        // NEW: Gán discount cho game
+        public void AddDiscountToGame(int gameId, int discountId)
+        {
+            var exist = _context.Games_InfoDiscounts.Any(x => x.GamesInfoId == gameId && x.GamesDiscountId == discountId);
+            if (!exist)
+            {
+                var link = new GamesInfoDiscount { GamesInfoId = gameId, GamesDiscountId = discountId };
+                _context.Games_InfoDiscounts.Add(link);
+                _context.SaveChanges();
+            }
+        }
+
+        // NEW: Bỏ discount khỏi game
+        public void RemoveDiscountFromGame(int gameId, int discountId)
+        {
+            var link = _context.Games_InfoDiscounts.FirstOrDefault(x => x.GamesInfoId == gameId && x.GamesDiscountId == discountId);
+            if (link != null)
+            {
+                _context.Games_InfoDiscounts.Remove(link);
+                _context.SaveChanges();
+            }
+        }
     }
 }
 

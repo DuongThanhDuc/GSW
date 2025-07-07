@@ -9,12 +9,13 @@ namespace BusinessModel.Model
 {
     public class GamesDiscount
     {
+        [Key]
         public int Id { get; set; }
 
-       
+        [Required]
         public string Code { get; set; }
 
-    
+
         public string Description { get; set; }
 
      

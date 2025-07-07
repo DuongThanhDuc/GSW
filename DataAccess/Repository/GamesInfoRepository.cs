@@ -34,7 +34,7 @@ namespace DataAccess.Repository
             return await _context.Games_Info
                 .Select(g => new GamesInfoDTO
                 {
-                    ID = g.ID,
+                    ID = g.Id,
                     Title = g.Title,
                     Description = g.Description,
                     Price = g.Price,
@@ -53,12 +53,12 @@ namespace DataAccess.Repository
         public async Task<GamesInfoDTO?> GetByIdAsync(int id)
         {
             var g = await _context.Games_Info
-                .FirstOrDefaultAsync(x => x.ID == id);
+                .FirstOrDefaultAsync(x => x.Id == id);
             if (g == null) return null;
 
             return new GamesInfoDTO
             {
-                ID = g.ID,
+                ID = g.Id,
                 Title = g.Title,
                 Description = g.Description,
                 Price = g.Price,
@@ -90,7 +90,7 @@ namespace DataAccess.Repository
             };
             _context.Games_Info.Add(game);
             await _context.SaveChangesAsync();
-            dto.ID = game.ID;
+            dto.ID = game.Id;
             return dto;
         }
 
