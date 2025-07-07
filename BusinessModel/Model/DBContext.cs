@@ -181,6 +181,18 @@ namespace BusinessModel.Model
                 .HasForeignKey(gid => gid.GamesDiscountId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            modelBuilder.Entity<GamesInfoDiscount>()
+        .HasKey(gid => new { gid.GamesInfoId, gid.GamesDiscountId });
+
+            modelBuilder.Entity<GamesInfoDiscount>()
+                .HasOne(gid => gid.GamesInfo)
+                .WithMany(gi => gi.GamesInfoDiscounts)
+                .HasForeignKey(gid => gid.GamesInfoId);
+
+            modelBuilder.Entity<GamesInfoDiscount>()
+                .HasOne(gid => gid.GamesDiscount)
+                .WithMany(gd => gd.GamesInfoDiscounts)
+                .HasForeignKey(gid => gid.GamesDiscountId);
 
 
             // Seeding Datas

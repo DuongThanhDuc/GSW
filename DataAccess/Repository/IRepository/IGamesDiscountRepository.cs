@@ -16,5 +16,10 @@ namespace DataAccess.Repository.IRepository
         GamesDiscount Update(int id, GamesDiscount entity);
         void Delete(int id);
         bool IsCodeExist(string code, int? ignoreId = null);
+
+        // Bổ sung hàm theo game
+        IEnumerable<GamesDiscount> GetByGameId(int gameId);
+        void AddDiscountToGame(int gameId, int discountId);
+        void RemoveDiscountFromGame(int gameId, int discountId);
     }
 }

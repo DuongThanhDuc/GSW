@@ -22,7 +22,7 @@ namespace DataAccess.Repository
         // Lấy thông tin game 
         public GamesInfoDTO GetGameInfoWithMedia(int gameId)
         {
-            var game = _context.Games_Info.FirstOrDefault(g => g.ID == gameId);
+            var game = _context.Games_Info.FirstOrDefault(g => g.Id == gameId);
             if (game == null) return null;
 
             // Lấy media liên quan tới game
@@ -32,7 +32,7 @@ namespace DataAccess.Repository
 
             return new GamesInfoDTO
             {
-                ID = game.ID,
+                ID = game.Id,
                 Title = game.Title,
                 Description = game.Description,
                 Price = game.Price,
