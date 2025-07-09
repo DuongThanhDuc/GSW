@@ -10,8 +10,8 @@ namespace DataAccess.Repository.IRepository
 {
     public interface IStoreOrderDetailRepository
     {
-        Task<IEnumerable<StoreOrderDetail>> GetAllAsync();
-        Task<StoreOrderDetail?> GetByIdAsync(int id);
+        Task<IEnumerable<StoreOrderDetailDTO>> GetAllAsync();
+        Task<StoreOrderDetailDTO?> GetByIdAsync(int id);
         Task<StoreOrderDetail> CreateAsync(StoreOrderDetailDTO dto);
         Task<bool> UpdateAsync(int id, StoreOrderDetailDTO dto);
         Task<bool> DeleteAsync(int id);

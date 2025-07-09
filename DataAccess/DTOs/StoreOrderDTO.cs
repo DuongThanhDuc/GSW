@@ -17,4 +17,14 @@ namespace DataAccess.DTOs
         public string Status { get; set; } = "COMPLETED";
         public DateTime CreatedAt { get; set; } 
     }
+
+    public class StoreOrderDTOReadOnly
+    {
+        public int ID { get; set; }
+        public string UserID { get; set; }
+        public DateTime OrderDate { get; set; }
+        public decimal TotalAmount { get; set; }
+        public string Status { get; set; }
+        public List<StoreOrderDetailDTO> OrderDetails { get; set; }
+    }
 }

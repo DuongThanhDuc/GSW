@@ -19,22 +19,51 @@ namespace DataAccess.Repository
             _context = context;
         }
 
-        public async Task<IEnumerable<StoreOrder>> GetAllAsync()
+        public async Task<IEnumerable<StoreOrderDTOReadOnly>> GetAllAsync()
         {
             return await _context.Store_Orders
                 .Include(o => o.OrderDetails)
-                .Include(o => o.Transactions)
-                .Include(o => o.RefundRequests)
+                .Select(o => new StoreOrderDTOReadOnly
+                {
+                    ID = o.ID,
+                    UserID = o.UserID,
+                    OrderDate = o.OrderDate,
+                    TotalAmount = o.TotalAmount,
+                    Status = o.Status,
+                    OrderDetails = o.OrderDetails.Select(d => new StoreOrderDetailDTO
+                    {
+                        ID = d.ID,
+                        OrderID = d.OrderID,
+                        GameID = d.GameID,
+                        UnitPrice = d.UnitPrice,
+                        CreatedAt = d.CreatedAt
+                    }).ToList()
+                })
                 .ToListAsync();
         }
 
-        public async Task<StoreOrder?> GetByIdAsync(int id)
+        public async Task<StoreOrderDTOReadOnly?> GetByIdAsync(int id)
         {
             return await _context.Store_Orders
                 .Include(o => o.OrderDetails)
-                .Include(o => o.Transactions)
-                .Include(o => o.RefundRequests)
-                .FirstOrDefaultAsync(o => o.ID == id);
+                .Where(o => o.ID == id)
+                .Select(o => new StoreOrderDTOReadOnly
+                {
+                    ID = o.ID,
+                    UserID = o.UserID,
+                    OrderDate = o.OrderDate,
+                    TotalAmount = o.TotalAmount,
+                    Status = o.Status,
+                    OrderDetails = o.OrderDetails.Select(d => new StoreOrderDetailDTO
+                    {
+                        ID = d.ID,
+                        OrderID = d.OrderID,
+                        GameID = d.GameID,
+                        UnitPrice = d.UnitPrice,
+                        CreatedAt = d.CreatedAt
+                    }).ToList()
+                })
+                .FirstOrDefaultAsync();
         }
 
         public async Task<StoreOrder> CreateAsync(StoreOrderDTO dto)

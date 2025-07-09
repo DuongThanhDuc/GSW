@@ -19,20 +19,37 @@ namespace DataAccess.Repository
             _context = context;
         }
 
-        public async Task<IEnumerable<StoreOrderDetail>> GetAllAsync()
+        public async Task<IEnumerable<StoreOrderDetailDTO>> GetAllAsync()
         {
             return await _context.Store_OrderDetails
                 .Include(d => d.Game)
                 .Include(d => d.Order)
+                .Select(d => new StoreOrderDetailDTO
+                {
+                    ID = d.ID,
+                    OrderID = d.OrderID,
+                    GameID = d.GameID,
+                    UnitPrice = d.UnitPrice,
+                    CreatedAt = d.CreatedAt
+                })
                 .ToListAsync();
         }
 
-        public async Task<StoreOrderDetail?> GetByIdAsync(int id)
+        public async Task<StoreOrderDetailDTO?> GetByIdAsync(int id)
         {
             return await _context.Store_OrderDetails
                 .Include(d => d.Game)
                 .Include(d => d.Order)
-                .FirstOrDefaultAsync(d => d.ID == id);
+                .Where(d => d.ID == id)
+                .Select(d => new StoreOrderDetailDTO
+                {
+                    ID = d.ID,
+                    OrderID = d.OrderID,
+                    GameID = d.GameID,
+                    UnitPrice = d.UnitPrice,
+                    CreatedAt = d.CreatedAt
+                })
+                .FirstOrDefaultAsync();
         }
 
         public async Task<StoreOrderDetail> CreateAsync(StoreOrderDetailDTO dto)
