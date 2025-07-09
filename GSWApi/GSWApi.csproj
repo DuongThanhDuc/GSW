@@ -7,6 +7,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Controllers\System\**" />
+    <Content Remove="Controllers\System\**" />
+    <EmbeddedResource Remove="Controllers\System\**" />
+    <None Remove="Controllers\System\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="CloudinaryDotNet" Version="1.27.6" />
     <PackageReference Include="Google.Apis.Drive.v3" Version="1.69.0.3783" />
     <PackageReference Include="Google.Cloud.Storage.V1" Version="4.13.0" />
@@ -23,10 +30,6 @@
   <ItemGroup>
     <ProjectReference Include="..\BusinessModel\BusinessModel.csproj" />
     <ProjectReference Include="..\DataAccess\DataAccess.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Controllers\System\" />
   </ItemGroup>
 
 </Project>
