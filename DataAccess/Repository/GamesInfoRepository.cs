@@ -29,10 +29,15 @@ namespace DataAccess.Repository
             return await _context.Games_Info.FindAsync(id);
         }
 
-        public async Task<IEnumerable<GamesInfoDTO>> GetAllAsync()
+        public async Task<IEnumerable<GamesInfoDTOReadOnly>> GetAllAsync()
         {
             return await _context.Games_Info
-                .Select(g => new GamesInfoDTO
+                .Include(g => g.Media)
+                .Include(g => g.Reviews)
+                .Include(g => g.GamesInfoDiscounts).ThenInclude(d => d.GamesDiscount)
+                .Include(g => g.GameTags).ThenInclude(gt => gt.Tag)
+                .Include(g => g.GameCategories).ThenInclude(gc => gc.Category)
+                .Select(g => new GamesInfoDTOReadOnly
                 {
                     ID = g.Id,
                     Title = g.Title,
@@ -44,19 +49,81 @@ namespace DataAccess.Repository
                     CoverImagePath = g.CoverImagePath,
                     Status = g.Status,
                     IsActive = g.IsActive,
-                    CreatedBy = g.CreatedBy
+                    CreatedBy = g.CreatedBy,
+
+                    Media = g.Media.Select(m => new GamesMediaDTO
+                    {
+                        Id = m.Id,
+                        GameID = m.GameID,
+                        MediaURL = m.MediaURL
+                    }).ToList(),
+
+                    Reviews = g.Reviews.Select(r => new GamesReviewDTO
+                    {
+                        ID = r.ID,
+                        GameID = r.GameID,
+                        UserID = r.UserID,
+                        StarCount = r.StarCount,
+                        Comment = r.Comment,
+                        CreatedAt = r.CreatedAt
+                    }).ToList(),
+
+
+                    ActiveDiscounts = g.GamesInfoDiscounts
+                        .Where(d => d.GamesDiscount.IsActive)
+                        .Select(d => new GamesDiscountDTO
+                        {
+                            Id = d.GamesDiscount.Id,
+                            Code = d.GamesDiscount.Code,
+                            Description = d.GamesDiscount.Description,
+                            Value = d.GamesDiscount.Value,
+                            IsPercent = d.GamesDiscount.IsPercent,
+                            StartDate = d.GamesDiscount.StartDate,
+                            EndDate = d.GamesDiscount.EndDate,
+                            IsActive = d.GamesDiscount.IsActive,
+                            CreatedAt = d.GamesDiscount.CreatedAt
+                        }).ToList(),
+
+                    Tags = g.GameTags.Select(gt => new GamesTagDTO
+                    {
+                        ID = gt.ID,
+                        GameID = gt.GameID,
+                        TagID = gt.TagID,
+                        CreatedAt = gt.CreatedAt,
+                        CreatedBy = gt.CreatedBy,
+                        GameName = gt.Game.Title,
+                        TagName = gt.Tag.TagName
+                    }).ToList(),
+
+                    Categories = g.GameCategories.Select(gc => new GamesCategoryDTO
+                    {
+                        ID = gc.ID,
+                        GameID = gc.GameID,
+                        CategoryID = gc.CategoryID,
+                        CreatedAt = gc.CreatedAt,
+                        CreatedBy = gc.CreatedBy,
+                        GameName = gc.Game.Title,
+                        CategoryName = gc.Category.CategoryName
+                    }).ToList()
                 })
                 .ToListAsync();
         }
 
+
         // Lấy game dạng DTO theo ID (không có media, không có discount)
-        public async Task<GamesInfoDTO?> GetByIdAsync(int id)
+        public async Task<GamesInfoDTOReadOnly?> GetByIdAsync(int id)
         {
             var g = await _context.Games_Info
+                .Include(g => g.Media)
+                .Include(g => g.Reviews)
+                .Include(g => g.GamesInfoDiscounts).ThenInclude(d => d.GamesDiscount)
+                .Include(g => g.GameTags).ThenInclude(gt => gt.Tag)
+                .Include(g => g.GameCategories).ThenInclude(gc => gc.Category)
                 .FirstOrDefaultAsync(x => x.Id == id);
+
             if (g == null) return null;
 
-            return new GamesInfoDTO
+            return new GamesInfoDTOReadOnly
             {
                 ID = g.Id,
                 Title = g.Title,
@@ -68,10 +135,63 @@ namespace DataAccess.Repository
                 CoverImagePath = g.CoverImagePath,
                 Status = g.Status,
                 IsActive = g.IsActive,
-                CreatedBy = g.CreatedBy
+                CreatedBy = g.CreatedBy,
+
+                Media = g.Media.Select(m => new GamesMediaDTO
+                {
+                    Id = m.Id,
+                    GameID = m.GameID,
+                    MediaURL = m.MediaURL
+                }).ToList(),
+
+                Reviews = g.Reviews.Select(r => new GamesReviewDTO
+                {
+                    ID = r.ID,
+                    GameID = r.GameID,
+                    UserID = r.UserID,
+                    StarCount = r.StarCount,
+                    Comment = r.Comment,
+                    CreatedAt = r.CreatedAt
+                }).ToList(),
+
+                ActiveDiscounts = g.GamesInfoDiscounts
+                    .Where(d => d.GamesDiscount.IsActive)
+                    .Select(d => new GamesDiscountDTO
+                    {
+                        Id = d.GamesDiscount.Id,
+                        Code = d.GamesDiscount.Code,
+                        Description = d.GamesDiscount.Description,
+                        Value = d.GamesDiscount.Value,
+                        IsPercent = d.GamesDiscount.IsPercent,
+                        StartDate = d.GamesDiscount.StartDate,
+                        EndDate = d.GamesDiscount.EndDate,
+                        IsActive = d.GamesDiscount.IsActive,
+                        CreatedAt = d.GamesDiscount.CreatedAt
+                    }).ToList(),
+
+                Tags = g.GameTags.Select(gt => new GamesTagDTO
+                {
+                    ID = gt.ID,
+                    GameID = gt.GameID,
+                    TagID = gt.TagID,
+                    CreatedAt = gt.CreatedAt,
+                    CreatedBy = gt.CreatedBy,
+                    GameName = gt.Game?.Title,
+                    TagName = gt.Tag?.TagName
+                }).ToList(),
+
+                Categories = g.GameCategories.Select(gc => new GamesCategoryDTO
+                {
+                    ID = gc.ID,
+                    GameID = gc.GameID,
+                    CategoryID = gc.CategoryID,
+                    CreatedAt = gc.CreatedAt,
+                    CreatedBy = gc.CreatedBy,
+                    GameName = gc.Game?.Title,
+                    CategoryName = gc.Category?.CategoryName
+                }).ToList()
             };
         }
-
         // Tạo game mới
         public async Task<GamesInfoDTO> CreateAsync(GamesInfoDTO dto)
         {
