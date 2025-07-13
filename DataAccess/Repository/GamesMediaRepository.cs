@@ -27,7 +27,7 @@ namespace DataAccess.Repository
 
             // Lấy media liên quan tới game
             var mediaList = _context.Games_Media
-                                    .Where(m => m.GameId == gameId)
+                                    .Where(m => m.GameID == gameId)
                                     .ToList();
 
             return new GamesInfoDTO
@@ -51,7 +51,7 @@ namespace DataAccess.Repository
         {
             var newMedia = new GamesMedia
             {
-                GameId = gameId,
+                GameID = gameId,
                 MediaURL = mediaDto.MediaURL
             };
             _context.Games_Media.Add(newMedia);
@@ -60,7 +60,7 @@ namespace DataAccess.Repository
 
         public void UpdateMediaInGame(int gameId, GamesMediaDTO mediaDto)
         {
-            var media = _context.Games_Media.FirstOrDefault(m => m.Id == mediaDto.Id && m.GameId == gameId);
+            var media = _context.Games_Media.FirstOrDefault(m => m.Id == mediaDto.Id && m.GameID == gameId);
             if (media != null)
             {
                 media.MediaURL = mediaDto.MediaURL;
@@ -70,7 +70,7 @@ namespace DataAccess.Repository
 
         public void DeleteMediaFromGame(int gameId, int mediaId)
         {
-            var media = _context.Games_Media.FirstOrDefault(m => m.Id == mediaId && m.GameId == gameId);
+            var media = _context.Games_Media.FirstOrDefault(m => m.Id == mediaId && m.GameID == gameId);
             if (media != null)
             {
                 _context.Games_Media.Remove(media);
