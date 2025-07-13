@@ -75,9 +75,8 @@ namespace BusinessModel.Model
 
             modelBuilder.Entity<GamesMedia>()
                 .HasOne(m => m.Game)
-                .WithMany()
-                .HasForeignKey(m => m.GameId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .WithMany(g => g.Media) // this must match the property name in GamesInfo
+                .HasForeignKey(m => m.GameID);
 
             modelBuilder.Entity<StoreLibrary>()
             .Property(l => l.CreatedAt)

@@ -4,6 +4,7 @@ using BusinessModel.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BusinessModel.Migrations
 {
     [DbContext(typeof(DBContext))]
-    partial class DBContextModelSnapshot : ModelSnapshot
+    [Migration("20250713103342_DropGameInfoCollumn")]
+    partial class DropGameInfoCollumn
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -218,6 +221,9 @@ namespace BusinessModel.Migrations
                     b.Property<int>("GameID")
                         .HasColumnType("int");
 
+                    b.Property<int?>("GamesInfoId")
+                        .HasColumnType("int");
+
                     b.Property<string>("MediaURL")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -225,6 +231,8 @@ namespace BusinessModel.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("GameID");
+
+                    b.HasIndex("GamesInfoId");
 
                     b.ToTable("Games_Media");
                 });
@@ -610,35 +618,35 @@ namespace BusinessModel.Migrations
                         {
                             ID = 1,
                             CategoryName = "RPG",
-                            CreatedAt = new DateTime(2025, 7, 13, 10, 37, 7, 286, DateTimeKind.Utc).AddTicks(5097),
+                            CreatedAt = new DateTime(2025, 7, 13, 10, 33, 42, 319, DateTimeKind.Utc).AddTicks(287),
                             CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af"
                         },
                         new
                         {
                             ID = 2,
                             CategoryName = "FPS",
-                            CreatedAt = new DateTime(2025, 7, 13, 10, 37, 7, 286, DateTimeKind.Utc).AddTicks(5099),
+                            CreatedAt = new DateTime(2025, 7, 13, 10, 33, 42, 319, DateTimeKind.Utc).AddTicks(288),
                             CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af"
                         },
                         new
                         {
                             ID = 3,
                             CategoryName = "Puzzle",
-                            CreatedAt = new DateTime(2025, 7, 13, 10, 37, 7, 286, DateTimeKind.Utc).AddTicks(5100),
+                            CreatedAt = new DateTime(2025, 7, 13, 10, 33, 42, 319, DateTimeKind.Utc).AddTicks(289),
                             CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af"
                         },
                         new
                         {
                             ID = 4,
                             CategoryName = "Simulation",
-                            CreatedAt = new DateTime(2025, 7, 13, 10, 37, 7, 286, DateTimeKind.Utc).AddTicks(5101),
+                            CreatedAt = new DateTime(2025, 7, 13, 10, 33, 42, 319, DateTimeKind.Utc).AddTicks(291),
                             CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af"
                         },
                         new
                         {
                             ID = 5,
                             CategoryName = "Horror",
-                            CreatedAt = new DateTime(2025, 7, 13, 10, 37, 7, 286, DateTimeKind.Utc).AddTicks(5102),
+                            CreatedAt = new DateTime(2025, 7, 13, 10, 33, 42, 319, DateTimeKind.Utc).AddTicks(292),
                             CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af"
                         });
                 });
@@ -672,35 +680,35 @@ namespace BusinessModel.Migrations
                         new
                         {
                             ID = 1,
-                            CreatedAt = new DateTime(2025, 7, 13, 10, 37, 7, 286, DateTimeKind.Utc).AddTicks(5075),
+                            CreatedAt = new DateTime(2025, 7, 13, 10, 33, 42, 319, DateTimeKind.Utc).AddTicks(264),
                             CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af",
                             TagName = "Action"
                         },
                         new
                         {
                             ID = 2,
-                            CreatedAt = new DateTime(2025, 7, 13, 10, 37, 7, 286, DateTimeKind.Utc).AddTicks(5077),
+                            CreatedAt = new DateTime(2025, 7, 13, 10, 33, 42, 319, DateTimeKind.Utc).AddTicks(265),
                             CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af",
                             TagName = "Adventure"
                         },
                         new
                         {
                             ID = 3,
-                            CreatedAt = new DateTime(2025, 7, 13, 10, 37, 7, 286, DateTimeKind.Utc).AddTicks(5078),
+                            CreatedAt = new DateTime(2025, 7, 13, 10, 33, 42, 319, DateTimeKind.Utc).AddTicks(266),
                             CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af",
                             TagName = "Multiplayer"
                         },
                         new
                         {
                             ID = 4,
-                            CreatedAt = new DateTime(2025, 7, 13, 10, 37, 7, 286, DateTimeKind.Utc).AddTicks(5079),
+                            CreatedAt = new DateTime(2025, 7, 13, 10, 33, 42, 319, DateTimeKind.Utc).AddTicks(268),
                             CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af",
                             TagName = "Indie"
                         },
                         new
                         {
                             ID = 5,
-                            CreatedAt = new DateTime(2025, 7, 13, 10, 37, 7, 286, DateTimeKind.Utc).AddTicks(5080),
+                            CreatedAt = new DateTime(2025, 7, 13, 10, 33, 42, 319, DateTimeKind.Utc).AddTicks(269),
                             CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af",
                             TagName = "Strategy"
                         });
@@ -771,21 +779,21 @@ namespace BusinessModel.Migrations
                         new
                         {
                             Id = "b7b9181c-ff61-4d8f-8f6d-5edb3a6d3a11",
-                            ConcurrencyStamp = "e5d86527-5b4a-408a-b5a5-8892961206c7",
+                            ConcurrencyStamp = "8dcf88c4-60e9-4e6e-a826-9948d3cfe9cd",
                             Name = "Admin",
                             NormalizedName = "ADMIN"
                         },
                         new
                         {
                             Id = "0f6781b2-4564-4bb3-8d85-92e4c194a2cb",
-                            ConcurrencyStamp = "069afae5-e100-4662-9b98-a352aae7ab78",
+                            ConcurrencyStamp = "f9e52576-69ed-49a3-9aac-ca4e526fc22d",
                             Name = "Staff",
                             NormalizedName = "STAFF"
                         },
                         new
                         {
                             Id = "26e5f054-e9fd-489f-891f-cf2b57fa9a1c",
-                            ConcurrencyStamp = "9114d2e9-d554-4924-a45c-19e2f5d597f8",
+                            ConcurrencyStamp = "e1326e79-d5b0-4eb0-8f64-7ebe8cc6869f",
                             Name = "User",
                             NormalizedName = "USER"
                         });
@@ -885,15 +893,15 @@ namespace BusinessModel.Migrations
                         {
                             Id = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af",
                             AccessFailedCount = 0,
-                            ConcurrencyStamp = "bdc85742-11cd-497f-b9c7-a029e189a3a4",
+                            ConcurrencyStamp = "d6cacc50-a1ea-4da6-84b3-65b2e14f2e1e",
                             Email = "admin@gameshop.com",
                             EmailConfirmed = true,
                             LockoutEnabled = false,
                             NormalizedEmail = "ADMIN@GAMESHOP.COM",
                             NormalizedUserName = "ADMIN",
-                            PasswordHash = "AQAAAAEAACcQAAAAEGQa17pDd5itHDG4h9j542hssMttmlQg7+kZm2fGETG6/l1miLEPHcDvkQ/UYyTeog==",
+                            PasswordHash = "AQAAAAEAACcQAAAAEJG65zvwNj6oGzKFVjMsXtzWBSNNDB0i6c3ryYJOKPg/tP80S3NbtCc0e9+pBfIvRg==",
                             PhoneNumberConfirmed = false,
-                            SecurityStamp = "95d66a19-6129-4ea6-9a76-4029f7cded1c",
+                            SecurityStamp = "da918eec-53e3-4070-9db5-a5755204c8d0",
                             TwoFactorEnabled = false,
                             UserName = "admin"
                         });
@@ -1035,10 +1043,14 @@ namespace BusinessModel.Migrations
             modelBuilder.Entity("BusinessModel.Model.GamesMedia", b =>
                 {
                     b.HasOne("BusinessModel.Model.GamesInfo", "Game")
-                        .WithMany("Media")
+                        .WithMany()
                         .HasForeignKey("GameID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("BusinessModel.Model.GamesInfo", null)
+                        .WithMany("Media")
+                        .HasForeignKey("GamesInfoId");
 
                     b.Navigation("Game");
                 });

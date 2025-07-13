@@ -9,7 +9,7 @@ namespace DataAccess.DTOs
     public class GamesMediaDTO
     {
         public int Id { get; set; }
-        public int GameId { get; set; }
+        public int GameID { get; set; }
         public string MediaURL { get; set; }
     }
 
