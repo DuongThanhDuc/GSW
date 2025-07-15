@@ -51,6 +51,8 @@ namespace BusinessModel.Model
         public DbSet<GamesBanner> Games_Banner { get; set; }
         public DbSet<GamesInfoDiscount> Games_InfoDiscounts { get; set; }
 
+        public DbSet<ApprovalHistory> ApprovalHistories { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
