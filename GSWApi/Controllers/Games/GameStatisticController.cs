@@ -4,16 +4,16 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using OfficeOpenXml;
 
-namespace GSWApi.Controllers.Admin
+namespace GSWApi.Controllers.Games
 {
 
     [Route("api/admin/games")]
     [ApiController]
-    public class AdminGameStatisticController : ControllerBase
+    public class GameStatisticController : ControllerBase
     {
         private readonly IGameStatisticRepository _repo;
 
-        public AdminGameStatisticController(IGameStatisticRepository repo)
+        public GameStatisticController(IGameStatisticRepository repo)
         {
             _repo = repo;
         }
@@ -32,7 +32,7 @@ namespace GSWApi.Controllers.Admin
         [HttpPost("top-selling/export")]
         public async Task<IActionResult> ExportTopSellingGames([FromBody] TopSellingGameRequestDTO req)
         {
-            OfficeOpenXml.ExcelPackage.LicenseContext = OfficeOpenXml.LicenseContext.NonCommercial;
+            ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
 
             var result = await _repo.GetTopSellingGamesAsync(req);
 
