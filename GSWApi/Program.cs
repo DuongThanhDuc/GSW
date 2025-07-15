@@ -37,6 +37,7 @@ builder.Services.AddScoped<IStoreOrderDetailRepository, StoreOrderDetailReposito
 builder.Services.AddScoped<IGamesDiscountRepository, GamesDiscountRepository>();
 builder.Services.AddScoped<IGamesBannerRepository, GamesBannerRepository>();
 builder.Services.AddScoped<IStatisticRepository, StatisticRepository>();
+builder.Services.AddScoped<IGameStatisticRepository, GameStatisticRepository>();
 
 
 
