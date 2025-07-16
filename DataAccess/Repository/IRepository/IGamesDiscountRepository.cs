@@ -17,9 +17,8 @@ namespace DataAccess.Repository.IRepository
         void Delete(int id);
         bool IsCodeExist(string code, int? ignoreId = null);
 
-        // Bổ sung hàm theo game
-        IEnumerable<GamesDiscount> GetByGameId(int gameId);
-        void AddDiscountToGame(int gameId, int discountId);
+        GamesDiscount GetActiveDiscountByGameId(int gameId);
+        void SetDiscountForGame(int gameId, int discountId); // Chỉ gán duy nhất 1 discount cho game
         void RemoveDiscountFromGame(int gameId, int discountId);
     }
 }

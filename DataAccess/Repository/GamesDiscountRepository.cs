@@ -60,33 +60,70 @@ namespace DataAccess.Repository
             return _context.Games_Discount.Any(x => x.Code == code && (!ignoreId.HasValue || x.Id != ignoreId));
         }
 
-        // NEW: Get discount theo game
-        public IEnumerable<GamesDiscount> GetByGameId(int gameId)
+        // Lấy discount hiện tại đang active (dựa trên bảng liên kết)
+        public GamesDiscount GetActiveDiscountByGameId(int gameId)
         {
-            var discountIds = _context.Games_InfoDiscounts
+            var discountId = _context.Games_InfoDiscounts
+                .Where(x => x.GamesInfoId == gameId)
+                .Select(x => x.GamesDiscountId)
+                .ToList()
+                .Select(did => _context.Games_Discount.FirstOrDefault(gd => gd.Id == did && gd.IsActive))
+                .Where(d => d != null)
+                .OrderByDescending(d => d.CreatedAt)
+                .Select(d => d.Id)
+                .FirstOrDefault();
+
+            if (discountId == 0) return null;
+            return _context.Games_Discount.FirstOrDefault(d => d.Id == discountId);
+        }
+
+        // Gán discount mới cho game, tự động deactive discount cũ
+        public void SetDiscountForGame(int gameId, int discountId)
+        {
+            // 1. Lấy các discount hiện tại của game (bảng liên kết)
+            var linkDiscountIds = _context.Games_InfoDiscounts
                 .Where(x => x.GamesInfoId == gameId)
                 .Select(x => x.GamesDiscountId)
                 .ToList();
 
-            return _context.Games_Discount
-                .Where(d => discountIds.Contains(d.Id))
-                .OrderByDescending(x => x.CreatedAt)
-                .ToList();
-        }
-
-        // NEW: Gán discount cho game
-        public void AddDiscountToGame(int gameId, int discountId)
-        {
-            var exist = _context.Games_InfoDiscounts.Any(x => x.GamesInfoId == gameId && x.GamesDiscountId == discountId);
-            if (!exist)
+            // 2. Deactive toàn bộ discount đang liên kết (nếu có)
+            if (linkDiscountIds.Any())
             {
-                var link = new GamesInfoDiscount { GamesInfoId = gameId, GamesDiscountId = discountId };
-                _context.Games_InfoDiscounts.Add(link);
+                var discounts = _context.Games_Discount.Where(d => linkDiscountIds.Contains(d.Id)).ToList();
+                foreach (var d in discounts)
+                    d.IsActive = false;
                 _context.SaveChanges();
+            }
+
+            // 3. Xóa toàn bộ liên kết cũ (không xóa discount bản ghi)
+            var oldLinks = _context.Games_InfoDiscounts
+                .Where(x => x.GamesInfoId == gameId)
+                .ToList();
+            if (oldLinks.Any())
+            {
+                _context.Games_InfoDiscounts.RemoveRange(oldLinks);
+                _context.SaveChanges();
+            }
+
+            // 4. Gán liên kết discount mới, đồng thời set IsActive = true
+            var discount = _context.Games_Discount.FirstOrDefault(d => d.Id == discountId);
+            if (discount != null)
+            {
+                discount.IsActive = true;
+                _context.SaveChanges();
+
+                // Gán liên kết mới
+                var exist = _context.Games_InfoDiscounts.Any(x => x.GamesInfoId == gameId && x.GamesDiscountId == discountId);
+                if (!exist)
+                {
+                    var link = new GamesInfoDiscount { GamesInfoId = gameId, GamesDiscountId = discountId };
+                    _context.Games_InfoDiscounts.Add(link);
+                    _context.SaveChanges();
+                }
             }
         }
 
-        // NEW: Bỏ discount khỏi game
+        // Nếu muốn vẫn xóa discount khỏi game (không xóa bản ghi discount, chỉ xóa liên kết)
         public void RemoveDiscountFromGame(int gameId, int discountId)
         {
             var link = _context.Games_InfoDiscounts.FirstOrDefault(x => x.GamesInfoId == gameId && x.GamesDiscountId == discountId);
@@ -95,6 +132,7 @@ namespace DataAccess.Repository
                 _context.Games_InfoDiscounts.Remove(link);
                 _context.SaveChanges();
             }
+            // Không deactive discount vì có thể liên kết với game khác hoặc dùng cho lịch sử
         }
     }
 }

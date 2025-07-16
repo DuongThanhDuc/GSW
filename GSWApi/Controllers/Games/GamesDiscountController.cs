@@ -1,7 +1,6 @@
 ﻿using BusinessModel.Model;
 using DataAccess.DTOs;
 using DataAccess.Repository.IRepository;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace GSWApi.Controllers.Games
@@ -127,13 +126,14 @@ namespace GSWApi.Controllers.Games
             return NoContent();
         }
 
-        // --- NEW: API thao tác discount theo game ---
-
+        // --- API lấy discount active của game (chỉ trả về 1, không phải list) ---
         [HttpGet("by-game/{gameId}")]
-        public IActionResult GetDiscountsByGame(int gameId)
+        public IActionResult GetActiveDiscountByGame(int gameId)
         {
-            var models = _repository.GetByGameId(gameId);
-            var dtos = models.Select(d => new GamesDiscountDTO
+            var d = _repository.GetActiveDiscountByGameId(gameId);
+            if (d == null) return NotFound();
+
+            var dto = new GamesDiscountDTO
             {
                 Id = d.Id,
                 Code = d.Code,
@@ -144,19 +144,19 @@ namespace GSWApi.Controllers.Games
                 EndDate = d.EndDate,
                 IsActive = d.IsActive,
                 CreatedAt = d.CreatedAt
-            }).ToList();
-            return Ok(dtos);
+            };
+            return Ok(dto);
         }
 
-        // Gán discount có sẵn cho game
+        // Gán discount có sẵn cho game, sẽ deactive discount cũ nếu có
         [HttpPost("assign/{gameId}/{discountId}")]
         public IActionResult AssignDiscountToGame(int gameId, int discountId)
         {
-            _repository.AddDiscountToGame(gameId, discountId);
+            _repository.SetDiscountForGame(gameId, discountId); // sửa thành SetDiscountForGame
             return Ok();
         }
 
-        // Bỏ discount khỏi game
+        // Xóa liên kết discount khỏi game (không deactive discount, chỉ bỏ liên kết)
         [HttpDelete("remove/{gameId}/{discountId}")]
         public IActionResult RemoveDiscountFromGame(int gameId, int discountId)
         {
@@ -164,7 +164,7 @@ namespace GSWApi.Controllers.Games
             return NoContent();
         }
 
-        // (OPTIONAL) Tạo mới discount và gán vào game ngay
+        // Tạo mới discount và gán vào game, đồng thời deactive discount cũ nếu có
         [HttpPost("create-and-assign/{gameId}")]
         public IActionResult CreateAndAssignDiscount(int gameId, [FromBody] GamesDiscountDTO dto)
         {
@@ -189,12 +189,11 @@ namespace GSWApi.Controllers.Games
             };
 
             var created = _repository.Create(entity);
-            _repository.AddDiscountToGame(gameId, created.Id);
+            _repository.SetDiscountForGame(gameId, created.Id); // sửa thành SetDiscountForGame
 
             dto.Id = created.Id;
             dto.CreatedAt = created.CreatedAt;
             return Ok(dto);
         }
     }
-
 }
