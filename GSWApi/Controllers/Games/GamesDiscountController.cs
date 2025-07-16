@@ -16,7 +16,6 @@ namespace GSWApi.Controllers.Games
             _repository = repository;
         }
 
-        // CRUD tổng thể
         [HttpGet]
         public IActionResult GetAll()
         {
@@ -126,7 +125,7 @@ namespace GSWApi.Controllers.Games
             return NoContent();
         }
 
-        // --- API lấy discount active của game (chỉ trả về 1, không phải list) ---
+        // --- API lấy discount active của game ---
         [HttpGet("by-game/{gameId}")]
         public IActionResult GetActiveDiscountByGame(int gameId)
         {
@@ -148,11 +147,11 @@ namespace GSWApi.Controllers.Games
             return Ok(dto);
         }
 
-        // Gán discount có sẵn cho game, sẽ deactive discount cũ nếu có
+        // Gán discount cho game (deactive discount cũ nếu có)
         [HttpPost("assign/{gameId}/{discountId}")]
         public IActionResult AssignDiscountToGame(int gameId, int discountId)
         {
-            _repository.SetDiscountForGame(gameId, discountId); // sửa thành SetDiscountForGame
+            _repository.SetDiscountForGame(gameId, discountId);
             return Ok();
         }
 
@@ -162,38 +161,6 @@ namespace GSWApi.Controllers.Games
         {
             _repository.RemoveDiscountFromGame(gameId, discountId);
             return NoContent();
-        }
-
-        // Tạo mới discount và gán vào game, đồng thời deactive discount cũ nếu có
-        [HttpPost("create-and-assign/{gameId}")]
-        public IActionResult CreateAndAssignDiscount(int gameId, [FromBody] GamesDiscountDTO dto)
-        {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
-            if (dto.EndDate < dto.StartDate)
-                return BadRequest("EndDate must be after StartDate.");
-
-            if (_repository.IsCodeExist(dto.Code))
-                return BadRequest("Code already exists.");
-
-            var entity = new GamesDiscount
-            {
-                Code = dto.Code,
-                Description = dto.Description,
-                Value = dto.Value,
-                IsPercent = dto.IsPercent,
-                StartDate = dto.StartDate,
-                EndDate = dto.EndDate,
-                IsActive = dto.IsActive
-            };
-
-            var created = _repository.Create(entity);
-            _repository.SetDiscountForGame(gameId, created.Id); // sửa thành SetDiscountForGame
-
-            dto.Id = created.Id;
-            dto.CreatedAt = created.CreatedAt;
-            return Ok(dto);
         }
     }
 }
