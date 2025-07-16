@@ -18,7 +18,7 @@ namespace DataAccess.Repository.IRepository
         bool IsCodeExist(string code, int? ignoreId = null);
 
         GamesDiscount GetActiveDiscountByGameId(int gameId);
-        void SetDiscountForGame(int gameId, int discountId); // Chỉ gán duy nhất 1 discount cho game
+        void SetDiscountForGame(int gameId, int discountId); // Gán duy nhất 1 discount cho 1 game
         void RemoveDiscountFromGame(int gameId, int discountId);
     }
 }

@@ -17,7 +17,7 @@ namespace DataAccess.Repository
             _context = context;
         }
 
-        public async Task<bool> ApproveGameAsync(int gameId, string status, string adminId, string note)
+        public async Task<bool> ApproveGameAsync(int gameId, string status, string changedBy, string note)
         {
             var game = await _context.Games_Info.FindAsync(gameId);
             if (game == null) return false;
@@ -28,7 +28,7 @@ namespace DataAccess.Repository
                 EntityType = "Game",
                 EntityId = gameId,
                 Status = status,
-                ChangedBy = adminId,
+                ChangedBy = changedBy, 
                 ChangedAt = DateTime.Now,
                 Note = note
             });
