@@ -23,48 +23,66 @@ namespace DataAccess.Repository
         {
             return await _context.Store_Orders
                 .Include(o => o.OrderDetails)
-                .Select(o => new StoreOrderDTOReadOnly
-                {
-                    ID = o.ID,
-                    UserID = o.UserID,
-                    OrderDate = o.OrderDate,
-                    TotalAmount = o.TotalAmount,
-                    Status = o.Status,
-                    OrderDetails = o.OrderDetails.Select(d => new StoreOrderDetailDTO
+                    .ThenInclude(od => od.Game)
+                .Join(_context.Users,
+                    order => order.UserID,
+                    user => user.Id,
+                    (order, user) => new StoreOrderDTOReadOnly
                     {
-                        ID = d.ID,
-                        OrderID = d.OrderID,
-                        GameID = d.GameID,
-                        UnitPrice = d.UnitPrice,
-                        CreatedAt = d.CreatedAt
-                    }).ToList()
-                })
+                        ID = order.ID,
+                        UserID = order.UserID,
+                        UserName = user.UserName,
+                        Email = user.Email,
+                        PhoneNumber = user.PhoneNumber,
+                        OrderDate = order.OrderDate,
+                        TotalAmount = order.TotalAmount,
+                        Status = order.Status,
+                        OrderDetails = order.OrderDetails.Select(d => new StoreOrderDetailDTOReadOnly
+                        {
+                            ID = d.ID,
+                            OrderID = d.OrderID,
+                            GameID = d.GameID,
+                            GameName = d.Game.Title,
+                            UnitPrice = d.UnitPrice,
+                            CreatedAt = d.CreatedAt
+                        }).ToList()
+                    })
                 .ToListAsync();
         }
+
 
         public async Task<StoreOrderDTOReadOnly?> GetByIdAsync(int id)
         {
             return await _context.Store_Orders
                 .Include(o => o.OrderDetails)
+                    .ThenInclude(od => od.Game)
                 .Where(o => o.ID == id)
-                .Select(o => new StoreOrderDTOReadOnly
-                {
-                    ID = o.ID,
-                    UserID = o.UserID,
-                    OrderDate = o.OrderDate,
-                    TotalAmount = o.TotalAmount,
-                    Status = o.Status,
-                    OrderDetails = o.OrderDetails.Select(d => new StoreOrderDetailDTO
+                .Join(_context.Users,
+                    order => order.UserID,
+                    user => user.Id,
+                    (order, user) => new StoreOrderDTOReadOnly
                     {
-                        ID = d.ID,
-                        OrderID = d.OrderID,
-                        GameID = d.GameID,
-                        UnitPrice = d.UnitPrice,
-                        CreatedAt = d.CreatedAt
-                    }).ToList()
-                })
+                        ID = order.ID,
+                        UserID = order.UserID,
+                        UserName = user.UserName,
+                        Email = user.Email,
+                        PhoneNumber = user.PhoneNumber,
+                        OrderDate = order.OrderDate,
+                        TotalAmount = order.TotalAmount,
+                        Status = order.Status,
+                        OrderDetails = order.OrderDetails.Select(d => new StoreOrderDetailDTOReadOnly
+                        {
+                            ID = d.ID,
+                            OrderID = d.OrderID,
+                            GameID = d.GameID,
+                            GameName = d.Game.Title,
+                            UnitPrice = d.UnitPrice,
+                            CreatedAt = d.CreatedAt
+                        }).ToList()
+                    })
                 .FirstOrDefaultAsync();
         }
+
 
         public async Task<StoreOrder> CreateAsync(StoreOrderDTO dto)
         {
