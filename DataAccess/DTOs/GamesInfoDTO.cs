@@ -19,7 +19,7 @@ namespace DataAccess.DTOs
         public string Status { get; set; }
         public string CreatedBy { get; set; }
         public bool IsActive { get; set; }
-
+        public GamesDiscountDTO ActiveDiscount { get; set; }
 
     }
     public class GamesInfoDTOReadOnly

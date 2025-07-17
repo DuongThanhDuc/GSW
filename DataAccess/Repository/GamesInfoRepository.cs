@@ -5,7 +5,6 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace DataAccess.Repository
@@ -29,6 +28,7 @@ namespace DataAccess.Repository
             return await _context.Games_Info.FindAsync(id);
         }
 
+        // --- Hàm cũ: Trả về GamesInfoDTOReadOnly (nếu muốn trả danh sách discount hoặc nhiều thông tin khác) ---
         public async Task<IEnumerable<GamesInfoDTOReadOnly>> GetAllAsync()
         {
             return await _context.Games_Info
@@ -68,9 +68,8 @@ namespace DataAccess.Repository
                         CreatedAt = r.CreatedAt
                     }).ToList(),
 
-
                     ActiveDiscounts = g.GamesInfoDiscounts
-                        .Where(d => d.GamesDiscount.IsActive)
+                        .Where(d => d.GamesDiscount.IsActive && d.GamesDiscount.StartDate <= DateTime.UtcNow && d.GamesDiscount.EndDate >= DateTime.UtcNow)
                         .Select(d => new GamesDiscountDTO
                         {
                             Id = d.GamesDiscount.Id,
@@ -109,8 +108,7 @@ namespace DataAccess.Repository
                 .ToListAsync();
         }
 
-
-        // Lấy game dạng DTO theo ID (không có media, không có discount)
+        // --- Hàm cũ: GetByIdAsync dạng ReadOnly ---
         public async Task<GamesInfoDTOReadOnly?> GetByIdAsync(int id)
         {
             var g = await _context.Games_Info
@@ -155,7 +153,7 @@ namespace DataAccess.Repository
                 }).ToList(),
 
                 ActiveDiscounts = g.GamesInfoDiscounts
-                    .Where(d => d.GamesDiscount.IsActive)
+                    .Where(d => d.GamesDiscount.IsActive && d.GamesDiscount.StartDate <= DateTime.UtcNow && d.GamesDiscount.EndDate >= DateTime.UtcNow)
                     .Select(d => new GamesDiscountDTO
                     {
                         Id = d.GamesDiscount.Id,
@@ -192,7 +190,119 @@ namespace DataAccess.Repository
                 }).ToList()
             };
         }
-        // Tạo game mới
+
+        // --- THÊM MỚI: Trả về GamesInfoDTO có ActiveDiscount (1 trường duy nhất) ---
+
+        public async Task<IEnumerable<GamesInfoDTO>> GetAllDtoWithActiveDiscountAsync()
+        {
+            var games = await _context.Games_Info
+                .Include(g => g.GamesInfoDiscounts).ThenInclude(d => d.GamesDiscount)
+                .ToListAsync();
+
+            var now = DateTime.UtcNow;
+
+            return games.Select(g =>
+            {
+                var activeDiscount = g.GamesInfoDiscounts
+                    .Select(d => d.GamesDiscount)
+                    .Where(d => d.IsActive && d.StartDate <= now && d.EndDate >= now)
+                    .OrderByDescending(d => d.CreatedAt)
+                    .FirstOrDefault();
+
+                return new GamesInfoDTO
+                {
+                    ID = g.Id,
+                    Title = g.Title,
+                    Description = g.Description,
+                    Price = g.Price,
+                    Genre = g.Genre,
+                    DeveloperId = g.DeveloperId,
+                    InstallerFilePath = g.InstallerFilePath,
+                    CoverImagePath = g.CoverImagePath,
+                    Status = g.Status,
+                    CreatedBy = g.CreatedBy,
+                    IsActive = g.IsActive,
+                    ActiveDiscount = activeDiscount == null ? null : new GamesDiscountDTO
+                    {
+                        Id = activeDiscount.Id,
+                        Code = activeDiscount.Code,
+                        Description = activeDiscount.Description,
+                        Value = activeDiscount.Value,
+                        IsPercent = activeDiscount.IsPercent,
+                        StartDate = activeDiscount.StartDate,
+                        EndDate = activeDiscount.EndDate,
+                        IsActive = activeDiscount.IsActive,
+                        CreatedAt = activeDiscount.CreatedAt
+                    }
+                };
+            }).ToList();
+        }
+
+        public async Task<GamesInfoDTO?> GetDtoByIdWithActiveDiscountAsync(int id)
+        {
+            var g = await _context.Games_Info
+                .Include(g => g.GamesInfoDiscounts).ThenInclude(d => d.GamesDiscount)
+                .FirstOrDefaultAsync(x => x.Id == id);
+
+            if (g == null) return null;
+
+            var now = DateTime.UtcNow;
+            var activeDiscount = g.GamesInfoDiscounts
+                .Select(d => d.GamesDiscount)
+                .Where(d => d.IsActive && d.StartDate <= now && d.EndDate >= now)
+                .OrderByDescending(d => d.CreatedAt)
+                .FirstOrDefault();
+
+            return new GamesInfoDTO
+            {
+                ID = g.Id,
+                Title = g.Title,
+                Description = g.Description,
+                Price = g.Price,
+                Genre = g.Genre,
+                DeveloperId = g.DeveloperId,
+                InstallerFilePath = g.InstallerFilePath,
+                CoverImagePath = g.CoverImagePath,
+                Status = g.Status,
+                CreatedBy = g.CreatedBy,
+                IsActive = g.IsActive,
+                ActiveDiscount = activeDiscount == null ? null : new GamesDiscountDTO
+                {
+                    Id = activeDiscount.Id,
+                    Code = activeDiscount.Code,
+                    Description = activeDiscount.Description,
+                    Value = activeDiscount.Value,
+                    IsPercent = activeDiscount.IsPercent,
+                    StartDate = activeDiscount.StartDate,
+                    EndDate = activeDiscount.EndDate,
+                    IsActive = activeDiscount.IsActive,
+                    CreatedAt = activeDiscount.CreatedAt
+                }
+            };
+        }
+
+        // --- Hàm lấy theo entity model, trả về entity (không phải DTO) ---
+        public GamesInfo GetByIdWithActiveDiscount(int gameId)
+        {
+            var game = _context.Games_Info
+                .Include(g => g.GamesInfoDiscounts)
+                .ThenInclude(gid => gid.GamesDiscount)
+                .FirstOrDefault(g => g.Id == gameId);
+
+            if (game == null) return null;
+
+            var now = DateTime.UtcNow;
+            var activeDiscount = game.GamesInfoDiscounts?
+                .Select(x => x.GamesDiscount)
+                .Where(d => d.IsActive && d.StartDate <= now && d.EndDate >= now)
+                .OrderByDescending(d => d.CreatedAt)
+                .FirstOrDefault();
+
+            game.ActiveDiscount = activeDiscount;
+            return game;
+        }
+
+        // Các hàm CRUD khác (GIỮ NGUYÊN)
         public async Task<GamesInfoDTO> CreateAsync(GamesInfoDTO dto)
         {
             var game = new GamesInfo
@@ -214,7 +324,6 @@ namespace DataAccess.Repository
             return dto;
         }
 
-        // Cập nhật game
         public async Task<bool> UpdateAsync(GamesInfoDTO dto)
         {
             var game = await _context.Games_Info.FindAsync(dto.ID);
@@ -236,7 +345,6 @@ namespace DataAccess.Repository
             return true;
         }
 
-        // Xóa game
         public async Task<bool> DeleteAsync(int id)
         {
             var game = await _context.Games_Info.FindAsync(id);
@@ -246,7 +354,6 @@ namespace DataAccess.Repository
             return true;
         }
 
-        // Kích hoạt/vô hiệu hóa game
         public async Task<bool> SetActiveStatusAsync(int id, bool isActive)
         {
             var game = await _context.Games_Info.FindAsync(id);
@@ -257,7 +364,6 @@ namespace DataAccess.Repository
             return true;
         }
 
-        // Đổi trạng thái game (Status)
         public async Task<bool> UpdateStatusAsync(int id, string status)
         {
             var game = await _context.Games_Info.FindAsync(id);
@@ -268,13 +374,10 @@ namespace DataAccess.Repository
             return true;
         }
 
-        // Update bằng entity gốc
         public async Task UpdateAsync(GamesInfo game)
         {
             _context.Games_Info.Update(game);
             await _context.SaveChangesAsync();
         }
     }
-   
 }
-
