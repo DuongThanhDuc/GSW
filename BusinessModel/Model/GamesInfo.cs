@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -36,5 +37,8 @@ namespace BusinessModel.Model
         public ICollection<GamesDiscount> Discounts { get; set; }
         public ICollection<GamesMedia> Media { get; set; }
         public virtual ICollection<GamesInfoDiscount> GamesInfoDiscounts { get; set; }
+
+        [NotMapped]
+        public GamesDiscount ActiveDiscount { get; set; }
     }
 }

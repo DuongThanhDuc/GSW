@@ -36,7 +36,7 @@ namespace GSWApi.Controllers.Games
         [HttpGet("dto/{id}")]
         public async Task<IActionResult> GetGameByIdDTO(int id)
         {
-            var game = await _repository.GetByIdAsync(id);
+            var game = await _repository.GetDtoByIdWithActiveDiscountAsync(id);
             if (game == null)
                 return NotFound(new { success = false, message = "Game not found." });
 
