@@ -14,8 +14,8 @@ namespace BusinessModel.Model
         public int EntityId { get; set; }         // GamesInfo.Id hoặc StoreRefundRequest.ID
         public string Status { get; set; }
         [Required]
-        public string ChangedBy { get; set; }     // UserName hoặc UserId của Admin thực hiện
+        public string ChangedByUserId { get; set; }     
         public DateTime ChangedAt { get; set; }
-        public string Note { get; set; }          // Ghi chú duyệt/từ chối
+        public string Note { get; set; }          
     }
 }
