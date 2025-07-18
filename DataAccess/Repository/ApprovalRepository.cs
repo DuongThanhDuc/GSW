@@ -17,7 +17,7 @@ namespace DataAccess.Repository
             _context = context;
         }
 
-        public async Task<bool> ApproveGameAsync(int gameId, string status, string changedBy, string note)
+        public async Task<bool> ApproveGameAsync(int gameId, string status, string changedByUserId, string note)
         {
             var game = await _context.Games_Info.FindAsync(gameId);
             if (game == null) return false;
@@ -28,15 +28,15 @@ namespace DataAccess.Repository
                 EntityType = "Game",
                 EntityId = gameId,
                 Status = status,
-                ChangedBy = changedBy, 
-                ChangedAt = DateTime.Now,
+                ChangedByUserId = changedByUserId, 
+                ChangedAt = DateTime.UtcNow,
                 Note = note
             });
             await _context.SaveChangesAsync();
             return true;
         }
 
-        public async Task<bool> ApproveRefundAsync(int refundId, string status, string adminId, string note)
+        public async Task<bool> ApproveRefundAsync(int refundId, string status, string changedByUserId, string note)
         {
             var refund = await _context.Store_RefundRequests.FindAsync(refundId);
             if (refund == null) return false;
@@ -47,12 +47,13 @@ namespace DataAccess.Repository
                 EntityType = "Refund",
                 EntityId = refundId,
                 Status = status,
-                ChangedBy = adminId,
-                ChangedAt = DateTime.Now,
+                ChangedByUserId = changedByUserId, 
+                ChangedAt = DateTime.UtcNow,
                 Note = note
             });
             await _context.SaveChangesAsync();
             return true;
         }
+
     }
 }
