@@ -27,7 +27,7 @@ namespace GSWApi.Controllers.Admin
         {
             if (string.IsNullOrWhiteSpace(dto.Status))
                 return BadRequest(new { message = "Status must not be empty." });
-
+            //var userId = "2aaab08b-c2da-462c-a7e7-9c2166d3961e";
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userId))
                 return Unauthorized(new { message = "You are not authorized or userId is missing." });
