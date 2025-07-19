@@ -24,34 +24,11 @@ namespace GSWApi.Controllers.Games
             return Ok(new { success = true, data = games });
         }
 
-        // GET: api/GamesInfo/model
-        [HttpGet("model")]
-        public async Task<IActionResult> GetAllGamesOriginal()
-        {
-            var games = await _repository.GetAllAsyncOriginal();
-            return Ok(new { success = true, data = games });
-        }
-
-        // GET: api/GamesInfo/dto/{id}
         [HttpGet("dto/{id}")]
-        public async Task<IActionResult> GetGameByIdDTO(int id)
+        public async Task<IActionResult> GetAllGamesByIDDTO(int id)
         {
-            var game = await _repository.GetDtoByIdWithActiveDiscountAsync(id);
-            if (game == null)
-                return NotFound(new { success = false, message = "Game not found." });
-
-            return Ok(new { success = true, data = game });
-        }
-
-        // GET: api/GamesInfo/model/{id}
-        [HttpGet("model/{id}")]
-        public async Task<IActionResult> GetGameByIdOriginal(int id)
-        {
-            var game = await _repository.GetByIdAsyncOriginal(id);
-            if (game == null)
-                return NotFound(new { success = false, message = "Game not found." });
-
-            return Ok(new { success = true, data = game });
+            var games = await _repository.GetByIdAsync(id);
+            return Ok(new { success = true, data = games });
         }
 
         // POST: api/GamesInfo
