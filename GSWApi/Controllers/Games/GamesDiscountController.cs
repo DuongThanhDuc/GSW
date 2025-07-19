@@ -1,5 +1,6 @@
 ﻿using BusinessModel.Model;
 using DataAccess.DTOs;
+using DataAccess.Repository;
 using DataAccess.Repository.IRepository;
 using Microsoft.AspNetCore.Mvc;
 
@@ -32,14 +33,14 @@ namespace GSWApi.Controllers.Games
                 IsActive = d.IsActive,
                 CreatedAt = d.CreatedAt
             }).ToList();
-            return Ok(dtos);
+            return Ok(new { success = true, data = dtos });
         }
 
         [HttpGet("{id}")]
         public IActionResult Get(int id)
         {
             var d = _repository.Get(id);
-            if (d == null) return NotFound();
+            if (d == null) return NotFound(new { success = false, message = "Discount not found." });
 
             var dto = new GamesDiscountDTO
             {
@@ -53,20 +54,20 @@ namespace GSWApi.Controllers.Games
                 IsActive = d.IsActive,
                 CreatedAt = d.CreatedAt
             };
-            return Ok(dto);
+            return Ok(new { success = true, data = dto });
         }
 
         [HttpPost]
         public IActionResult Create([FromBody] GamesDiscountDTO dto)
         {
             if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+                return BadRequest(new { success = false, message = "Invalid model." });
 
             if (dto.EndDate < dto.StartDate)
-                return BadRequest("EndDate must be after StartDate.");
+                return BadRequest(new { success = false, message = "EndDate must be after StartDate." });
 
             if (_repository.IsCodeExist(dto.Code))
-                return BadRequest("Code already exists.");
+                return BadRequest(new { success = false, message = "Code already exists." });
 
             var entity = new GamesDiscount
             {
@@ -80,24 +81,20 @@ namespace GSWApi.Controllers.Games
             };
 
             var created = _repository.Create(entity);
-
             dto.Id = created.Id;
             dto.CreatedAt = created.CreatedAt;
-            return Ok(dto);
+
+            return Ok(new { success = true, data = dto });
         }
 
         [HttpPut("{id}")]
         public IActionResult Update(int id, [FromBody] GamesDiscountDTO dto)
         {
             if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+                return BadRequest(new { success = false, message = "Invalid model." });
 
             if (dto.EndDate < dto.StartDate)
-                return BadRequest("EndDate must be after StartDate.");
-
-            if (_repository.IsCodeExist(dto.Code, id))
-                return BadRequest("Code already exists.");
-
+                return BadRequest(new { success = false, message = "EndDate must be after StartDate." });
             var entity = new GamesDiscount
             {
                 Id = id,
@@ -111,18 +108,34 @@ namespace GSWApi.Controllers.Games
             };
 
             var updated = _repository.Update(id, entity);
-            if (updated == null) return NotFound();
+            if (updated == null)
+                return NotFound(new { success = false, message = "Discount not found." });
 
-            dto.Id = updated.Id;
-            dto.CreatedAt = updated.CreatedAt;
-            return Ok(dto);
+            var result = new GamesDiscountDTO
+            {
+                Id = updated.Id,
+                Code = updated.Code,
+                Description = updated.Description,
+                Value = updated.Value,
+                IsPercent = updated.IsPercent,
+                StartDate = updated.StartDate,
+                EndDate = updated.EndDate,
+                IsActive = updated.IsActive,
+                CreatedAt = updated.CreatedAt
+            };
+
+            return Ok(new { success = true, data = result });
         }
 
         [HttpDelete("{id}")]
         public IActionResult Delete(int id)
         {
+            if(id == null)
+            {
+                return NotFound(new { success = false, message = "Discount not found." });
+            }
             _repository.Delete(id);
-            return NoContent();
+            return Ok(new { success = true, data = $"Discount {id} deleted successfully." });
         }
 
         // --- API lấy discount active của game ---
@@ -151,16 +164,27 @@ namespace GSWApi.Controllers.Games
         [HttpPost("assign/{gameId}/{discountId}")]
         public IActionResult AssignDiscountToGame(int gameId, int discountId)
         {
+            if (gameId == null)
+                return NotFound(new { success = false, message = $"Game with ID {gameId} not found." });
+
+            if (discountId == null)
+                return NotFound(new { success = false, message = $"Discount with ID {discountId} not found." });
+
             _repository.SetDiscountForGame(gameId, discountId);
-            return Ok();
+            return Ok(new { success = true, data = $"Discount {discountId} assigned to Game {gameId}." });
         }
 
-        // Xóa liên kết discount khỏi game (không deactive discount, chỉ bỏ liên kết)
         [HttpDelete("remove/{gameId}/{discountId}")]
         public IActionResult RemoveDiscountFromGame(int gameId, int discountId)
         {
+            if (gameId == null)
+                return NotFound(new { success = false, message = $"Game with ID {gameId} not found." });
+
+            if (discountId == null)
+                return NotFound(new { success = false, message = $"Discount with ID {discountId} not found." });
+
             _repository.RemoveDiscountFromGame(gameId, discountId);
-            return NoContent();
+            return Ok(new { success = true, data = $"Discount {discountId} removed from Game {gameId}." });
         }
     }
 }
