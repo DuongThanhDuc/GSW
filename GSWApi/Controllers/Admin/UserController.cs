@@ -191,5 +191,39 @@ namespace GSWApi.Controllers.Admin
             return Ok(new { success = true, message = "User has been unlocked." });
         }
 
+        [HttpPut("update/{id}")]
+        public async Task<IActionResult> UpdateUserProfile(string id, [FromBody] UpdateProfileDTO dto)
+        {
+            if (string.IsNullOrEmpty(id))
+                return BadRequest(new { success = false, message = "ID không được để trống." });
+
+            var user = await _userManager.FindByIdAsync(id);
+            if (user == null)
+                return NotFound(new { success = false, message = "Không tìm thấy tài khoản." });
+
+            user.UserName = dto.Username ?? user.UserName;
+            user.Email = dto.Email ?? user.Email;
+            user.PhoneNumber = dto.PhoneNumber ?? user.PhoneNumber;
+
+            var result = await _userManager.UpdateAsync(user);
+            if (!result.Succeeded)
+                return BadRequest(new { success = false, message = "Cập nhật thất bại", errors = result.Errors });
+
+            var roles = await _userManager.GetRolesAsync(user);
+
+            return Ok(new
+            {
+                success = true,
+                data = new
+                {
+                    user.Id,
+                    user.UserName,
+                    user.Email,
+                    user.PhoneNumber,
+                    Roles = roles
+                }
+            });
+        }
+
     }
 }
