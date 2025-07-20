@@ -1,8 +1,10 @@
 ﻿using DataAccess.DTOs;
 using GSWApi.Utility;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
+using System.Security.Claims;
 
 namespace GSWApi.Controllers
 {
@@ -118,6 +120,37 @@ namespace GSWApi.Controllers
             });
         }
 
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDTO dto)
+        {
+            var user = await _userManager.FindByEmailAsync(dto.Email);
+            if (user == null)
+                return BadRequest(new { success = false, message = "Không tìm thấy tài khoản!" });
+
+            var otp = OtpManager.GenerateOtp(dto.Email);
+            await _emailService.SendOtpEmail(dto.Email, otp);
+
+            return Ok(new { success = true, data = "OTP đã được gửi tới email!" });
+        }
+
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDTO dto)
+        {
+            if (!OtpManager.VerifyOtp(dto.Email, dto.Otp))
+                return BadRequest(new { success = false, message = "OTP không đúng hoặc đã hết hạn!" });
+
+            var user = await _userManager.FindByEmailAsync(dto.Email);
+            if (user == null)
+                return BadRequest(new { success = false, message = "Không tìm thấy tài khoản!" });
+
+            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+            var result = await _userManager.ResetPasswordAsync(user, token, dto.NewPassword);
+
+            if (!result.Succeeded)
+                return BadRequest(new { success = false, message = "Đặt lại mật khẩu thất bại", errors = result.Errors });
+
+            return Ok(new { success = true, data = "Đặt lại mật khẩu thành công!" });
+        }
 
     }
 }
