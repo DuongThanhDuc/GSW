@@ -52,6 +52,7 @@ namespace BusinessModel.Model
         public DbSet<GamesInfoDiscount> Games_InfoDiscounts { get; set; }
 
         public DbSet<ApprovalHistory> ApprovalHistories { get; set; }
+        public DbSet<PaymentTransaction> PaymentTransactions { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

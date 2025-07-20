@@ -21,6 +21,8 @@ builder.Services.AddIdentity<IdentityUser, IdentityRole>()
     .AddEntityFrameworkStores<DBContext>()
     .AddDefaultTokenProviders();
 
+builder.Services.AddHttpContextAccessor();
+
 builder.Services.AddScoped<IGamesCategoryRepository, GamesCategoryRepository>();
 builder.Services.AddScoped<IGamesTagRepository, GamesTagRepository>();
 builder.Services.AddScoped<IGamesInfoRepository, GamesInfoRepository>();
@@ -39,6 +41,7 @@ builder.Services.AddScoped<IGamesBannerRepository, GamesBannerRepository>();
 builder.Services.AddScoped<IStatisticRepository, StatisticRepository>();
 builder.Services.AddScoped<IGameStatisticRepository, GameStatisticRepository>();
 builder.Services.AddScoped<IApprovalRepository, ApprovalRepository>();
+builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
 
 
 
