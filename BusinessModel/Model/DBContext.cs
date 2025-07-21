@@ -42,11 +42,8 @@ namespace BusinessModel.Model
         public DbSet<StoreCart> Store_Cart { get; set; }
         public DbSet<StoreThread> Store_Threads { get; set; }
         public DbSet<StoreThreadReply> Store_ThreadReplies { get; set; }
-
         public DbSet<GamesMedia> Games_Media { get; set; }
         public DbSet<StoreLibrary> Store_Library { get; set; }
-        public DbSet<SystemTokenRefresh> System_TokenRefreshes { get; set; }
-
         public DbSet<GamesDiscount> Games_Discount { get; set; }
         public DbSet<GamesBanner> Games_Banner { get; set; }
         public DbSet<GamesInfoDiscount> Games_InfoDiscounts { get; set; }
@@ -160,14 +157,6 @@ namespace BusinessModel.Model
                 .Property(r => r.CreatedBy)
                 .IsRequired();
 
-            modelBuilder.Entity<SystemTokenRefresh>()
-                .Property(t => t.CreatedAt)
-                .HasDefaultValueSql("GETDATE()");
-
-            modelBuilder.Entity<SystemTokenRefresh>()
-                .Property(t => t.UpdatedAt)
-                .HasDefaultValueSql("GETDATE()");
-
             modelBuilder.Entity<GamesInfoDiscount>()
     .HasKey(gid => new { gid.GamesInfoId, gid.GamesDiscountId });
 
@@ -221,8 +210,9 @@ namespace BusinessModel.Model
       }
       );
 
-            //Admin User
+            // Admin Users
             var adminUserId = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af";
+            var adminUserId2 = "bcbcdd33-9a99-75dv-82d7-0c9e67f9d9af";
             var hasher = new PasswordHasher<IdentityUser>();
 
             var adminUser = new IdentityUser
@@ -237,15 +227,35 @@ namespace BusinessModel.Model
                 PasswordHash = hasher.HashPassword(null!, "AdminPassword@123")
             };
 
-            modelBuilder.Entity<IdentityUser>().HasData(adminUser);
+            var adminUser2 = new IdentityUser
+            {
+                Id = adminUserId2,
+                UserName = "trananhtuan180202",
+                NormalizedUserName = "TRANANHTUAN180202",
+                Email = "trananhtuan180202@gmail.com",
+                NormalizedEmail = "TRANANHTUAN180202@GMAIL.COM",
+                EmailConfirmed = true,
+                SecurityStamp = Guid.NewGuid().ToString(),
+                PasswordHash = hasher.HashPassword(null!, "AdminPassword@123")
+            };
 
+            // Seed Users
+            modelBuilder.Entity<IdentityUser>().HasData(adminUser, adminUser2);
+
+            // Seed Roles for Users
             modelBuilder.Entity<IdentityUserRole<string>>().HasData(
                 new IdentityUserRole<string>
                 {
                     UserId = adminUserId,
-                    RoleId = "b7b9181c-ff61-4d8f-8f6d-5edb3a6d3a11"
+                    RoleId = "b7b9181c-ff61-4d8f-8f6d-5edb3a6d3a11" // Role for admin
+                },
+                new IdentityUserRole<string>
+                {
+                    UserId = adminUserId2,
+                    RoleId = "b7b9181c-ff61-4d8f-8f6d-5edb3a6d3a11" // Same role or change if needed
                 }
             );
+
 
             //System Tag
             modelBuilder.Entity<SystemTag>().HasData(
