@@ -42,6 +42,7 @@ builder.Services.AddScoped<IStatisticRepository, StatisticRepository>();
 builder.Services.AddScoped<IGameStatisticRepository, GameStatisticRepository>();
 builder.Services.AddScoped<IApprovalRepository, ApprovalRepository>();
 builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
+builder.Services.AddScoped<ISystemProfilePictureRepository, SystemProfilePictureRepository>();
 
 
 

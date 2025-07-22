@@ -4,6 +4,9 @@ using Microsoft.EntityFrameworkCore;
 using DataAccess;
 using System.Threading.Tasks;
 using DataAccess.DTOs;
+using CloudinaryDotNet;
+using DataAccess.Repository.IRepository;
+using CloudinaryDotNet.Actions;
 
 namespace GSWApi.Controllers.Admin
 {
@@ -12,11 +15,17 @@ namespace GSWApi.Controllers.Admin
     public class UserController : ControllerBase
     {
         private readonly UserManager<IdentityUser> _userManager;
+        private readonly ISystemProfilePictureRepository _repo;
+        private readonly Cloudinary _cloudinary;
 
-        public UserController(UserManager<IdentityUser> userManager)
+
+        public UserController(UserManager<IdentityUser> userManager,ISystemProfilePictureRepository repo,Cloudinary cloudinary)
         {
             _userManager = userManager;
+            _repo = repo;
+            _cloudinary = cloudinary;
         }
+
 
         // GET: admin/user
         [HttpGet]
@@ -28,13 +37,16 @@ namespace GSWApi.Controllers.Admin
             foreach (var user in users)
             {
                 var roles = await _userManager.GetRolesAsync(user);
+                var profile = await _repo.GetByUserIdAsync(user.Id);
+
                 userList.Add(new
                 {
                     user.Id,
                     user.UserName,
                     user.Email,
                     user.PhoneNumber,
-                    Roles = roles
+                    Roles = roles,
+                    ProfilePicture = profile?.ImageUrl
                 });
             }
 
@@ -53,20 +65,22 @@ namespace GSWApi.Controllers.Admin
                 return NotFound(new { success = false, message = "User not found." });
 
             var roles = await _userManager.GetRolesAsync(user);
+            var profile = await _repo.GetByUserIdAsync(user.Id);
 
             return Ok(new
             {
                 success = true,
                 data = new[]
                 {
-                    new {
-                        user.Id,
-                        user.UserName,
-                        user.Email,
-                        user.PhoneNumber,
-                        Roles = roles
-                    }
-                }
+            new {
+                user.Id,
+                user.UserName,
+                user.Email,
+                user.PhoneNumber,
+                Roles = roles,
+                ProfilePicture = profile?.ImageUrl
+            }
+        }
             });
         }
 
@@ -192,15 +206,16 @@ namespace GSWApi.Controllers.Admin
         }
 
         [HttpPut("update/{id}")]
-        public async Task<IActionResult> UpdateUserProfile(string id, [FromBody] UpdateProfileDTO dto)
+        public async Task<IActionResult> UpdateUserProfile(string id, [FromForm] UpdateProfileDTO dto, IFormFile? imageFile)
         {
-            if (string.IsNullOrEmpty(id))
+            if (string.IsNullOrWhiteSpace(id))
                 return BadRequest(new { success = false, message = "ID không được để trống." });
 
             var user = await _userManager.FindByIdAsync(id);
             if (user == null)
                 return NotFound(new { success = false, message = "Không tìm thấy tài khoản." });
 
+            // Update user fields
             user.UserName = dto.Username ?? user.UserName;
             user.Email = dto.Email ?? user.Email;
             user.PhoneNumber = dto.PhoneNumber ?? user.PhoneNumber;
@@ -209,7 +224,55 @@ namespace GSWApi.Controllers.Admin
             if (!result.Succeeded)
                 return BadRequest(new { success = false, message = "Cập nhật thất bại", errors = result.Errors });
 
+            string? uploadedImageUrl = null;
+
+            if (imageFile != null && imageFile.Length > 0)
+            {
+                try
+                {
+                    var uploadParams = new ImageUploadParams
+                    {
+                        File = new FileDescription(imageFile.FileName, imageFile.OpenReadStream()),
+                        Folder = "profile_pictures",
+                        PublicId = $"user_{id}",
+                        Overwrite = true
+                    };
+
+                    var uploadResult = await _cloudinary.UploadAsync(uploadParams);
+
+                    if (uploadResult.StatusCode == System.Net.HttpStatusCode.OK)
+                    {
+                        uploadedImageUrl = uploadResult.SecureUrl.ToString();
+
+                        await _repo.CreateOrUpdateAsync(new SystemProfilePictureDTO
+                        {
+                            UserId = id,
+                            ImageUrl = uploadedImageUrl
+                        });
+                    }
+                    else
+                    {
+                        return BadRequest(new
+                        {
+                            success = false,
+                            message = "Tải ảnh lên Cloudinary thất bại.",
+                            error = uploadResult.Error?.Message
+                        });
+                    }
+                }
+                catch (Exception ex)
+                {
+                    return StatusCode(500, new
+                    {
+                        success = false,
+                        message = "Lỗi khi tải ảnh lên.",
+                        error = ex.Message
+                    });
+                }
+            }
+
             var roles = await _userManager.GetRolesAsync(user);
+            var profilePicture = uploadedImageUrl ?? (await _repo.GetByUserIdAsync(id))?.ImageUrl;
 
             return Ok(new
             {
@@ -220,10 +283,12 @@ namespace GSWApi.Controllers.Admin
                     user.UserName,
                     user.Email,
                     user.PhoneNumber,
-                    Roles = roles
+                    Roles = roles,
+                    ProfilePicture = profilePicture
                 }
             });
         }
+
 
     }
 }

@@ -50,6 +50,8 @@ namespace BusinessModel.Model
 
         public DbSet<ApprovalHistory> ApprovalHistories { get; set; }
         public DbSet<PaymentTransaction> PaymentTransactions { get; set; }
+        public DbSet<SystemProfilePicture> System_ProfilePictures { get; set; }
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -184,6 +186,19 @@ namespace BusinessModel.Model
                 .HasOne(gid => gid.GamesDiscount)
                 .WithMany(gd => gd.GamesInfoDiscounts)
                 .HasForeignKey(gid => gid.GamesDiscountId);
+
+            modelBuilder.Entity<SystemProfilePicture>(entity =>
+            {
+                entity.HasKey(p => p.Id);
+
+                entity.Property(p => p.ImageUrl)
+                    .IsRequired();
+
+                entity.HasOne(p => p.User)
+                    .WithOne()
+                    .HasForeignKey<SystemProfilePicture>(p => p.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
 
 
             // Seeding Datas

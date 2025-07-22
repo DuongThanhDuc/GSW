@@ -1,17 +1,15 @@
-﻿using Microsoft.AspNetCore.Identity;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BusinessModel.Model
+namespace DataAccess.DTOs
 {
-    public class SystemProfilePicture
+    public class SystemProfilePictureDTO
     {
         public int Id { get; set; }
         public string UserId { get; set; }
         public string ImageUrl { get; set; }
-        public IdentityUser User { get; set; }
     }
 }
