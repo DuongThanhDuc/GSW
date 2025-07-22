@@ -44,6 +44,21 @@ namespace GSWApi.Controllers.User
             });
         }
 
+        // GET: api/cart/user/{id}
+        [HttpGet("user/{id}")]
+        public async Task<IActionResult> GetByUserId(string id)
+        {
+            var cart = await _cartRepository.GetByUserIdAsync(id);
+            if (cart == null)
+                return NotFound(new { success = false, message = "Cart not found." });
+
+            return Ok(new
+            {
+                success = true,
+                data = cart
+            });
+        }
+
         // POST: api/cart
         [HttpPost]
         public async Task<IActionResult> Create(CartDTO dto)
