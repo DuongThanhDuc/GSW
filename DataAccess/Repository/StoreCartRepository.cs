@@ -13,48 +13,101 @@ namespace DataAccess.Repository
     public class StoreCartRepository : IStoreCartRepository
     {
         private readonly DBContext _context;
+        private readonly IGamesInfoRepository _gamesRepo;
 
-        public StoreCartRepository(DBContext context)
+        public StoreCartRepository(DBContext context, IGamesInfoRepository gamesRepo)
         {
             _context = context;
+            _gamesRepo = gamesRepo;
         }
 
-        // Return the original model
-        public async Task<IEnumerable<StoreCart>> GetAllAsyncOriginal()
+        public async Task<IEnumerable<CartViewDTO>> GetAllAsync()
         {
-            return await _context.Store_Cart.ToListAsync();
-        }
+            var carts = await _context.Store_Cart.ToListAsync();
 
-        // Return the original model
-        public async Task<StoreCart?> GetByIdAsyncOriginal(int id)
-        {
-            return await _context.Store_Cart.FindAsync(id);
-        }
+            var result = new List<CartViewDTO>();
 
-        public async Task<IEnumerable<CartDTO>> GetAllAsync()
-        {
-            return await _context.Store_Cart
-                .Select(c => new CartDTO
+            foreach (var cart in carts)
+            {
+                var game = await _gamesRepo.GetByIdAsync(cart.GameID);
+                if (game == null) continue;
+
+                var discount = game.ActiveDiscounts.FirstOrDefault();
+                var discountValue = discount?.Value ?? 0;
+                var isPercent = discount?.IsPercent ?? false;
+                var finalPrice = isPercent ? game.Price * (1 - (discountValue / 100)) : game.Price - discountValue;
+
+                result.Add(new CartViewDTO
                 {
-                    ID = c.ID,
-                    UserID = c.UserID,
-                    GameID = c.GameID,
-                    AddedAt = c.AddedAt
-                }).ToListAsync();
+                    ID = cart.ID,
+                    UserID = cart.UserID,
+                    GaneID = cart.GameID,
+                    Price = game.Price,
+                    Discount = discountValue,
+                    IsPercent = isPercent,
+                    TotalPtice = finalPrice
+                });
+            }
+
+            return result;
         }
 
-        public async Task<CartDTO?> GetByIdAsync(int id)
+        public async Task<CartViewDTO?> GetByIdAsync(int cartId)
         {
-            var cart = await _context.Store_Cart.FindAsync(id);
+            var cart = await _context.Store_Cart.FindAsync(cartId);
             if (cart == null) return null;
 
-            return new CartDTO
+            var game = await _gamesRepo.GetByIdAsync(cart.GameID);
+            if (game == null) return null;
+
+            var discount = game.ActiveDiscounts.FirstOrDefault();
+            var discountValue = discount?.Value ?? 0;
+            var isPercent = discount?.IsPercent ?? false;
+            var finalPrice = isPercent ? game.Price * (1 - (discountValue / 100)) : game.Price - discountValue;
+
+            return new CartViewDTO
             {
                 ID = cart.ID,
                 UserID = cart.UserID,
-                GameID = cart.GameID,
-                AddedAt = cart.AddedAt
+                GaneID = cart.GameID,
+                Price = game.Price,
+                Discount = discountValue,
+                IsPercent = isPercent,
+                TotalPtice = finalPrice
             };
+        }
+
+        public async Task<IEnumerable<CartViewDTO>> GetByUserIdAsync(string userId)
+        {
+            var carts = await _context.Store_Cart
+                .Where(c => c.UserID == userId)
+                .ToListAsync();
+
+            var result = new List<CartViewDTO>();
+
+            foreach (var cart in carts)
+            {
+                var game = await _gamesRepo.GetByIdAsync(cart.GameID);
+                if (game == null) continue;
+
+                var discount = game.ActiveDiscounts.FirstOrDefault();
+                var discountValue = discount?.Value ?? 0;
+                var isPercent = discount?.IsPercent ?? false;
+                var finalPrice = isPercent ? game.Price * (1 - (discountValue / 100)) : game.Price - discountValue;
+
+                result.Add(new CartViewDTO
+                {
+                    ID = cart.ID,
+                    UserID = cart.UserID,
+                    GaneID = cart.GameID,
+                    Price = game.Price,
+                    Discount = discountValue,
+                    IsPercent = isPercent,
+                    TotalPtice = finalPrice
+                });
+            }
+
+            return result;
         }
 
         public async Task<CartDTO> CreateAsync(CartDTO dto)
@@ -96,5 +149,7 @@ namespace DataAccess.Repository
             await _context.SaveChangesAsync();
             return true;
         }
+
+
     }
 }
