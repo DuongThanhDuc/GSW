@@ -46,16 +46,15 @@ builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
 
 
 
-var cloudinarySettings = builder.Configuration.GetSection("CloudinarySettings").Get<CloudinarySettings>();
+var cloudinarySettings = builder.Configuration.GetSection("CloudinarySettings");
+builder.Services.Configure<CloudinarySettings>(cloudinarySettings);
 
-var account = new Account(
-    cloudinarySettings.CloudName,
-    cloudinarySettings.ApiKey,
-    cloudinarySettings.ApiSecret
-);
-
-var cloudinary = new Cloudinary(account);
-builder.Services.AddSingleton(cloudinary);
+builder.Services.AddSingleton(x =>
+{
+    var config = cloudinarySettings.Get<CloudinarySettings>();
+    var account = new Account(config.CloudName, config.ApiKey, config.ApiSecret);
+    return new Cloudinary(account);
+});
 
 builder.Services.AddSingleton<EmailService>();
 
