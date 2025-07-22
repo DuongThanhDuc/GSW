@@ -18,10 +18,11 @@ namespace DataAccess.DTOs
     {
         public int ID { get; set; }
         public string UserID { get; set; }
-        public int GaneID { get; set; }
+        public int GameID { get; set; }
+        public string GameName { get; set; }
         public decimal Price { get; set; }
         public decimal Discount { get; set; }
         public bool IsPercent { get; set; }
-        public decimal TotalPtice { get; set; }
+        public decimal TotalPrice { get; set; }
     }
 }
