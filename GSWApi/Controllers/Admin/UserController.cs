@@ -322,7 +322,8 @@ namespace GSWApi.Controllers.Admin
                             game.Description,
                             game.Price,
                             game.Genre,
-                            game.CoverImagePath
+                            game.CoverImagePath,
+                            game.InstallerFilePath
                         });
                     }
                 }
@@ -367,7 +368,8 @@ namespace GSWApi.Controllers.Admin
                         game.Description,
                         game.Price,
                         game.Genre,
-                        game.CoverImagePath
+                        game.CoverImagePath,
+                        game.InstallerFilePath
                     });
                 }
             }
