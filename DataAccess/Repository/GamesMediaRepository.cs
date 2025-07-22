@@ -77,6 +77,11 @@ namespace DataAccess.Repository
                 _context.SaveChanges();
             }
         }
+
+        public GamesMedia? GetMediaById(int mediaId)
+        {
+            return _context.Games_Media.FirstOrDefault(m => m.Id == mediaId);
+        }
     }
 
 }

@@ -56,5 +56,16 @@ namespace GSWApi.Controllers.Games
 
             return Ok(new { message = "Uploaded and saved.", url = mediaDto.MediaURL });
         }
+
+        [HttpDelete("delete/by-id/{mediaId}")]
+        public IActionResult DeleteMediaById(int gameId, int mediaId)
+        {
+            var media = _repo.GetMediaById(mediaId);
+            if (media == null || media.GameID != gameId)
+                return NotFound("Media not found for this game.");
+
+            _repo.DeleteMediaFromGame(gameId, mediaId);
+            return Ok(new { message = "Deleted media from database only." });
+        }
     }
 }
