@@ -17,13 +17,21 @@ namespace GSWApi.Controllers.Admin
         private readonly UserManager<IdentityUser> _userManager;
         private readonly ISystemProfilePictureRepository _repo;
         private readonly Cloudinary _cloudinary;
+        private readonly IStoreLibraryRepository _libraryRepo;
+        private readonly IGamesInfoRepository _gamesRepo;
 
-
-        public UserController(UserManager<IdentityUser> userManager,ISystemProfilePictureRepository repo,Cloudinary cloudinary)
+        public UserController(
+            UserManager<IdentityUser> userManager,
+            ISystemProfilePictureRepository repo,
+            IStoreLibraryRepository libraryRepo,
+            IGamesInfoRepository gamesRepo,
+            Cloudinary cloudinary)
         {
             _userManager = userManager;
             _repo = repo;
             _cloudinary = cloudinary;
+            _libraryRepo = libraryRepo;
+            _gamesRepo = gamesRepo;
         }
 
 
@@ -288,6 +296,101 @@ namespace GSWApi.Controllers.Admin
                 }
             });
         }
+
+        [HttpGet("with-library")]
+        public async Task<IActionResult> GetAllUsersWithLibrary()
+        {
+            var users = await _userManager.Users.ToListAsync();
+            var result = new List<object>();
+
+            foreach (var user in users)
+            {
+                var profile = await _repo.GetByUserIdAsync(user.Id);
+                var roles = await _userManager.GetRolesAsync(user);
+                var userLibrary = await _libraryRepo.GetByUserIdAsync(user.Id);
+
+                var gameList = new List<object>();
+                foreach (var lib in userLibrary)
+                {
+                    var game = await _gamesRepo.GetByIdAsync(lib.GamesID);
+                    if (game != null)
+                    {
+                        gameList.Add(new
+                        {
+                            game.ID,
+                            game.Title,
+                            game.Description,
+                            game.Price,
+                            game.Genre,
+                            game.CoverImagePath,
+                            game.InstallerFilePath
+                        });
+                    }
+                }
+
+                result.Add(new
+                {
+                    user.Id,
+                    user.UserName,
+                    user.Email,
+                    user.PhoneNumber,
+                    Roles = roles,
+                    ProfilePicture = profile?.ImageUrl,
+                    Library = gameList
+                });
+            }
+
+            return Ok(new { success = true, data = result });
+        }
+
+
+        [HttpGet("with-library/{id}")]
+        public async Task<IActionResult> GetUserWithLibrary(string id)
+        {
+            var user = await _userManager.FindByIdAsync(id);
+            if (user == null)
+                return NotFound(new { success = false, message = "User not found." });
+
+            var profile = await _repo.GetByUserIdAsync(user.Id);
+            var roles = await _userManager.GetRolesAsync(user);
+            var userLibrary = await _libraryRepo.GetByUserIdAsync(user.Id);
+
+            var gameList = new List<object>();
+            foreach (var lib in userLibrary)
+            {
+                var game = await _gamesRepo.GetByIdAsync(lib.GamesID);
+                if (game != null)
+                {
+                    gameList.Add(new
+                    {
+                        game.ID,
+                        game.Title,
+                        game.Description,
+                        game.Price,
+                        game.Genre,
+                        game.CoverImagePath,
+                        game.InstallerFilePath
+                    });
+                }
+            }
+
+            return Ok(new
+            {
+                success = true,
+                data = new
+                {
+                    user.Id,
+                    user.UserName,
+                    user.Email,
+                    user.PhoneNumber,
+                    Roles = roles,
+                    ProfilePicture = profile?.ImageUrl,
+                    Library = gameList
+                }
+            });
+        }
+
+
 
 
     }

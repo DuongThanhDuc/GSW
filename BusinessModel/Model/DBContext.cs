@@ -200,6 +200,16 @@ namespace BusinessModel.Model
                     .OnDelete(DeleteBehavior.Cascade);
             });
 
+            modelBuilder.Entity<StoreLibrary>()
+                .Property(l => l.CreatedAt)
+                .HasDefaultValueSql("GETDATE()");
+
+            modelBuilder.Entity<StoreLibrary>()
+                .HasOne(l => l.Game)
+                .WithMany()
+                .HasForeignKey(l => l.GamesID)
+                .OnDelete(DeleteBehavior.Cascade);
+
 
             // Seeding Datas
 
