@@ -3,39 +3,33 @@ using System.Text;
 
 public class VnPayHelper
 {
-    public static string CreatePaymentUrl(
-        PaymentRequestDTO model,
-        IConfiguration configuration,
-        string ipAddress)
+    public static string CreatePaymentUrl(PaymentRequestDTO model, IConfiguration configuration, string ipAddress)
     {
         var vnp_TmnCode = configuration["VnPay:TmnCode"]?.Trim();
         var vnp_HashSecret = configuration["VnPay:HashSecret"]?.Trim();
         var vnp_Url = configuration["VnPay:Url"]?.Trim();
         var vnp_ReturnUrl = configuration["VnPay:ReturnUrl"]?.Trim();
 
-        // Chỉ nhận giá trị hợp lệ
-        string orderId = model.OrderId;
-        if (string.IsNullOrWhiteSpace(orderId)) orderId = Guid.NewGuid().ToString("N").Substring(0, 10);
+        string orderId = string.IsNullOrWhiteSpace(model.OrderId) ? Guid.NewGuid().ToString("N").Substring(0, 10) : model.OrderId;
 
         var pay = new Dictionary<string, string>
-        {
-            {"vnp_Version", "2.1.0"},
-            {"vnp_Command", "pay"},
-            {"vnp_TmnCode", vnp_TmnCode},
-            {"vnp_Amount", ((int)(model.Amount * 100)).ToString()},
-            {"vnp_CreateDate", DateTime.Now.ToString("yyyyMMddHHmmss")},
-            {"vnp_CurrCode", "VND"},
-            {"vnp_IpAddr", ipAddress},
-            {"vnp_Locale", "vn"},
-            {"vnp_OrderInfo", $"Thanh toan don hang {orderId}"},
-            {"vnp_OrderType", "other"},
-            {"vnp_ReturnUrl", vnp_ReturnUrl},
-            {"vnp_TxnRef", orderId},
-            // Expire date OPTIONAL, nếu có, phải đúng định dạng, KHÔNG để rỗng hoặc null!
-            //{"vnp_ExpireDate", DateTime.Now.AddMinutes(15).ToString("yyyyMMddHHmmss")},
-        };
+    {
+        {"vnp_Version", "2.1.0"},
+        {"vnp_Command", "pay"},
+        {"vnp_TmnCode", vnp_TmnCode},
+        {"vnp_Amount", ((long)(model.Amount * 100)).ToString()},
+        {"vnp_CreateDate", DateTime.Now.ToString("yyyyMMddHHmmss")},
+        {"vnp_CurrCode", "VND"},
+        {"vnp_IpAddr", ipAddress},
+        {"vnp_Locale", "vn"},
+        {"vnp_OrderInfo", $"Thanh toan don hang {orderId}"},
+        {"vnp_OrderType", "other"},
+        {"vnp_ReturnUrl", vnp_ReturnUrl},
+        {"vnp_TxnRef", orderId},
+        {"vnp_ExpireDate", DateTime.Now.AddMinutes(15).ToString("yyyyMMddHHmmss")}
+    };
 
-        // Remove các param null/empty
+        // Xếp key tăng dần
         var sorted = pay.Where(x => !string.IsNullOrEmpty(x.Value)).OrderBy(x => x.Key).ToList();
         var query = string.Join("&", sorted.Select(x => $"{x.Key}={Uri.EscapeDataString(x.Value)}"));
         var signData = string.Join("&", sorted.Select(x => $"{x.Key}={x.Value}"));
@@ -50,6 +44,7 @@ public class VnPayHelper
 
         return $"{vnp_Url}?{query}&vnp_SecureHash={hash}";
     }
+
 
     public static string CreateHmacSHA512(string key, string input)
     {
