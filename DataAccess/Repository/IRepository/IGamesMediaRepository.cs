@@ -11,6 +11,7 @@ namespace DataAccess.Repository.IRepository
     public interface IGamesMediaRepository
     {
         GamesInfoDTO GetGameInfoWithMedia(int gameId);
+        GamesMedia? GetMediaById(int mediaId);
         void AddMediaToGame(int gameId, GamesMediaDTO mediaDto);
         void UpdateMediaInGame(int gameId, GamesMediaDTO mediaDto);
         void DeleteMediaFromGame(int gameId, int mediaId);
