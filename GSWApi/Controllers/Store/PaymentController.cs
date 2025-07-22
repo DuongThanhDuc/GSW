@@ -41,7 +41,7 @@ public class PaymentController : ControllerBase
         await _paymentRepo.CreateTransactionAsync(transaction);
 
         // LẤY IP ADDRESS CHO VNPAY
-        string ipAddress = "42.113.119.106";
+        string ipAddress = "8.8.8.8";
         var remoteIp = _httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress;
         if (remoteIp != null && remoteIp.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
             ipAddress = remoteIp.ToString();
@@ -60,7 +60,7 @@ public class PaymentController : ControllerBase
     }
 
     [HttpGet("vnpay-callback")]
-    public async Task<IActionResult> VnPayCallback([FromQuery] VnPayCallbackDTO callback)
+    public async Task<IActionResult> VnPayCallback()
     {
         var hashSecret = _config["VnPay:HashSecret"];
         var isValid = VnPayHelper.ValidateVnpaySignature(Request.Query, hashSecret);
@@ -68,11 +68,14 @@ public class PaymentController : ControllerBase
         if (!isValid)
             return BadRequest("Invalid signature!");
 
-        var orderId = callback.vnp_TxnRef;
+        var orderId = Request.Query["vnp_TxnRef"].ToString();
+        var amount = Request.Query["vnp_Amount"].ToString();
+        var responseCode = Request.Query["vnp_ResponseCode"].ToString();
+
         var transaction = await _paymentRepo.GetByOrderIdAsync(orderId);
         if (transaction == null) return NotFound("Không tìm thấy giao dịch");
 
-        if (callback.vnp_ResponseCode == "00")
+        if (responseCode == "00")
         {
             transaction.Status = "Success";
         }
@@ -80,11 +83,12 @@ public class PaymentController : ControllerBase
         {
             transaction.Status = "Failed";
         }
-        transaction.PaymentGatewayResponse = JsonConvert.SerializeObject(callback);
+        transaction.PaymentGatewayResponse = JsonConvert.SerializeObject(Request.Query);
         await _paymentRepo.UpdateTransactionAsync(transaction);
 
         return Ok("Giao dịch đã được xử lý.");
     }
+
 
     [HttpGet("vnpay-ipn")]
     public async Task<IActionResult> VnPayIpn([FromQuery] VnPayCallbackDTO callback)
