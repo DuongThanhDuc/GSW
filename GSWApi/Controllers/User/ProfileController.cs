@@ -8,7 +8,7 @@ namespace GSWApi.Controllers.User
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize]
+
     public class ProfileController : ControllerBase
     {
         private readonly UserManager<IdentityUser> _userManager;

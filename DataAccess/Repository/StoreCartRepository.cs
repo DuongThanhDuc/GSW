@@ -41,11 +41,12 @@ namespace DataAccess.Repository
                 {
                     ID = cart.ID,
                     UserID = cart.UserID,
-                    GaneID = cart.GameID,
+                    GameID = cart.GameID,
+                    GameName = game.Title,
                     Price = game.Price,
                     Discount = discountValue,
                     IsPercent = isPercent,
-                    TotalPtice = finalPrice
+                    TotalPrice = finalPrice
                 });
             }
 
@@ -69,11 +70,12 @@ namespace DataAccess.Repository
             {
                 ID = cart.ID,
                 UserID = cart.UserID,
-                GaneID = cart.GameID,
+                GameID = cart.GameID,
+                GameName = game.Title,
                 Price = game.Price,
                 Discount = discountValue,
                 IsPercent = isPercent,
-                TotalPtice = finalPrice
+                TotalPrice = finalPrice
             };
         }
 
@@ -99,11 +101,11 @@ namespace DataAccess.Repository
                 {
                     ID = cart.ID,
                     UserID = cart.UserID,
-                    GaneID = cart.GameID,
+                    GameID = cart.GameID,
                     Price = game.Price,
                     Discount = discountValue,
                     IsPercent = isPercent,
-                    TotalPtice = finalPrice
+                    TotalPrice = finalPrice
                 });
             }
 
