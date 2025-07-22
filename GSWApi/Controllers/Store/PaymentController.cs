@@ -2,6 +2,7 @@
 using BusinessModel.Model;
 using DataAccess.DTOs;
 using DataAccess.Repository.IRepository;
+using GSWApi.Utility;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 
@@ -20,7 +21,7 @@ public class PaymentController : ControllerBase
         _httpContextAccessor = httpContextAccessor;
     }
 
-    [HttpPost("create")]
+    [HttpPost("vnpay-create")]
     public async Task<IActionResult> CreatePayment([FromBody] PaymentRequestDTO model)
     {
         // Nếu client không gửi OrderId, backend tự sinh mã duy nhất!
@@ -114,9 +115,62 @@ public class PaymentController : ControllerBase
         transaction.PaymentGatewayResponse = JsonConvert.SerializeObject(callback);
         await _paymentRepo.UpdateTransactionAsync(transaction);
 
-        
+
         return Content("responseCode=00");
     }
+    [HttpPost("momo-create")]
+    public async Task<IActionResult> CreateMomoPayment([FromBody] MomoPaymentRequestDTO model)
+    {
+        if (string.IsNullOrEmpty(model.OrderId) || model.OrderId.Trim().ToLower() == "string")
+        {
+            
+            model.OrderId = Guid.NewGuid().ToString("N").Substring(0, 10);
+        }
+
+        // amount: số nguyên (Momo yêu cầu), truyền lên dạng string!
+        var amount = Convert.ToInt32(model.Amount).ToString();
+
+        var transaction = new PaymentTransaction
+        {
+            OrderId = model.OrderId,
+            Amount = model.Amount,
+            PaymentMethod = "MOMO",
+            Status = "Pending",
+            CreatedAt = DateTime.Now
+        };
+        await _paymentRepo.CreateTransactionAsync(transaction);
+
+        var config = _config.GetSection("MomoAPI");
+        var partnerCode = config["PartnerCode"];
+        var accessKey = config["AccessKey"];
+        var secretKey = config["SecretKey"];
+        var endpoint = config["MomoApiUrl"];
+        var returnUrl = config["ReturnUrl"];
+        var notifyUrl = config["NotifyUrl"];
+        var requestType = config["RequestType"];
+        var orderId = model.OrderId;
+        var orderInfo = $"Thanh toán đơn hàng {orderId}";
+
+        var momoResp = await MomoHelper.CreatePaymentAsync(
+            endpoint, partnerCode, accessKey, secretKey,
+            returnUrl, notifyUrl, amount, orderId, orderInfo, requestType
+        );
+
+        if (momoResp.errorCode == 0)
+        {
+            return Ok(new PaymentResponseDTO
+            {
+                PaymentUrl = momoResp.payUrl,
+                OrderId = orderId,
+                Message = "Tạo thanh toán thành công với MOMO!"
+            });
+        }
+        else
+        {
+            return BadRequest(new { momoResp.errorCode, momoResp.message });
+        }
+    }
+
 
     [HttpGet("status/{orderId}")]
     public async Task<IActionResult> GetPaymentStatus(string orderId)
