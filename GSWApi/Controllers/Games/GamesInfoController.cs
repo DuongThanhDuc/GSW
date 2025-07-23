@@ -1,6 +1,10 @@
-﻿using DataAccess.DTOs;
+﻿using CloudinaryDotNet;
+using CloudinaryDotNet.Actions;
+using DataAccess.DTOs;
 using DataAccess.Repository.IRepository;
+using GSWApi.Utility;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using System.Threading.Tasks;
 
 namespace GSWApi.Controllers.Games
@@ -10,10 +14,24 @@ namespace GSWApi.Controllers.Games
     public class GamesInfoController : ControllerBase
     {
         private readonly IGamesInfoRepository _repository;
+        private readonly GoogleDriveUploader _googleDriveUploader;
+        private readonly Cloudinary _cloudinary;
 
-        public GamesInfoController(IGamesInfoRepository repository)
+        public GamesInfoController(
+            IGamesInfoRepository repository,
+            GoogleDriveUploader googleDriveUploader,
+            IOptions<CloudinarySettings> cloudinaryConfig)
         {
             _repository = repository;
+            _googleDriveUploader = googleDriveUploader;
+
+            var account = new Account(
+                cloudinaryConfig.Value.CloudName,
+                cloudinaryConfig.Value.ApiKey,
+                cloudinaryConfig.Value.ApiSecret
+            );
+
+            _cloudinary = new Cloudinary(account);
         }
 
         // GET: api/GamesInfo/dto
@@ -31,20 +49,90 @@ namespace GSWApi.Controllers.Games
             return Ok(new { success = true, data = games });
         }
 
-        // POST: api/GamesInfo
         [HttpPost]
-        public async Task<IActionResult> CreateGame(GamesInfoDTO dto)
+        public async Task<IActionResult> CreateGame(
+             [FromForm] GamesInfoDTO dto,
+             IFormFile installerFile,
+             IFormFile coverImage)
         {
+            if (installerFile == null || installerFile.Length == 0)
+                return BadRequest(new { success = false, message = "Installer file is required." });
+
+            // Upload installer to Google Drive
+            try
+            {
+                dto.InstallerFilePath = await _googleDriveUploader.UploadInstallerAsync(installerFile);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = "Installer upload failed.", error = ex.Message });
+            }
+
+            // Upload cover image to Cloudinary
+            if (coverImage != null && coverImage.Length > 0)
+            {
+                var uploadParams = new ImageUploadParams
+                {
+                    File = new FileDescription(coverImage.FileName, coverImage.OpenReadStream()),
+                    Folder = $"games/covers"
+                };
+
+                var uploadResult = await _cloudinary.UploadAsync(uploadParams);
+                if (uploadResult.Error != null)
+                {
+                    return StatusCode(500, new { success = false, message = "Cover image upload failed.", error = uploadResult.Error.Message });
+                }
+
+                dto.CoverImagePath = uploadResult.SecureUrl.ToString();
+            }
+
             var createdGame = await _repository.CreateAsync(dto);
-            return Ok(new { success = true, message = "Game created successfully.", data = createdGame });
+            return Ok(new
+            {
+                success = true,
+                message = "Game created successfully.",
+                data = createdGame
+            });
         }
 
-        // PUT: api/GamesInfo/{id}
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateGame(int id, GamesInfoDTO dto)
+        public async Task<IActionResult> UpdateGame(
+            int id,
+            [FromForm] GamesInfoDTO dto,
+            IFormFile installerFile,
+            IFormFile coverImage)
         {
             if (id != dto.ID)
                 return BadRequest(new { success = false, message = "ID mismatch." });
+
+            if (installerFile != null && installerFile.Length > 0)
+            {
+                try
+                {
+                    dto.InstallerFilePath = await _googleDriveUploader.UploadInstallerAsync(installerFile);
+                }
+                catch (Exception ex)
+                {
+                    return StatusCode(500, new { success = false, message = "Installer upload failed.", error = ex.Message });
+                }
+            }
+
+            if (coverImage != null && coverImage.Length > 0)
+            {
+                var uploadParams = new ImageUploadParams
+                {
+                    File = new FileDescription(coverImage.FileName, coverImage.OpenReadStream()),
+                    Folder = $"games/covers"
+                };
+
+                var uploadResult = await _cloudinary.UploadAsync(uploadParams);
+                if (uploadResult.Error != null)
+                {
+                    return StatusCode(500, new { success = false, message = "Cover image upload failed.", error = uploadResult.Error.Message });
+                }
+
+                dto.CoverImagePath = uploadResult.SecureUrl.ToString();
+            }
 
             var success = await _repository.UpdateAsync(dto);
             if (!success)
