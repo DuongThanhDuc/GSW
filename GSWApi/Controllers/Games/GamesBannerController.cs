@@ -1,6 +1,10 @@
-﻿using DataAccess.DTOs;
+﻿using CloudinaryDotNet.Actions;
+using CloudinaryDotNet;
+using DataAccess.DTOs;
 using DataAccess.Repository.IRepository;
+using GSWApi.Utility;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using System.Collections.Generic;
 
 namespace GSWApi.Controllers.Games
@@ -9,46 +13,77 @@ namespace GSWApi.Controllers.Games
     [Route("api/games/banner")]
     public class GamesBannerController : ControllerBase
     {
+
         private readonly IGamesBannerRepository _repo;
-        public GamesBannerController(IGamesBannerRepository repo)
+        private readonly Cloudinary _cloudinary;
+
+        public GamesBannerController(
+            IGamesBannerRepository repo,
+            IOptions<CloudinarySettings> cloudinaryConfig)
         {
             _repo = repo;
+
+            var account = new Account(
+                cloudinaryConfig.Value.CloudName,
+                cloudinaryConfig.Value.ApiKey,
+                cloudinaryConfig.Value.ApiSecret
+            );
+
+            _cloudinary = new Cloudinary(account);
         }
 
         [HttpPost]
-        public IActionResult CreateBanner([FromBody] GamesBannerDTO dto)
+        public async Task<IActionResult> CreateBanner(
+            [FromForm] GamesBannerDTO dto,
+            IFormFile imageFile)
         {
+            if (imageFile == null || imageFile.Length == 0)
+                return BadRequest(new { success = false, message = "Image file is required." });
+
+            // Upload to Cloudinary
+            var uploadParams = new ImageUploadParams
+            {
+                File = new FileDescription(imageFile.FileName, imageFile.OpenReadStream()),
+                Folder = "games/banners"
+            };
+
+            var uploadResult = await _cloudinary.UploadAsync(uploadParams);
+            if (uploadResult.Error != null)
+            {
+                return StatusCode(500, new { success = false, message = "Image upload failed.", error = uploadResult.Error.Message });
+            }
+
+            dto.ImageUrl = uploadResult.SecureUrl.ToString();
+
             _repo.CreateBanner(dto);
-            return Ok(new { message = "Banner created." });
+            return Ok(new { success = true, message = "Banner created.", data = dto });
         }
 
         [HttpPut("{id}")]
-        public IActionResult UpdateBanner(int id, [FromBody] GamesBannerDTO dto)
+        public async Task<IActionResult> UpdateBanner(
+            int id,
+            [FromForm] GamesBannerDTO dto,
+            IFormFile imageFile)
         {
+            if (imageFile != null && imageFile.Length > 0)
+            {
+                var uploadParams = new ImageUploadParams
+                {
+                    File = new FileDescription(imageFile.FileName, imageFile.OpenReadStream()),
+                    Folder = "games/banners"
+                };
+
+                var uploadResult = await _cloudinary.UploadAsync(uploadParams);
+                if (uploadResult.Error != null)
+                {
+                    return StatusCode(500, new { success = false, message = "Image upload failed.", error = uploadResult.Error.Message });
+                }
+
+                dto.ImageUrl = uploadResult.SecureUrl.ToString();
+            }
+
             _repo.UpdateBanner(id, dto);
-            return Ok(new { message = "Banner updated." });
-        }
-
-        [HttpDelete("{id}")]
-        public IActionResult DeleteBanner(int id)
-        {
-            _repo.DeleteBanner(id);
-            return Ok(new { message = "Banner deleted." });
-        }
-
-        [HttpGet("{id}")]
-        public ActionResult<GamesBannerDTO> GetBannerById(int id)
-        {
-            var result = _repo.GetBannerById(id);
-            if (result == null) return NotFound();
-            return Ok(result);
-        }
-
-        [HttpGet]
-        public ActionResult<IEnumerable<GamesBannerDTO>> GetAllBanners()
-        {
-            var result = _repo.GetAllBanners();
-            return Ok(result);
+            return Ok(new { success = true, message = "Banner updated.", data = dto });
         }
     }
 }
