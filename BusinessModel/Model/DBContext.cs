@@ -52,6 +52,7 @@ namespace BusinessModel.Model
         public DbSet<PaymentTransaction> PaymentTransactions { get; set; }
         public DbSet<SystemProfilePicture> System_ProfilePictures { get; set; }
 
+        public DbSet<DepositWithdrawTransaction> DepositWithdrawTransactions { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

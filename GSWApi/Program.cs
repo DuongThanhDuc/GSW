@@ -45,6 +45,7 @@ builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
 builder.Services.AddScoped<ISystemProfilePictureRepository, SystemProfilePictureRepository>();
 builder.Services.AddScoped<IStoreLibraryRepository, StoreLibraryRepository>();
 builder.Services.AddScoped<GoogleDriveUploader>();
+builder.Services.AddScoped<IDepositWithdrawRepository, DepositWithdrawRepository>();
 
 
 

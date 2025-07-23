@@ -4,6 +4,7 @@ using BusinessModel.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BusinessModel.Migrations
 {
     [DbContext(typeof(DBContext))]
-    partial class DBContextModelSnapshot : ModelSnapshot
+    [Migration("20250723090358_AddDepositWithdrawTransaction")]
+    partial class AddDepositWithdrawTransaction
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -35,7 +38,7 @@ namespace BusinessModel.Migrations
 
                     b.Property<string>("ChangedByUserId")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("EntityId")
                         .HasColumnType("int");
@@ -53,8 +56,6 @@ namespace BusinessModel.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("ChangedByUserId");
 
                     b.ToTable("ApprovalHistories");
                 });
@@ -74,6 +75,7 @@ namespace BusinessModel.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("ApprovedBy")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("CreatedAt")
@@ -724,35 +726,35 @@ namespace BusinessModel.Migrations
                         {
                             ID = 1,
                             CategoryName = "RPG",
-                            CreatedAt = new DateTime(2025, 7, 23, 9, 30, 59, 675, DateTimeKind.Utc).AddTicks(3095),
+                            CreatedAt = new DateTime(2025, 7, 23, 9, 3, 57, 804, DateTimeKind.Utc).AddTicks(87),
                             CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af"
                         },
                         new
                         {
                             ID = 2,
                             CategoryName = "FPS",
-                            CreatedAt = new DateTime(2025, 7, 23, 9, 30, 59, 675, DateTimeKind.Utc).AddTicks(3096),
+                            CreatedAt = new DateTime(2025, 7, 23, 9, 3, 57, 804, DateTimeKind.Utc).AddTicks(88),
                             CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af"
                         },
                         new
                         {
                             ID = 3,
                             CategoryName = "Puzzle",
-                            CreatedAt = new DateTime(2025, 7, 23, 9, 30, 59, 675, DateTimeKind.Utc).AddTicks(3097),
+                            CreatedAt = new DateTime(2025, 7, 23, 9, 3, 57, 804, DateTimeKind.Utc).AddTicks(89),
                             CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af"
                         },
                         new
                         {
                             ID = 4,
                             CategoryName = "Simulation",
-                            CreatedAt = new DateTime(2025, 7, 23, 9, 30, 59, 675, DateTimeKind.Utc).AddTicks(3097),
+                            CreatedAt = new DateTime(2025, 7, 23, 9, 3, 57, 804, DateTimeKind.Utc).AddTicks(90),
                             CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af"
                         },
                         new
                         {
                             ID = 5,
                             CategoryName = "Horror",
-                            CreatedAt = new DateTime(2025, 7, 23, 9, 30, 59, 675, DateTimeKind.Utc).AddTicks(3098),
+                            CreatedAt = new DateTime(2025, 7, 23, 9, 3, 57, 804, DateTimeKind.Utc).AddTicks(91),
                             CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af"
                         });
                 });
@@ -810,35 +812,35 @@ namespace BusinessModel.Migrations
                         new
                         {
                             ID = 1,
-                            CreatedAt = new DateTime(2025, 7, 23, 9, 30, 59, 675, DateTimeKind.Utc).AddTicks(3062),
+                            CreatedAt = new DateTime(2025, 7, 23, 9, 3, 57, 804, DateTimeKind.Utc).AddTicks(61),
                             CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af",
                             TagName = "Action"
                         },
                         new
                         {
                             ID = 2,
-                            CreatedAt = new DateTime(2025, 7, 23, 9, 30, 59, 675, DateTimeKind.Utc).AddTicks(3064),
+                            CreatedAt = new DateTime(2025, 7, 23, 9, 3, 57, 804, DateTimeKind.Utc).AddTicks(63),
                             CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af",
                             TagName = "Adventure"
                         },
                         new
                         {
                             ID = 3,
-                            CreatedAt = new DateTime(2025, 7, 23, 9, 30, 59, 675, DateTimeKind.Utc).AddTicks(3065),
+                            CreatedAt = new DateTime(2025, 7, 23, 9, 3, 57, 804, DateTimeKind.Utc).AddTicks(64),
                             CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af",
                             TagName = "Multiplayer"
                         },
                         new
                         {
                             ID = 4,
-                            CreatedAt = new DateTime(2025, 7, 23, 9, 30, 59, 675, DateTimeKind.Utc).AddTicks(3066),
+                            CreatedAt = new DateTime(2025, 7, 23, 9, 3, 57, 804, DateTimeKind.Utc).AddTicks(65),
                             CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af",
                             TagName = "Indie"
                         },
                         new
                         {
                             ID = 5,
-                            CreatedAt = new DateTime(2025, 7, 23, 9, 30, 59, 675, DateTimeKind.Utc).AddTicks(3067),
+                            CreatedAt = new DateTime(2025, 7, 23, 9, 3, 57, 804, DateTimeKind.Utc).AddTicks(66),
                             CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af",
                             TagName = "Strategy"
                         });
@@ -874,21 +876,21 @@ namespace BusinessModel.Migrations
                         new
                         {
                             Id = "b7b9181c-ff61-4d8f-8f6d-5edb3a6d3a11",
-                            ConcurrencyStamp = "419a31cb-72d9-4493-86e4-77dff9cec94c",
+                            ConcurrencyStamp = "db4c1047-f1c3-46a7-b6c1-0188462fe5d9",
                             Name = "Admin",
                             NormalizedName = "ADMIN"
                         },
                         new
                         {
                             Id = "0f6781b2-4564-4bb3-8d85-92e4c194a2cb",
-                            ConcurrencyStamp = "675f3a30-44ee-48ec-aaed-755f7a4f1234",
+                            ConcurrencyStamp = "6cee9bcf-8f3d-4c32-8b84-f4bcb0458c90",
                             Name = "Staff",
                             NormalizedName = "STAFF"
                         },
                         new
                         {
                             Id = "26e5f054-e9fd-489f-891f-cf2b57fa9a1c",
-                            ConcurrencyStamp = "03e94273-7e37-45c4-acb9-21802b121f0a",
+                            ConcurrencyStamp = "758a2144-a62b-4f3b-8be4-cc735a79284a",
                             Name = "User",
                             NormalizedName = "USER"
                         });
@@ -988,15 +990,15 @@ namespace BusinessModel.Migrations
                         {
                             Id = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af",
                             AccessFailedCount = 0,
-                            ConcurrencyStamp = "95c41989-046b-4933-9403-bdce317d66a3",
+                            ConcurrencyStamp = "f53366f0-fcb4-47e0-9402-0888751fd73c",
                             Email = "admin@gameshop.com",
                             EmailConfirmed = true,
                             LockoutEnabled = false,
                             NormalizedEmail = "ADMIN@GAMESHOP.COM",
                             NormalizedUserName = "ADMIN",
-                            PasswordHash = "AQAAAAEAACcQAAAAEDaxsIw26lrsdNe4hlo52r4V9ESgANaQZrDbYRtbt0Hu/3XJLmwOBUeQ9YDZJYyt2A==",
+                            PasswordHash = "AQAAAAEAACcQAAAAEPsUBVMbGTZWvAcSkad1KWRIRH/6N9JaCz9lzXIFQFsYKJMeJ1bnLRALM9uDLhQn5A==",
                             PhoneNumberConfirmed = false,
-                            SecurityStamp = "8118da5f-11d3-4bb5-a4aa-5afd8a51ba05",
+                            SecurityStamp = "c6c9796c-ef0e-47d2-bbe9-581a993f16a1",
                             TwoFactorEnabled = false,
                             UserName = "admin"
                         },
@@ -1004,15 +1006,15 @@ namespace BusinessModel.Migrations
                         {
                             Id = "bcbcdd33-9a99-75dv-82d7-0c9e67f9d9af",
                             AccessFailedCount = 0,
-                            ConcurrencyStamp = "b9dd2108-49d9-4f88-aadc-dd1c4e6e41f5",
+                            ConcurrencyStamp = "eae49ee7-513a-43f9-ab1f-eeaaa47dee4d",
                             Email = "trananhtuan180202@gmail.com",
                             EmailConfirmed = true,
                             LockoutEnabled = false,
                             NormalizedEmail = "TRANANHTUAN180202@GMAIL.COM",
                             NormalizedUserName = "TRANANHTUAN180202",
-                            PasswordHash = "AQAAAAEAACcQAAAAEM6VCBOY1VGedA/M06WdnTpFUUTnlMIzc+zJBjx2mX/CWRfdf3fhqJI88PAV2b6+mQ==",
+                            PasswordHash = "AQAAAAEAACcQAAAAEDbgTmNSV/ziATRDlbcm2liq3QrhpuojEQOAhB2E2mRGLMeQ7W0Rz3KWS/7QaWxrKQ==",
                             PhoneNumberConfirmed = false,
-                            SecurityStamp = "c71153b2-7c5e-400a-8b9d-81f27b08d533",
+                            SecurityStamp = "fe1cda06-ed5a-4c20-b325-675948cb7ef9",
                             TwoFactorEnabled = false,
                             UserName = "trananhtuan180202"
                         });
@@ -1109,17 +1111,6 @@ namespace BusinessModel.Migrations
                     b.HasKey("UserId", "LoginProvider", "Name");
 
                     b.ToTable("AspNetUserTokens", (string)null);
-                });
-
-            modelBuilder.Entity("BusinessModel.Model.ApprovalHistory", b =>
-                {
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "ChangedByUser")
-                        .WithMany()
-                        .HasForeignKey("ChangedByUserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("ChangedByUser");
                 });
 
             modelBuilder.Entity("BusinessModel.Model.DepositWithdrawTransaction", b =>
