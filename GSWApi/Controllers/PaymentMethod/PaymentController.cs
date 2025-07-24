@@ -42,13 +42,8 @@ public class PaymentController : ControllerBase
         await _paymentRepo.CreateTransactionAsync(transaction);
 
         // LẤY IP ADDRESS CHO VNPAY
-        string ipAddress = "8.8.8.8";
-        var remoteIp = _httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress;
-        if (remoteIp != null && remoteIp.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
-            ipAddress = remoteIp.ToString();
+        string ipAddress = VnPayHelper.GetClientIpAddress(_httpContextAccessor.HttpContext);
 
-        // Nếu test local thì nên hardcode ip public nếu VNPAY yêu cầu
-        // ipAddress = "xxx.xxx.xxx.xxx"; // điền IP public thực tế
 
         var url = VnPayHelper.CreatePaymentUrl(model, _config, ipAddress);
 
@@ -63,6 +58,12 @@ public class PaymentController : ControllerBase
     [HttpGet("vnpay-callback")]
     public async Task<IActionResult> VnPayCallback()
     {
+
+        // In ra toàn bộ query string
+        Console.WriteLine("QueryString received: " + Request.QueryString);
+        foreach (var kv in Request.Query)
+            Console.WriteLine($"{kv.Key}: {kv.Value}");
+
         var hashSecret = _config["VnPay:HashSecret"];
         var isValid = VnPayHelper.ValidateVnpaySignature(Request.Query, hashSecret);
 
@@ -87,7 +88,9 @@ public class PaymentController : ControllerBase
         transaction.PaymentGatewayResponse = JsonConvert.SerializeObject(Request.Query);
         await _paymentRepo.UpdateTransactionAsync(transaction);
 
+
         return Ok("Giao dịch đã được xử lý.");
+
     }
 
 
