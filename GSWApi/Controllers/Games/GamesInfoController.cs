@@ -49,90 +49,20 @@ namespace GSWApi.Controllers.Games
             return Ok(new { success = true, data = games });
         }
 
+        // POST: api/GamesInfo
         [HttpPost]
-        public async Task<IActionResult> CreateGame(
-             [FromForm] GamesInfoDTO dto,
-             IFormFile installerFile,
-             IFormFile coverImage)
+        public async Task<IActionResult> CreateGame(GamesInfoDTO dto)
         {
-            if (installerFile == null || installerFile.Length == 0)
-                return BadRequest(new { success = false, message = "Installer file is required." });
-
-            // Upload installer to Google Drive
-            try
-            {
-                dto.InstallerFilePath = await _googleDriveUploader.UploadInstallerAsync(installerFile);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { success = false, message = "Installer upload failed.", error = ex.Message });
-            }
-
-            // Upload cover image to Cloudinary
-            if (coverImage != null && coverImage.Length > 0)
-            {
-                var uploadParams = new ImageUploadParams
-                {
-                    File = new FileDescription(coverImage.FileName, coverImage.OpenReadStream()),
-                    Folder = $"games/covers"
-                };
-
-                var uploadResult = await _cloudinary.UploadAsync(uploadParams);
-                if (uploadResult.Error != null)
-                {
-                    return StatusCode(500, new { success = false, message = "Cover image upload failed.", error = uploadResult.Error.Message });
-                }
-
-                dto.CoverImagePath = uploadResult.SecureUrl.ToString();
-            }
-
             var createdGame = await _repository.CreateAsync(dto);
-            return Ok(new
-            {
-                success = true,
-                message = "Game created successfully.",
-                data = createdGame
-            });
+            return Ok(new { success = true, message = "Game created successfully.", data = createdGame });
         }
 
+        // PUT: api/GamesInfo/{id}
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateGame(
-            int id,
-            [FromForm] GamesInfoDTO dto,
-            IFormFile installerFile,
-            IFormFile coverImage)
+        public async Task<IActionResult> UpdateGame(int id, GamesInfoDTO dto)
         {
             if (id != dto.ID)
                 return BadRequest(new { success = false, message = "ID mismatch." });
-
-            if (installerFile != null && installerFile.Length > 0)
-            {
-                try
-                {
-                    dto.InstallerFilePath = await _googleDriveUploader.UploadInstallerAsync(installerFile);
-                }
-                catch (Exception ex)
-                {
-                    return StatusCode(500, new { success = false, message = "Installer upload failed.", error = ex.Message });
-                }
-            }
-
-            if (coverImage != null && coverImage.Length > 0)
-            {
-                var uploadParams = new ImageUploadParams
-                {
-                    File = new FileDescription(coverImage.FileName, coverImage.OpenReadStream()),
-                    Folder = $"games/covers"
-                };
-
-                var uploadResult = await _cloudinary.UploadAsync(uploadParams);
-                if (uploadResult.Error != null)
-                {
-                    return StatusCode(500, new { success = false, message = "Cover image upload failed.", error = uploadResult.Error.Message });
-                }
-
-                dto.CoverImagePath = uploadResult.SecureUrl.ToString();
-            }
 
             var success = await _repository.UpdateAsync(dto);
             if (!success)
@@ -186,5 +116,92 @@ namespace GSWApi.Controllers.Games
                 return NotFound(new { success = false, message = "Game not found." });
             return Ok(new { success = true, message = $"Game status updated to {dto.Status}." });
         }
+
+        // POST: api/GamesInfo/{id}/upload-installer
+        [HttpPost("{id}/upload-installer")]
+        public async Task<IActionResult> UploadInstallerFile(int id, IFormFile installerFile)
+        {
+            if (installerFile == null || installerFile.Length == 0)
+                return BadRequest(new { success = false, message = "Installer file is required." });
+
+            var existing = await _repository.GetByIdAsync(id);
+            if (existing == null)
+                return NotFound(new { success = false, message = "Game not found." });
+
+            try
+            {
+                var filePath = await _googleDriveUploader.UploadInstallerAsync(installerFile);
+
+                // Manual mapping
+                var editableDto = new GamesInfoDTO
+                {
+                    ID = existing.ID,
+                    Title = existing.Title,
+                    Description = existing.Description,
+                    Price = existing.Price,
+                    CoverImagePath = existing.CoverImagePath,
+                    InstallerFilePath = filePath, // update only this
+                    Status = existing.Status,
+                    IsActive = existing.IsActive,
+                };
+
+                await _repository.UpdateAsync(editableDto);
+
+                return Ok(new { success = true, message = "Installer uploaded successfully.", installerFilePath = filePath });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = "Installer upload failed.", error = ex.Message });
+            }
+        }
+
+        // POST: api/GamesInfo/{id}/upload-cover
+        [HttpPost("{id}/upload-cover")]
+        public async Task<IActionResult> UploadCoverImage(int id, IFormFile coverImage)
+        {
+            if (coverImage == null || coverImage.Length == 0)
+                return BadRequest(new { success = false, message = "Cover image is required." });
+
+            var existing = await _repository.GetByIdAsync(id);
+            if (existing == null)
+                return NotFound(new { success = false, message = "Game not found." });
+
+            try
+            {
+                var uploadParams = new ImageUploadParams
+                {
+                    File = new FileDescription(coverImage.FileName, coverImage.OpenReadStream()),
+                    Folder = $"games/covers"
+                };
+
+                var uploadResult = await _cloudinary.UploadAsync(uploadParams);
+                if (uploadResult.Error != null)
+                {
+                    return StatusCode(500, new { success = false, message = "Cover image upload failed.", error = uploadResult.Error.Message });
+                }
+
+                // Manual mapping
+                var editableDto = new GamesInfoDTO
+                {
+                    ID = existing.ID,
+                    Title = existing.Title,
+                    Description = existing.Description,
+                    Price = existing.Price,
+                    CoverImagePath = uploadResult.SecureUrl.ToString(), // update only this
+                    InstallerFilePath = existing.InstallerFilePath,
+                    Status = existing.Status,
+                    IsActive = existing.IsActive,
+                };
+
+                await _repository.UpdateAsync(editableDto);
+
+                return Ok(new { success = true, message = "Cover image uploaded successfully.", coverImagePath = editableDto.CoverImagePath });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = "Cover image upload failed.", error = ex.Message });
+            }
+        }
+
     }
 }
