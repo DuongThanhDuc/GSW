@@ -1,20 +1,25 @@
 
 import { CommonModule, Location } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
-import { Category, Discount, GameInfor } from 'src/app/core/models/db.model';
+import { Category, Discount, GameInfor, Tag } from 'src/app/core/models/db.model';
 import { CategoryService } from 'src/app/core/services/category.service';
 import { GameService } from 'src/app/core/services/game.service';
 import { GamecategoryService } from 'src/app/core/services/gamecategory.service';
 import { UserLogged } from 'src/app/core/utils/userLogged';
-import { finalize, switchMap, of, forkJoin } from 'rxjs';
-
+import {MatSelectModule} from '@angular/material/select';
+import {MatFormFieldModule} from '@angular/material/form-field';
+import { TagsService } from 'src/app/core/services/tags.service';
+export interface FileWithMediaURL {
+  file: File;
+  mediaURL: string;
+}
 @Component({
   selector: 'app-game-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule,MatFormFieldModule, MatSelectModule],
   templateUrl: './game-detail.component.html',
   styleUrls: ['./game-detail.component.css']
 })
@@ -22,16 +27,28 @@ export class GameDetailComponent implements OnInit {
   gameForm!: FormGroup;
   public listDiscount : Discount[] = []
   listCategory: Category[] = [];
-  idgame: string | null = null;
+  idgame: any;
+    file: any = '';
+   tagSelected: number[] = []; 
+    public fileUpload: any;
   userLogged = new UserLogged();
  listHashtags = ['Hành Động', 'Phiêu Lưu', 'Kinh Dị', 'Chiến Thuật', 'Indie', 'VR', 'Online', 'Offline'];
   // Các thuộc tính cần thiết cho giao diện "làm đẹp"
   pageTitle = 'Đang tải...';
+   fruits = [
+    { value: 'apple', name: 'Táo' },
+    { value: 'banana', name: 'Chuối' },
+    { value: 'orange', name: 'Cam' },
+    { value: 'grapes', name: 'Nho' },
+    { value: 'pineapple', name: 'Dứa' }
+  ];
   isLoading = true;
   isSaving = false;
-  public  game : GameInfor = new GameInfor()
+  public  game : GameInfor = new GameInfor();
+   selectedFruits: number[] = [];
   public discountId : any;
-
+uploadedFiles: FileWithMediaURL[] = [];
+public listTags : Tag[] = [];
   constructor(
     private gameService: GameService,
     private fb: FormBuilder,
@@ -40,7 +57,9 @@ export class GameDetailComponent implements OnInit {
     private toastService: ToastrService,
     private gameCategoryService: GamecategoryService,
     private router: Router,
-    private location: Location
+    private tagService : TagsService,
+    private location: Location,
+    private changeDetectorRef: ChangeDetectorRef
   ) {
     // Khởi tạo form với tất cả các trường cần thiết
     this.gameForm = this.fb.group({
@@ -60,16 +79,59 @@ export class GameDetailComponent implements OnInit {
     this.idgame = this.route.snapshot.paramMap.get('id');
     this.loadInitialData();
   }
+  removeFile(index: number) {
+    this.uploadedFiles.splice(index, 1);
+  }
+fileChange(event: any) {
+  if (event.target.files.length) {
+    const fileAllow = '.png,.jpg'; // Allowed file extensions
+    const sizeFileAllow = '10'; // Max file size in MB
+
+    const arrayFileAllow = fileAllow.toLowerCase().split(',');
+
+    // Loop through each selected file
+    for (let file of event.target.files) {
+      const fileExtension = `.${file.name.split('.').pop()}`;
+
+      // Check file extension
+      if (!arrayFileAllow.includes(fileExtension.toLowerCase())) {
+        this.toastService.warning('Loại file không được hỗ trợ.');
+        return;
+      }
+
+      // Check file size
+      const maxSizeInBytes = parseInt(sizeFileAllow) * 1024 * 1024; // Convert MB to Bytes
+      if (file.size > maxSizeInBytes) {
+        this.toastService.warning('Dung lượng file quá lớn.');
+        return;
+      }
+
+      // Add file to the array of uploaded files
+      this.uploadedFiles.push({
+        file,
+        mediaURL: file.name
+      });
+    }
+  }
+}
+
 
   // Getter để truy cập form controls dễ dàng hơn trong template
   get f() { return this.gameForm.controls; }
 
   // Hàm tải dữ liệu ban đầu cho form
-  loadInitialData(): void {
+   loadInitialData(): void {
     this.isLoading = true;
     this.pageTitle = this.idgame ? 'Chỉnh sửa thông tin Game' : 'Thêm Game Mới';
-    this.gameService.getListDiscount().subscribe(data => {
-      this.listDiscount = data;
+
+    this.gameService.getListDiscount().subscribe((data) => {
+      this.listDiscount = data.data;
+      if(!this.idgame){
+        this.discountId = this.listDiscount[0].id;
+      }
+    });
+    this.tagService.getListTag().subscribe((data) => {
+      this.listTags = data.data;
     })
     this.categoryService.getListCategory().subscribe({
       next: (categoryData) => {
@@ -78,198 +140,158 @@ export class GameDetailComponent implements OnInit {
         if (this.idgame) {
           this.gameService.getGameDetail(this.idgame).subscribe({
             next: (gameData) => {
-    const game = gameData.data;
+              const game = gameData.data;
               this.game = gameData.data;
-    // Collect all media URLs by mapping over the Media array
-    const mediaUrlsString = Array.isArray(game.Media) ? game.Media.map((media:any) => media.MediaURL).join(', ') : '';
-
-    this.gameForm.patchValue({
-        ...game,
-        MediaUrls: mediaUrlsString
-    });
-              this.isLoading = false; 
+                 this.gameForm.patchValue({
+              Title: game.Title,
+              Description: game.Description,
+              Price: game.Price,
+              CoverImagePath: game.CoverImagePath,
+              Genre: game.Genre,
+              
+            });
+            this.discountId = game.Discounts[0].id;
+          this.tagSelected = game.Tags ? game.Tags.map((tag: any) => tag.TagID) : [];
+              this.uploadedFiles = game.Media.map((media: any) => ({
+                file: new File([media.MediaURL], media.MediaURL, { type: 'application/octet-stream' }),
+                mediaURL: media.MediaURL,
+              }));
+              this.isLoading = false;
             },
             error: (err) => {
-              this.toastService.error('Không thể tải thông tin.', 'Lỗi');
+              this.toastService.error('Không thể tải thông tin game.', 'Lỗi');
               console.error(err);
               this.isLoading = false;
-            }
+            },
+            
           });
+
         } else {
-          
-          this.isLoading = false; 
+          this.isLoading = false;
         }
       },
       error: (err) => {
         this.toastService.error('Không thể tải danh sách thể loại.', 'Lỗi');
         console.error(err);
-        this.isLoading = false; 
-      }
+        this.isLoading = false;
+      },
     });
   }
+
   onChangeDiscount(value: any){
     this.discountId = value.target.value;
     console.log(this.discountId);
   }
-onSave() {
-  if (this.gameForm.invalid) {
-    this.toastService.error('Vui lòng điền đầy đủ các trường bắt buộc.', 'Lỗi');
-    this.gameForm.markAllAsTouched(); // Hiển thị lỗi validation cho người dùng
-    return;
+ onSave(): void {
+    if (this.gameForm.invalid) {
+      this.toastService.error('Vui lòng điền đầy đủ các trường bắt buộc.', 'Lỗi');
+      this.gameForm.markAllAsTouched();
+      return;
+    }
+
+    this.isSaving = true;
+    const formValues = this.gameForm.value;
+    const currentUser = this.userLogged.getCurrentUser();
+
+    const mediaUrls = (formValues.MediaUrls || '')
+      .split(',')
+      .map((url: string) => url.trim())
+      .filter((url: string) => url);
+    console.log(this.tagSelected);
+    const createPayload = {
+      id: 0,
+      title: formValues.Title,
+      description: formValues.Description,
+      price: formValues.Price,
+      coverImagePath: formValues.CoverImagePath,
+      installerFilePath: formValues.CoverImagePath,
+      createdBy: currentUser.userId,
+      isActive: true,
+      status: 'active',
+      genre: formValues.Genre,
+      developerId: currentUser.userId,
+    };
+    if (!this.idgame) {
+      this.gameService.createGame(createPayload).subscribe({
+        next: (response) => {
+          this.toastService.success('Thêm game mới thành công!');
+          // Upload files with media URLs
+          this.uploadedFiles.forEach((item) => {
+            const formData = new FormData();
+            formData.append('file', item.file);
+            formData.append('mediaURL', item.mediaURL);
+            let formDis = {
+              discountId: this.discountId,
+              gameId: response.data.id
+            }
+            this.gameService.createGameDiscount(response.data.id, this.discountId).subscribe({
+              
+            })
+            for (let index = 0; index < this.tagSelected.length; index++) {
+                const element = this.tagSelected[index];
+                let formData = {
+                  gameId: response.data.id,
+                  tagID: element,
+                  createdBy: this.userLogged.getCurrentUser().userId
+                }
+                this.tagService.addgameTag(formData).subscribe();
+              }
+            this.gameService.createGameMedia(formData, response.data.id).subscribe({
+              next: () => console.log('File uploaded successfully'),
+              error: (err) => console.error('Error uploading file:', err),
+            });
+          });
+
+          this.router.navigate(['/dashboard/manager-game']);
+        },
+        error: (err) => {
+          this.toastService.error('Đã có lỗi xảy ra khi thêm game.', 'Lỗi');
+          console.error(err);
+        },
+      });
+    } else {
+         this.checkTags();
+      createPayload.id = parseInt(this.idgame);
+      this.gameService.UpdateGame(createPayload, this.idgame).subscribe({
+        next: (response) => {
+        this.gameService.deleteGameDiscount(this.idgame,this.game.Discounts[0].id).subscribe();
+          this.toastService.success('Cập nhật game thành công!');
+          this.router.navigate(['/dashboard/manager-game']);
+        },
+        error: (err) => {
+          this.toastService.error('Đã có lỗi xảy ra khi cập nhật game.', 'Lỗi');
+          console.error(err);
+        },
+      });
+    }
   }
 
-  this.isSaving = true;
-  const formValues = this.gameForm.value;
-  const currentUser = this.userLogged.getCurrentUser();
-
- 
-  const mediaUrls = (formValues.MediaUrls || '')
-    .split(',')
-    .map((url: string) => url.trim())
-    .filter((url: string) => url); 
-
-
- var dis = this.listDiscount.filter(discount => discount.id == this.discountId);
- console.log("discount",dis);
-  const createPayload = {
-    id: 0, 
-    title: formValues.Title,
-    description: formValues.Description,
-    price: formValues.Price,
-    coverImagePath: formValues.CoverImagePath,
-    installerFilePath: formValues.CoverImagePath, 
-    createdBy: currentUser.userId,
-    isActive: true,
-    status: 'active',
-    genre: formValues.Genre,
-    developerId: currentUser.userId,
-    activeDiscount:{
-      id : dis[0].id,
-      code : dis[0].code,
-      description: dis[0].description,
-      value: dis[0].value,
-      isPercent: dis[0].isPercent,
-      startDate: dis[0].startDate,
-      endDate: dis[0].endDate,
-      isActive: dis[0].isActive,
-      createdAt: dis[0].createdAt
+  getTagNameById(tagId: number): string {
+    console.log("tagId",tagId);
+    debugger
+    const tag = this.listTags.find(t => t.Id === tagId);
+    return tag ? tag.TagName : 'Unknown';
+  }
+checkTags(){
+  this.tagService.getListGameTag().subscribe((data) => {
+    debugger
+    var x = data.data.filter((x:any) => x.GameID == parseInt(this.idgame));
+    for (let index = 0; index < x.length; index++) {
+      const element = x[index];
+      this.tagService.DeleteGameTag(element.Id).subscribe();
     }
-    // media: media,
-    // activeDiscounts: activeDiscounts
-  };
-
- if(!this.idgame){
-   this.gameService.createGame(createPayload).pipe(
-    switchMap(newGameResponse => {
-      const categoryId = this.listCategory.find(c => c.CategoryName === formValues.Genre)?.Id;
-      if (!categoryId) {
-        this.toastService.error('Không tìm thấy thể loại hợp lệ.', 'Lỗi');
-        return of(null); 
-      }
-      const gameCategoryPayload = {
-        gameID: newGameResponse.data.id,
-        categoryID: categoryId,
-        createdBy: currentUser.userId,
-      };
-      return this.gameCategoryService.createGameCategory(gameCategoryPayload);
-    }),
-    finalize(() => this.isSaving = false) 
-  ).subscribe({
-    next: (response) => {
-      if (response) {
-        this.toastService.success('Thêm game mới thành công!');
-          const media = mediaUrls.map((url: string) => ({
-            id: 0,
-            gameId: response.data.id, 
-            mediaURL: url
-  }));
-         for (let index = 0; index < media.length; index++) {
-          const element = media[index];
-             let formData = {
-               id: 0,
-               gameId:response.data.id,
-               mediaURL: element.mediaURL
-             }
-             this.gameService.createGameMedia(formData, response.data.id).subscribe();
-         }
-        //  this.gameService.createGameDiscount(response.data.id, this.discountId).subscribe();
-
-        this.router.navigate(['/dashboard/manager-game']); 
-      }
-    },
-    error: (err) => {
-      this.toastService.error('Đã có lỗi xảy ra khi thêm game.', 'Lỗi');
-      console.error(err);
-    }
-  });
- }else{
-  createPayload.id = parseInt(this.idgame);
-  this.gameService.UpdateGame(createPayload, this.idgame).pipe(
-    switchMap(updatedGameResponse => {
-      // If category ID is changed, update the game category
-      const categoryId = this.listCategory.find(c => c.CategoryName === formValues.Genre)?.Id;
-      if (!categoryId) {
-        this.toastService.error('Không tìm thấy thể loại hợp lệ.', 'Lỗi');
-        return of(null);
-      }
-
-      const gameCategoryPayload = {
-        gameID: updatedGameResponse.data.id,
-        categoryID: categoryId,
-        createdBy: currentUser.userId,
-      };
-      return this.gameCategoryService.Update(gameCategoryPayload, this.idgame);
-    }),
-    switchMap(() => {
-      
-     if (this.game.Media.length == 0){
-      // var x= 0;
-       return forkJoin();
-     }
-
-const mediaDeleteRequests = this.game.Media.map(mediaItem =>
-  this.gameService.deleteGameMedia(this.idgame, mediaItem.Id)
-);
-
-return forkJoin(mediaDeleteRequests);
-
-    }),
-    switchMap(() => {
-      const media = mediaUrls.map((url: string) => ({
-        id: 0,
+    
+  })
+  for (let index = 0; index < this.tagSelected.length; index++) {
+      const element = this.tagSelected[index];
+      let formData = {
         gameId: this.idgame,
-        mediaURL: url
-      }));
-
-      const mediaCreateRequests = media.map((mediaItem: any) => {
-        const formData = {
-          id: 0,
-          gameId: this.idgame,
-          mediaURL: mediaItem.mediaURL
-        };
-        return this.gameService.createGameMedia(formData, this.idgame);
-      });
-
-      return forkJoin(mediaCreateRequests);
-    }),
-    finalize(() => this.isSaving = false)
-  ).subscribe({
-    next: (response) => {
-      if (response) {
-        this.toastService.success('Cập nhật game thành công!');
-        this.router.navigate(['/dashboard/manager-game']); // Redirect to game management page
+        tagID: element,
+        createdBy: this.userLogged.getCurrentUser().userId
       }
-    },
-    error: (err) => {
-      this.toastService.error('Đã có lỗi xảy ra khi cập nhật game.', 'Lỗi');
-      console.error(err);
+      this.tagService.addgameTag(formData).subscribe();
     }
-  });
- }
 }
-
-
-  // Hàm cho nút "Quay lại"
   goBack(): void {
     this.location.back();
   }
