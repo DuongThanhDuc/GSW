@@ -52,7 +52,8 @@ namespace DataAccess.Repository
             var newMedia = new GamesMedia
             {
                 GameID = gameId,
-                MediaURL = mediaDto.MediaURL
+                MediaURL = mediaDto.MediaURL,
+                MediaType = mediaDto.MediaType
             };
             _context.Games_Media.Add(newMedia);
             _context.SaveChanges();
@@ -64,6 +65,7 @@ namespace DataAccess.Repository
             if (media != null)
             {
                 media.MediaURL = mediaDto.MediaURL;
+                media.MediaType = mediaDto.MediaType;
                 _context.SaveChanges();
             }
         }

@@ -124,24 +124,28 @@ namespace GSWApi.Controllers
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDTO dto)
         {
             var user = await _userManager.FindByEmailAsync(dto.Email);
-            if (user == null)
-                return BadRequest(new { success = false, message = "Không tìm thấy tài khoản!" });
+            if (user == null || !user.EmailConfirmed)
+                return BadRequest(new { success = false, message = "Email không tồn tại hoặc chưa xác thực!" });
 
             var otp = OtpManager.GenerateOtp(dto.Email);
             await _emailService.SendOtpEmail(dto.Email, otp);
 
-            return Ok(new { success = true, data = "OTP đã được gửi tới email!" });
+            return Ok(new { success = true, data = "Đã gửi OTP đặt lại mật khẩu đến email." });
         }
 
         [HttpPost("reset-password")]
         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDTO dto)
         {
-            if (!OtpManager.VerifyOtp(dto.Email, dto.Otp))
+            var email = OtpManager.GetEmailByOtp(dto.Otp); // 🔸 new method you’ll add
+            if (string.IsNullOrEmpty(email))
                 return BadRequest(new { success = false, message = "OTP không đúng hoặc đã hết hạn!" });
 
-            var user = await _userManager.FindByEmailAsync(dto.Email);
+            var user = await _userManager.FindByEmailAsync(email);
             if (user == null)
                 return BadRequest(new { success = false, message = "Không tìm thấy tài khoản!" });
+
+            if (dto.NewPassword != dto.ConfirmPassword)
+                return BadRequest(new { success = false, message = "Mật khẩu xác nhận không khớp!" });
 
             var token = await _userManager.GeneratePasswordResetTokenAsync(user);
             var result = await _userManager.ResetPasswordAsync(user, token, dto.NewPassword);
@@ -151,6 +155,7 @@ namespace GSWApi.Controllers
 
             return Ok(new { success = true, data = "Đặt lại mật khẩu thành công!" });
         }
+
 
     }
 }
