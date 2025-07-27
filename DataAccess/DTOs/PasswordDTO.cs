@@ -14,13 +14,13 @@ namespace DataAccess.DTOs
 
     public class ForgotPasswordDTO
     {
-        public string Email { get; set; } = null!;
+        public string Email { get; set; }
     }
 
     public class ResetPasswordDTO
     {
-        public string Email { get; set; } = null!;
-        public string Otp { get; set; } = null!;
-        public string NewPassword { get; set; } = null!;
+        public string Otp { get; set; }
+        public string NewPassword { get; set; }
+        public string ConfirmPassword { get; set; }
     }
 }

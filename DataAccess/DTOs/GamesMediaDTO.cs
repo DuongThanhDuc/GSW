@@ -11,6 +11,7 @@ namespace DataAccess.DTOs
         public int Id { get; set; }
         public int GameID { get; set; }
         public string MediaURL { get; set; }
+        public string MediaType { get; set; }
     }
 
 }

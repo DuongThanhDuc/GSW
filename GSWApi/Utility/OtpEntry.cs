@@ -13,6 +13,8 @@ namespace GSWApi.Utility
     {
         // Email -> OtpEntry
         private static ConcurrentDictionary<string, OtpEntry> otpStore = new();
+        private static ConcurrentDictionary<string, string> otpToEmailMap = new();
+
 
         public static string GenerateOtp(string email, int digits = 6)
         {
@@ -33,6 +35,20 @@ namespace GSWApi.Utility
                 }
             }
             return false;
+        }
+
+        public static string? GetEmailByOtp(string otp)
+        {
+            if (otpToEmailMap.TryGetValue(otp, out var email))
+            {
+                if (otpStore.TryGetValue(email, out var entry) && entry.Otp == otp && entry.ExpireAt > DateTime.Now)
+                {
+                    otpStore.TryRemove(email, out _);
+                    otpToEmailMap.TryRemove(otp, out _);
+                    return email;
+                }
+            }
+            return null;
         }
     }
 }

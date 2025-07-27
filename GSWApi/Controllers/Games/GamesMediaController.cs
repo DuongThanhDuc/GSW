@@ -33,28 +33,71 @@ namespace GSWApi.Controllers.Games
         public async Task<IActionResult> UploadMediaToGame(int gameId, IFormFile file)
         {
             if (file == null || file.Length == 0)
-                return BadRequest("No file provided.");
+                return BadRequest(new { success = false, message = "No file provided." });
 
-            var uploadParams = new ImageUploadParams
+            var extension = Path.GetExtension(file.FileName).ToLower();
+            var mediaType = extension switch
             {
-                File = new FileDescription(file.FileName, file.OpenReadStream()),
-                Folder = $"games/{gameId}/media"
+                ".jpg" or ".jpeg" or ".png" or ".gif" => "image",
+                ".mp4" or ".avi" or ".mov" or ".webm" => "video",
+                _ => "unknown"
             };
 
-            var uploadResult = await _cloudinary.UploadAsync(uploadParams);
+            if (mediaType == "unknown")
+                return BadRequest(new { success = false, message = "Unsupported file type." });
+
+            // Choose correct upload parameters
+            UploadResult uploadResult;
+
+            if (mediaType == "image")
+            {
+                var uploadParams = new ImageUploadParams
+                {
+                    File = new FileDescription(file.FileName, file.OpenReadStream()),
+                    Folder = $"games/{gameId}/media"
+                };
+
+                uploadResult = await _cloudinary.UploadAsync(uploadParams);
+            }
+            else // video
+            {
+                var uploadParams = new VideoUploadParams
+                {
+                    File = new FileDescription(file.FileName, file.OpenReadStream()),
+                    Folder = $"games/{gameId}/media"
+                };
+
+                uploadResult = await _cloudinary.UploadAsync(uploadParams);
+            }
 
             if (uploadResult.Error != null)
-                return StatusCode(500, $"Cloudinary Error: {uploadResult.Error.Message}");
+            {
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = $"Cloudinary Error: {uploadResult.Error.Message}"
+                });
+            }
 
             var mediaDto = new GamesMediaDTO
             {
                 GameID = gameId,
-                MediaURL = uploadResult.SecureUrl.ToString()
+                MediaURL = uploadResult.SecureUrl.ToString(),
+                MediaType = mediaType
             };
 
             _repo.AddMediaToGame(gameId, mediaDto);
 
-            return Ok(new { message = "Uploaded and saved.", url = mediaDto.MediaURL });
+            return Ok(new
+            {
+                success = true,
+                message = "Media uploaded and saved successfully.",
+                data = new
+                {
+                    mediaDto.MediaURL,
+                    mediaDto.MediaType
+                }
+            });
         }
 
         [HttpDelete("delete/by-id/{mediaId}")]

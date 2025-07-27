@@ -12,7 +12,8 @@ namespace BusinessModel.Model
         public int Id { get; set; }
         public int GameID { get; set; }
         public GamesInfo Game { get; set; }
-        public string MediaURL { get; set; }   
+        public string MediaURL { get; set; }  
+        public string MediaType { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.Now;
     }
 }
