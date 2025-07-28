@@ -55,7 +55,8 @@ namespace DataAccess.Repository
                     {
                         Id = m.Id,
                         GameID = m.GameID,
-                        MediaURL = m.MediaURL
+                        MediaURL = m.MediaURL,
+                        MediaType = m.MediaType
                     }).ToList(),
 
                     Reviews = g.Reviews.Select(r => new GamesReviewDTO
@@ -139,7 +140,8 @@ namespace DataAccess.Repository
                 {
                     Id = m.Id,
                     GameID = m.GameID,
-                    MediaURL = m.MediaURL
+                    MediaURL = m.MediaURL,
+                    MediaType = m.MediaType
                 }).ToList(),
 
                 Reviews = g.Reviews.Select(r => new GamesReviewDTO
