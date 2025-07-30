@@ -1,4 +1,5 @@
-﻿using Azure.Core;
+﻿using System.Web;
+using Azure.Core;
 using BusinessModel.Model;
 using DataAccess.DTOs;
 using DataAccess.Repository.IRepository;
@@ -14,7 +15,8 @@ public class PaymentController : ControllerBase
     private readonly IConfiguration _config;
     private readonly IHttpContextAccessor _httpContextAccessor;
 
-    public PaymentController(IPaymentRepository paymentRepo, IConfiguration config, IHttpContextAccessor httpContextAccessor)
+    public PaymentController(IPaymentRepository paymentRepo, IConfiguration config,
+        IHttpContextAccessor httpContextAccessor)
     {
         _paymentRepo = paymentRepo;
         _config = config;
@@ -24,13 +26,13 @@ public class PaymentController : ControllerBase
     [HttpPost("vnpay-create")]
     public async Task<IActionResult> CreatePayment([FromBody] PaymentRequestDTO model)
     {
-        // Nếu client không gửi OrderId, backend tự sinh mã duy nhất!
+        // Kiểm tra và tự sinh OrderId nếu không có
         if (string.IsNullOrEmpty(model.OrderId) || model.OrderId.Trim().ToLower() == "string")
         {
             model.OrderId = Guid.NewGuid().ToString("N").Substring(0, 10);
         }
 
-
+        // Tạo giao dịch thanh toán
         var transaction = new PaymentTransaction
         {
             OrderId = model.OrderId,
@@ -39,66 +41,104 @@ public class PaymentController : ControllerBase
             Status = "Pending",
             CreatedAt = DateTime.Now
         };
+
         await _paymentRepo.CreateTransactionAsync(transaction);
 
-        // LẤY IP ADDRESS CHO VNPAY
-        string ipAddress = VnPayHelper.GetClientIpAddress(_httpContextAccessor.HttpContext);
+        string hostName = System.Net.Dns.GetHostName();
+        string clientIPAddress = System.Net.Dns.GetHostAddresses(hostName).GetValue(0).ToString();
 
-
-        var url = VnPayHelper.CreatePaymentUrl(model, _config, ipAddress);
+        string paymentUrl = VnPayHelper.CreatePaymentUrl(model, _config, clientIPAddress);
 
         return Ok(new PaymentResponseDTO
         {
-            PaymentUrl = url,
+            PaymentUrl = paymentUrl,
             OrderId = model.OrderId,
-            Message = "Tạo thanh toán thành công đơn hàng , vui lòng quét mã QR hoặc nhấn vào link."
+            Message = "Tạo thanh toán thành công, vui lòng quét mã QR hoặc nhấn vào link để thanh toán."
         });
     }
 
     [HttpGet("vnpay-callback")]
     public async Task<IActionResult> VnPayCallback()
     {
+        // Extract the query string from the request
+        var queryString = Request.QueryString.Value;
 
-        // In ra toàn bộ query string
-        Console.WriteLine("QueryString received: " + Request.QueryString);
-        foreach (var kv in Request.Query)
-            Console.WriteLine($"{kv.Key}: {kv.Value}");
+        // Parse the query string into a dictionary (key-value pairs)
+        var json = HttpUtility.ParseQueryString(queryString);
 
+        // Retrieve necessary parameters from the query string
+        string orderId = json["vnp_TxnRef"]; // Order ID
+        string orderInfor = json["vnp_OrderInfo"]; // Order info (description)
+        long vnpayTranId = Convert.ToInt64(json["vnp_TransactionNo"]); // VnPay transaction ID
+        string vnp_ResponseCode = json["vnp_ResponseCode"]; // Response code from VnPay
+        string vnp_SecureHash = json["vnp_SecureHash"]; // Secure hash from VnPay
+
+        // Calculate the position where the SecureHash ends in the query string
+        var pos = queryString.IndexOf("&vnp_SecureHash");
+
+        // Fetch the secret key from the configuration
         var hashSecret = _config["VnPay:HashSecret"];
-        var isValid = VnPayHelper.ValidateVnpaySignature(Request.Query, hashSecret);
 
+        // Validate the signature using the query string and VnPay's secure hash
+        bool isValid = VnPayHelper.ValidateSignature(queryString.Substring(1, pos - 1), vnp_SecureHash, hashSecret);
+
+        // If the signature is not valid, return a BadRequest response
         if (!isValid)
             return BadRequest("Invalid signature!");
 
-        var orderId = Request.Query["vnp_TxnRef"].ToString();
-        var amount = Request.Query["vnp_Amount"].ToString();
-        var responseCode = Request.Query["vnp_ResponseCode"].ToString();
+        // If the signature is valid, proceed to handle the transaction result
+        var responseCode = json["vnp_ResponseCode"]; // Response code from VnPay
 
-        var transaction = await _paymentRepo.GetByOrderIdAsync(orderId);
-        if (transaction == null) return NotFound("Không tìm thấy giao dịch");
+        // Get the transaction from the repository using the order ID
+        var transaction = await _paymentRepo.GetByOrderIdAsync(orderId.ToString());
 
+        // If no transaction is found, return NotFound
+        if (transaction == null)
+            return NotFound("Transaction not found");
+
+        // Update the transaction status based on the response code
         if (responseCode == "00")
         {
+            // Payment was successful
             transaction.Status = "Success";
         }
         else
         {
+            // Payment failed
             transaction.Status = "Failed";
         }
+
+        // Serialize the entire response for logging or further processing
         transaction.PaymentGatewayResponse = JsonConvert.SerializeObject(Request.Query);
-        await _paymentRepo.UpdateTransactionAsync(transaction);
 
+        // Update the transaction in the database
+         await _paymentRepo.UpdateTransactionAsync(transaction);
 
-        return Ok("Giao dịch đã được xử lý.");
-
+        // Return a success message after processing the transaction
+        // Return URL FE
+        return Ok("Transaction has been processed.");
     }
-
 
     [HttpGet("vnpay-ipn")]
     public async Task<IActionResult> VnPayIpn([FromQuery] VnPayCallbackDTO callback)
     {
         var hashSecret = _config["VnPay:HashSecret"];
-        var isValid = VnPayHelper.ValidateVnpaySignature(Request.Query, hashSecret);
+
+        // 1. Tạo chuỗi dữ liệu cần ký lại (bỏ trường vnp_SecureHash & vnp_SecureHashType ra)
+        var query = HttpContext.Request.Query;
+        var sorted = query.Where(kv => kv.Key != "vnp_SecureHash" && kv.Key != "vnp_SecureHashType")
+                          .OrderBy(kv => kv.Key)
+                          .Select(kv => $"{kv.Key}={kv.Value}")
+                          .ToArray();
+
+        string rspraw = string.Join("&", sorted);
+
+        // 2. Lấy giá trị hash gốc
+        string inputHash = HttpContext.Request.Query["vnp_SecureHash"];
+
+
+        // 3. Gọi hàm kiểm tra
+        var isValid = VnPayHelper.ValidateSignature(rspraw, inputHash, hashSecret);
 
         if (!isValid)
             return BadRequest("Invalid signature!");
@@ -115,18 +155,19 @@ public class PaymentController : ControllerBase
         {
             transaction.Status = "Failed";
         }
+
         transaction.PaymentGatewayResponse = JsonConvert.SerializeObject(callback);
         await _paymentRepo.UpdateTransactionAsync(transaction);
 
 
         return Content("responseCode=00");
     }
+
     [HttpPost("momo-create")]
     public async Task<IActionResult> CreateMomoPayment([FromBody] MomoPaymentRequestDTO model)
     {
         if (string.IsNullOrEmpty(model.OrderId) || model.OrderId.Trim().ToLower() == "string")
         {
-            
             model.OrderId = Guid.NewGuid().ToString("N").Substring(0, 10);
         }
 
@@ -182,5 +223,4 @@ public class PaymentController : ControllerBase
         if (transaction == null) return NotFound();
         return Ok(new { transaction.OrderId, transaction.Status, transaction.CreatedAt });
     }
-
 }
