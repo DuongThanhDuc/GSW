@@ -3,6 +3,7 @@ using Azure.Core;
 using BusinessModel.Model;
 using DataAccess.DTOs;
 using DataAccess.Repository.IRepository;
+using Google.Apis.Drive.v3.Data;
 using GSWApi.Utility;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
@@ -86,9 +87,6 @@ public class PaymentController : ControllerBase
         if (!isValid)
             return BadRequest("Invalid signature!");
 
-        // If the signature is valid, proceed to handle the transaction result
-        var responseCode = json["vnp_ResponseCode"]; // Response code from VnPay
-
         // Get the transaction from the repository using the order ID
         var transaction = await _paymentRepo.GetByOrderIdAsync(orderId.ToString());
 
@@ -96,28 +94,23 @@ public class PaymentController : ControllerBase
         if (transaction == null)
             return NotFound("Transaction not found");
 
-        // Update the transaction status based on the response code
-        if (responseCode == "00")
-        {
-            // Payment was successful
-            transaction.Status = "Success";
-        }
-        else
-        {
-            // Payment failed
-            transaction.Status = "Failed";
-        }
+        // Xác định trạng thái
+        string status = vnp_ResponseCode == "00" ? "success" : "failed";
 
-        // Serialize the entire response for logging or further processing
+        // Cập nhật trạng thái transaction
+        transaction.Status = status == "success" ? "Success" : "Failed";
         transaction.PaymentGatewayResponse = JsonConvert.SerializeObject(Request.Query);
 
         // Update the transaction in the database
-         await _paymentRepo.UpdateTransactionAsync(transaction);
+        await _paymentRepo.UpdateTransactionAsync(transaction);
 
-        // Return a success message after processing the transaction
-        // Return URL FE
-        return Ok("Transaction has been processed.");
+        // Build FE URL
+        var feUrl = $"http://localhost:5000/payment/result?orderId={orderId}&status={status}";
+
+        // Redirect về FE
+        return Redirect(feUrl);
     }
+
 
     [HttpGet("vnpay-ipn")]
     public async Task<IActionResult> VnPayIpn([FromQuery] VnPayCallbackDTO callback)
@@ -163,6 +156,10 @@ public class PaymentController : ControllerBase
         return Content("responseCode=00");
     }
 
+
+    // ================== MOMO ==================
+
+    // Tạo đơn MoMo (sandbox V3)
     [HttpPost("momo-create")]
     public async Task<IActionResult> CreateMomoPayment([FromBody] MomoPaymentRequestDTO model)
     {
@@ -171,50 +168,93 @@ public class PaymentController : ControllerBase
             model.OrderId = Guid.NewGuid().ToString("N").Substring(0, 10);
         }
 
-        // amount: số nguyên (Momo yêu cầu), truyền lên dạng string!
-        var amount = Convert.ToInt32(model.Amount).ToString();
-
-        var transaction = new PaymentTransaction
-        {
-            OrderId = model.OrderId,
-            Amount = model.Amount,
-            PaymentMethod = "MOMO",
-            Status = "Pending",
-            CreatedAt = DateTime.Now
-        };
-        await _paymentRepo.CreateTransactionAsync(transaction);
-
         var config = _config.GetSection("MomoAPI");
-        var partnerCode = config["PartnerCode"];
-        var accessKey = config["AccessKey"];
-        var secretKey = config["SecretKey"];
-        var endpoint = config["MomoApiUrl"];
-        var returnUrl = config["ReturnUrl"];
-        var notifyUrl = config["NotifyUrl"];
-        var requestType = config["RequestType"];
-        var orderId = model.OrderId;
-        var orderInfo = $"Thanh toán đơn hàng {orderId}";
-
         var momoResp = await MomoHelper.CreatePaymentAsync(
-            endpoint, partnerCode, accessKey, secretKey,
-            returnUrl, notifyUrl, amount, orderId, orderInfo, requestType
+            endpoint: config["MomoApiUrl"],
+            partnerCode: config["PartnerCode"],
+            accessKey: config["AccessKey"],
+            secretKey: config["SecretKey"],
+            redirectUrl: config["ReturnUrl"],   // redirectUrl
+            ipnUrl: config["NotifyUrl"],        // ipnUrl
+            amount: Convert.ToInt64(model.Amount),
+            orderId: model.OrderId,
+            orderInfo: $"Thanh toán đơn hàng {model.OrderId}",
+            requestType: config["RequestType"]
         );
 
-        if (momoResp.errorCode == 0)
+        if (momoResp.resultCode == 0)
         {
-            return Ok(new PaymentResponseDTO
+            return Ok(new
             {
-                PaymentUrl = momoResp.payUrl,
-                OrderId = orderId,
-                Message = "Tạo thanh toán thành công với MOMO!"
+                paymentUrl = momoResp.payUrl,
+                message = "Tạo thanh toán thành công với MOMO!",
+                orderId = momoResp.orderId
             });
         }
         else
         {
-            return BadRequest(new { momoResp.errorCode, momoResp.message });
+            return BadRequest(new { momoResp.resultCode, momoResp.message });
         }
     }
+    // Callback: Khi user thanh toán xong, MoMo redirect về link này (FE dùng GET)
+    [HttpGet("momo-callback")]
+    public IActionResult MomoCallback([FromQuery] MomoCallbackDTO callback)
+    {
+        // Có thể redirect về trang FE hoặc trả nội dung luôn tuỳ bạn
+        if (callback.resultCode == 0)
+            return Redirect($"/payment-success?orderId={callback.orderId}");
+        else
+            return Redirect($"/payment-failed?orderId={callback.orderId}&message={callback.message}");
+        // Nếu muốn test API thuần, có thể trả về Ok:
+        // return Ok($"OrderId: {callback.orderId}, Error: {callback.errorCode}, Message: {callback.message}");
+    }
 
+    // Xử lý IPN/Notify từ MoMo (khi thanh toán xong MoMo sẽ POST về đây)
+    [HttpPost("momo-notify")]
+    public async Task<IActionResult> MomoNotify([FromBody] MomoIPNRequestDTO request)
+    {
+        // build rawData cho signature
+        string rawData = $"amount={request.amount}" +
+                         $"&extraData={request.extraData}" +
+                         $"&message={request.message}" +
+                         $"&orderId={request.orderId}" +
+                         $"&orderInfo={request.orderInfo}" +
+                         $"&orderType={request.orderType}" +
+                         $"&partnerCode={request.partnerCode}" +
+                         $"&payType={request.payType}" +
+                         $"&requestId={request.requestId}" +
+                         $"&responseTime={request.responseTime}" +
+                         $"&resultCode={request.resultCode}" +
+                         $"&transId={request.transId}";
+
+        var secretKey = _config["MomoAPI:SecretKey"];
+        var checkSignature = MomoHelper.CreateSignature(rawData, secretKey);
+
+        if (checkSignature != request.signature)
+            return BadRequest("Invalid signature");
+
+        var transaction = await _paymentRepo.GetByOrderIdAsync(request.orderId);
+        if (transaction == null) return NotFound("Không tìm thấy giao dịch");
+
+        if (transaction.Status == "Success")
+            return Ok(new { message = "Already processed" });
+
+        transaction.Status = request.resultCode == 0 ? "Success" : "Failed";
+        transaction.PaymentGatewayResponse = JsonConvert.SerializeObject(request);
+        await _paymentRepo.UpdateTransactionAsync(transaction);
+
+        return Ok(new
+        {
+            partnerCode = request.partnerCode,
+            orderId = request.orderId,
+            requestId = request.requestId,
+            resultCode = 0,
+            message = "Received",
+            responseTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
+        });
+    }
+
+    // ================== TRA CỨU TRẠNG THÁI ==================
 
     [HttpGet("status/{orderId}")]
     public async Task<IActionResult> GetPaymentStatus(string orderId)
