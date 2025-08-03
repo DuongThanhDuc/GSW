@@ -728,35 +728,35 @@ namespace BusinessModel.Migrations
                         {
                             ID = 1,
                             CategoryName = "RPG",
-                            CreatedAt = new DateTime(2025, 7, 28, 15, 50, 22, 626, DateTimeKind.Utc).AddTicks(9885),
+                            CreatedAt = new DateTime(2025, 7, 28, 16, 23, 36, 754, DateTimeKind.Utc).AddTicks(6854),
                             CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af"
                         },
                         new
                         {
                             ID = 2,
                             CategoryName = "FPS",
-                            CreatedAt = new DateTime(2025, 7, 28, 15, 50, 22, 626, DateTimeKind.Utc).AddTicks(9887),
+                            CreatedAt = new DateTime(2025, 7, 28, 16, 23, 36, 754, DateTimeKind.Utc).AddTicks(6855),
                             CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af"
                         },
                         new
                         {
                             ID = 3,
                             CategoryName = "Puzzle",
-                            CreatedAt = new DateTime(2025, 7, 28, 15, 50, 22, 626, DateTimeKind.Utc).AddTicks(9888),
+                            CreatedAt = new DateTime(2025, 7, 28, 16, 23, 36, 754, DateTimeKind.Utc).AddTicks(6857),
                             CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af"
                         },
                         new
                         {
                             ID = 4,
                             CategoryName = "Simulation",
-                            CreatedAt = new DateTime(2025, 7, 28, 15, 50, 22, 626, DateTimeKind.Utc).AddTicks(9890),
+                            CreatedAt = new DateTime(2025, 7, 28, 16, 23, 36, 754, DateTimeKind.Utc).AddTicks(6858),
                             CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af"
                         },
                         new
                         {
                             ID = 5,
                             CategoryName = "Horror",
-                            CreatedAt = new DateTime(2025, 7, 28, 15, 50, 22, 626, DateTimeKind.Utc).AddTicks(9892),
+                            CreatedAt = new DateTime(2025, 7, 28, 16, 23, 36, 754, DateTimeKind.Utc).AddTicks(6859),
                             CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af"
                         });
                 });
@@ -814,35 +814,35 @@ namespace BusinessModel.Migrations
                         new
                         {
                             ID = 1,
-                            CreatedAt = new DateTime(2025, 7, 28, 15, 50, 22, 626, DateTimeKind.Utc).AddTicks(9808),
+                            CreatedAt = new DateTime(2025, 7, 28, 16, 23, 36, 754, DateTimeKind.Utc).AddTicks(6827),
                             CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af",
                             TagName = "Action"
                         },
                         new
                         {
                             ID = 2,
-                            CreatedAt = new DateTime(2025, 7, 28, 15, 50, 22, 626, DateTimeKind.Utc).AddTicks(9810),
+                            CreatedAt = new DateTime(2025, 7, 28, 16, 23, 36, 754, DateTimeKind.Utc).AddTicks(6828),
                             CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af",
                             TagName = "Adventure"
                         },
                         new
                         {
                             ID = 3,
-                            CreatedAt = new DateTime(2025, 7, 28, 15, 50, 22, 626, DateTimeKind.Utc).AddTicks(9811),
+                            CreatedAt = new DateTime(2025, 7, 28, 16, 23, 36, 754, DateTimeKind.Utc).AddTicks(6829),
                             CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af",
                             TagName = "Multiplayer"
                         },
                         new
                         {
                             ID = 4,
-                            CreatedAt = new DateTime(2025, 7, 28, 15, 50, 22, 626, DateTimeKind.Utc).AddTicks(9813),
+                            CreatedAt = new DateTime(2025, 7, 28, 16, 23, 36, 754, DateTimeKind.Utc).AddTicks(6831),
                             CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af",
                             TagName = "Indie"
                         },
                         new
                         {
                             ID = 5,
-                            CreatedAt = new DateTime(2025, 7, 28, 15, 50, 22, 626, DateTimeKind.Utc).AddTicks(9814),
+                            CreatedAt = new DateTime(2025, 7, 28, 16, 23, 36, 754, DateTimeKind.Utc).AddTicks(6832),
                             CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af",
                             TagName = "Strategy"
                         });
@@ -878,21 +878,21 @@ namespace BusinessModel.Migrations
                         new
                         {
                             Id = "b7b9181c-ff61-4d8f-8f6d-5edb3a6d3a11",
-                            ConcurrencyStamp = "c417e837-7437-4066-907d-c9b22a07d9f0",
+                            ConcurrencyStamp = "6657f7cc-eeff-417b-9074-f638858bb00d",
                             Name = "Admin",
                             NormalizedName = "ADMIN"
                         },
                         new
                         {
                             Id = "0f6781b2-4564-4bb3-8d85-92e4c194a2cb",
-                            ConcurrencyStamp = "b0c2a5dc-69bc-4e20-9abb-e12aae37a72b",
+                            ConcurrencyStamp = "76614d79-511a-4ea4-ae0f-ebbdf5d0a3a5",
                             Name = "Staff",
                             NormalizedName = "STAFF"
                         },
                         new
                         {
                             Id = "26e5f054-e9fd-489f-891f-cf2b57fa9a1c",
-                            ConcurrencyStamp = "36198b2f-e076-4e4b-a65e-50155a60d556",
+                            ConcurrencyStamp = "ea12294f-584e-4d99-925e-543c62c6e0b9",
                             Name = "User",
                             NormalizedName = "USER"
                         });
@@ -935,9 +935,14 @@ namespace BusinessModel.Migrations
                         .IsConcurrencyToken()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("Discriminator")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Email")
                         .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("nvarchar(256)")
+                        .HasColumnOrder(3);
 
                     b.Property<bool>("EmailConfirmed")
                         .HasColumnType("bit");
@@ -950,11 +955,13 @@ namespace BusinessModel.Migrations
 
                     b.Property<string>("NormalizedEmail")
                         .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("nvarchar(256)")
+                        .HasColumnOrder(4);
 
                     b.Property<string>("NormalizedUserName")
                         .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("nvarchar(256)")
+                        .HasColumnOrder(1);
 
                     b.Property<string>("PasswordHash")
                         .HasColumnType("nvarchar(max)");
@@ -973,7 +980,8 @@ namespace BusinessModel.Migrations
 
                     b.Property<string>("UserName")
                         .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("nvarchar(256)")
+                        .HasColumnOrder(0);
 
                     b.HasKey("Id");
 
@@ -987,20 +995,24 @@ namespace BusinessModel.Migrations
 
                     b.ToTable("AspNetUsers", (string)null);
 
+                    b.HasDiscriminator<string>("Discriminator").HasValue("IdentityUser");
+
+                    b.UseTphMappingStrategy();
+
                     b.HasData(
                         new
                         {
                             Id = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af",
                             AccessFailedCount = 0,
-                            ConcurrencyStamp = "1c5fa994-00ac-4ee3-b853-170b26b966fe",
+                            ConcurrencyStamp = "2cde5282-6687-49bd-88c2-cc3747108a33",
                             Email = "admin@gameshop.com",
                             EmailConfirmed = true,
                             LockoutEnabled = false,
                             NormalizedEmail = "ADMIN@GAMESHOP.COM",
                             NormalizedUserName = "ADMIN",
-                            PasswordHash = "AQAAAAEAACcQAAAAEG/tvvR+CoI4ACOdcNYZRd73r4YHEZSjO7i4TtIcTNVsOL6+4sHEWOBQcB096VsSLQ==",
+                            PasswordHash = "AQAAAAEAACcQAAAAEGzqodTVR3FJ0UEwCzmYSvvQAJjU+l8uAZMgJK0ufXXugQ1f5PZLFMQXsy+KYp4KIQ==",
                             PhoneNumberConfirmed = false,
-                            SecurityStamp = "37d782f1-5251-41a1-aa38-63f965f213d7",
+                            SecurityStamp = "c8885ef2-c82f-44fa-a686-700cdaeb9bb9",
                             TwoFactorEnabled = false,
                             UserName = "admin"
                         },
@@ -1008,15 +1020,15 @@ namespace BusinessModel.Migrations
                         {
                             Id = "bcbcdd33-9a99-75dv-82d7-0c9e67f9d9af",
                             AccessFailedCount = 0,
-                            ConcurrencyStamp = "dee49eee-98a1-4645-822d-fbd2083e47fa",
+                            ConcurrencyStamp = "02034246-0eb2-4841-adb3-a49ec2e0c5c6",
                             Email = "trananhtuan180202@gmail.com",
                             EmailConfirmed = true,
                             LockoutEnabled = false,
                             NormalizedEmail = "TRANANHTUAN180202@GMAIL.COM",
                             NormalizedUserName = "TRANANHTUAN180202",
-                            PasswordHash = "AQAAAAEAACcQAAAAEIaRRBlvnuFNG+wuSwXezN4t4DcFzFO0taiwdCFJ5edlQ/S3t+wq9IRbvubRTqus0g==",
+                            PasswordHash = "AQAAAAEAACcQAAAAEBXjvcK39BNaSBvikiCeLa6ima2nesyF1nyXZl2d0a2pGl+jPyU/9fZ2bnelkzY6Bw==",
                             PhoneNumberConfirmed = false,
-                            SecurityStamp = "2f92eb64-ddc7-42c1-9072-0ec9cf75f7b2",
+                            SecurityStamp = "1c32482e-5b99-487d-b48c-c73d79822ec8",
                             TwoFactorEnabled = false,
                             UserName = "trananhtuan180202"
                         });
@@ -1113,6 +1125,17 @@ namespace BusinessModel.Migrations
                     b.HasKey("UserId", "LoginProvider", "Name");
 
                     b.ToTable("AspNetUserTokens", (string)null);
+                });
+
+            modelBuilder.Entity("BusinessModel.Model.ApplicationUser", b =>
+                {
+                    b.HasBaseType("Microsoft.AspNetCore.Identity.IdentityUser");
+
+                    b.Property<string>("DisplayName")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnOrder(2);
+
+                    b.HasDiscriminator().HasValue("ApplicationUser");
                 });
 
             modelBuilder.Entity("BusinessModel.Model.ApprovalHistory", b =>

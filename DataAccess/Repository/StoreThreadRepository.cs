@@ -1,12 +1,10 @@
-﻿using BusinessModel.Model;
-using DataAccess.DTOs;
+﻿using DataAccess.DTOs;
 using DataAccess.Repository.IRepository;
 using Microsoft.EntityFrameworkCore;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
+using BusinessModel.Model;
 
 namespace DataAccess.Repository
 {
@@ -22,11 +20,13 @@ namespace DataAccess.Repository
         public async Task<IEnumerable<StoreThreadDTO>> GetAllAsync()
         {
             return await _context.Store_Threads
+                .OrderByDescending(t => t.CreatedAt)
                 .Select(t => new StoreThreadDTO
                 {
                     Id = t.Id,
                     ThreadTitle = t.ThreadTitle,
                     ThreadDescription = t.ThreadDescription,
+                    ThreadImageUrl = t.ThreadImageUrl,
                     UpvoteCount = t.UpvoteCount,
                     CreatedBy = t.CreatedBy,
                     CreatedAt = t.CreatedAt
@@ -43,6 +43,7 @@ namespace DataAccess.Repository
                 Id = thread.Id,
                 ThreadTitle = thread.ThreadTitle,
                 ThreadDescription = thread.ThreadDescription,
+                ThreadImageUrl = thread.ThreadImageUrl,
                 UpvoteCount = thread.UpvoteCount,
                 CreatedBy = thread.CreatedBy,
                 CreatedAt = thread.CreatedAt
@@ -55,16 +56,25 @@ namespace DataAccess.Repository
             {
                 ThreadTitle = dto.ThreadTitle,
                 ThreadDescription = dto.ThreadDescription,
+                ThreadImageUrl = dto.ThreadImageUrl,
                 CreatedBy = dto.CreatedBy,
+                CreatedAt = DateTime.UtcNow,
                 UpvoteCount = 0
             };
 
             _context.Store_Threads.Add(newThread);
             await _context.SaveChangesAsync();
 
-            dto.Id = newThread.Id;
-            dto.CreatedAt = newThread.CreatedAt;
-            return dto;
+            return new StoreThreadDTO
+            {
+                Id = newThread.Id,
+                ThreadTitle = newThread.ThreadTitle,
+                ThreadDescription = newThread.ThreadDescription,
+                ThreadImageUrl = newThread.ThreadImageUrl,
+                CreatedBy = newThread.CreatedBy,
+                UpvoteCount = newThread.UpvoteCount,
+                CreatedAt = newThread.CreatedAt
+            };
         }
 
         public async Task<bool> UpdateAsync(StoreThreadDTO dto)
@@ -74,10 +84,13 @@ namespace DataAccess.Repository
 
             thread.ThreadTitle = dto.ThreadTitle;
             thread.ThreadDescription = dto.ThreadDescription;
+            thread.ThreadImageUrl = dto.ThreadImageUrl;
             thread.UpvoteCount = dto.UpvoteCount;
             thread.CreatedBy = dto.CreatedBy;
 
+            _context.Store_Threads.Update(thread);
             await _context.SaveChangesAsync();
+
             return true;
         }
 
@@ -88,6 +101,7 @@ namespace DataAccess.Repository
 
             _context.Store_Threads.Remove(thread);
             await _context.SaveChangesAsync();
+
             return true;
         }
     }
