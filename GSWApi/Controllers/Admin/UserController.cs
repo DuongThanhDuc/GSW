@@ -80,15 +80,15 @@ namespace GSWApi.Controllers.Admin
                 success = true,
                 data = new[]
                 {
-            new {
-                user.Id,
-                user.UserName,
-                user.Email,
-                user.PhoneNumber,
-                Roles = roles,
-                ProfilePicture = profile?.ImageUrl
-            }
-        }
+                    new {
+                        user.Id,
+                        user.UserName,
+                        user.Email,
+                        user.PhoneNumber,
+                        Roles = roles,
+                        ProfilePicture = profile?.ImageUrl
+                    }
+                }
             });
         }
 
@@ -116,14 +116,14 @@ namespace GSWApi.Controllers.Admin
                 success = true,
                 data = new[]
                 {
-            new {
-                user.Id,
-                user.UserName,
-                user.Email,
-                user.PhoneNumber,
-                Roles = roles
-            }
-        }
+                    new {
+                        user.Id,
+                        user.UserName,
+                        user.Email,
+                        user.PhoneNumber,
+                        Roles = roles
+                    }
+                }
             });
         }
 
@@ -158,14 +158,14 @@ namespace GSWApi.Controllers.Admin
             {
                 success = true,
                 data = new[] {
-            new {
-                user.Id,
-                user.UserName,
-                user.Email,
-                user.PhoneNumber,
-                Roles = updatedRoles
-            }
-        }
+                    new {
+                        user.Id,
+                        user.UserName,
+                        user.Email,
+                        user.PhoneNumber,
+                        Roles = updatedRoles
+                    }
+                }
             });
         }
 
@@ -193,7 +193,7 @@ namespace GSWApi.Controllers.Admin
                 return NotFound(new { success = false, message = "User not found." });
 
             await _userManager.SetLockoutEnabledAsync(user, true);
-            // Set thời điểm khóa tới rất xa (vô thời hạn)
+            // Set lockout end date to far future (indefinite)
             await _userManager.SetLockoutEndDateAsync(user, DateTimeOffset.MaxValue);
 
             return Ok(new { success = true, message = "User has been locked." });
@@ -207,7 +207,7 @@ namespace GSWApi.Controllers.Admin
             if (user == null)
                 return NotFound(new { success = false, message = "User not found." });
 
-            // Set LockoutEnd = null để mở khóa
+            // Set LockoutEnd = null to unlock
             await _userManager.SetLockoutEndDateAsync(user, null);
 
             return Ok(new { success = true, message = "User has been unlocked." });
@@ -217,11 +217,11 @@ namespace GSWApi.Controllers.Admin
         public async Task<IActionResult> UpdateUserProfile(string id, [FromForm] UpdateProfileDTO dto, IFormFile? imageFile)
         {
             if (string.IsNullOrWhiteSpace(id))
-                return BadRequest(new { success = false, message = "ID không được để trống." });
+                return BadRequest(new { success = false, message = "ID cannot be empty." });
 
             var user = await _userManager.FindByIdAsync(id);
             if (user == null)
-                return NotFound(new { success = false, message = "Không tìm thấy tài khoản." });
+                return NotFound(new { success = false, message = "Account not found." });
 
             // Update user fields
             user.UserName = dto.Username ?? user.UserName;
@@ -230,7 +230,7 @@ namespace GSWApi.Controllers.Admin
 
             var result = await _userManager.UpdateAsync(user);
             if (!result.Succeeded)
-                return BadRequest(new { success = false, message = "Cập nhật thất bại", errors = result.Errors });
+                return BadRequest(new { success = false, message = "Update failed.", errors = result.Errors });
 
             string? uploadedImageUrl = null;
 
@@ -263,7 +263,7 @@ namespace GSWApi.Controllers.Admin
                         return BadRequest(new
                         {
                             success = false,
-                            message = "Tải ảnh lên Cloudinary thất bại.",
+                            message = "Failed to upload image to Cloudinary.",
                             error = uploadResult.Error?.Message
                         });
                     }
@@ -273,7 +273,7 @@ namespace GSWApi.Controllers.Admin
                     return StatusCode(500, new
                     {
                         success = false,
-                        message = "Lỗi khi tải ảnh lên.",
+                        message = "Error uploading image.",
                         error = ex.Message
                     });
                 }
@@ -389,9 +389,5 @@ namespace GSWApi.Controllers.Admin
                 }
             });
         }
-
-
-
-
     }
 }

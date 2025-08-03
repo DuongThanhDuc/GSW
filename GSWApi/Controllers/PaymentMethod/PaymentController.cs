@@ -27,13 +27,13 @@ public class PaymentController : ControllerBase
     [HttpPost("vnpay-create")]
     public async Task<IActionResult> CreatePayment([FromBody] PaymentRequestDTO model)
     {
-        // Kiểm tra và tự sinh OrderId nếu không có
+        // Check and auto-generate OrderId if not provided
         if (string.IsNullOrEmpty(model.OrderId) || model.OrderId.Trim().ToLower() == "string")
         {
             model.OrderId = Guid.NewGuid().ToString("N").Substring(0, 10);
         }
 
-        // Tạo giao dịch thanh toán
+        // Create payment transaction
         var transaction = new PaymentTransaction
         {
             OrderId = model.OrderId,
@@ -54,7 +54,7 @@ public class PaymentController : ControllerBase
         {
             PaymentUrl = paymentUrl,
             OrderId = model.OrderId,
-            Message = "Tạo thanh toán thành công, vui lòng quét mã QR hoặc nhấn vào link để thanh toán."
+            Message = "Payment created successfully. Please scan the QR code or click the link to proceed with payment."
         });
     }
 
@@ -94,10 +94,10 @@ public class PaymentController : ControllerBase
         if (transaction == null)
             return NotFound("Transaction not found");
 
-        // Xác định trạng thái
+        // Determine status
         string status = vnp_ResponseCode == "00" ? "success" : "failed";
 
-        // Cập nhật trạng thái transaction
+        // Update transaction status
         transaction.Status = status == "success" ? "Success" : "Failed";
         transaction.PaymentGatewayResponse = JsonConvert.SerializeObject(Request.Query);
 
@@ -107,7 +107,7 @@ public class PaymentController : ControllerBase
         // Build FE URL
         var feUrl = $"http://localhost:5000/payment/result?orderId={orderId}&status={status}";
 
-        // Redirect về FE
+        // Redirect to FE
         return Redirect(feUrl);
     }
 
@@ -117,7 +117,7 @@ public class PaymentController : ControllerBase
     {
         var hashSecret = _config["VnPay:HashSecret"];
 
-        // 1. Tạo chuỗi dữ liệu cần ký lại (bỏ trường vnp_SecureHash & vnp_SecureHashType ra)
+        // 1. Build raw data string for signature (excluding vnp_SecureHash & vnp_SecureHashType)
         var query = HttpContext.Request.Query;
         var sorted = query.Where(kv => kv.Key != "vnp_SecureHash" && kv.Key != "vnp_SecureHashType")
                           .OrderBy(kv => kv.Key)
@@ -126,11 +126,10 @@ public class PaymentController : ControllerBase
 
         string rspraw = string.Join("&", sorted);
 
-        // 2. Lấy giá trị hash gốc
+        // 2. Get input hash value
         string inputHash = HttpContext.Request.Query["vnp_SecureHash"];
 
-
-        // 3. Gọi hàm kiểm tra
+        // 3. Validate signature
         var isValid = VnPayHelper.ValidateSignature(rspraw, inputHash, hashSecret);
 
         if (!isValid)
@@ -138,7 +137,7 @@ public class PaymentController : ControllerBase
 
         var orderId = callback.vnp_TxnRef;
         var transaction = await _paymentRepo.GetByOrderIdAsync(orderId);
-        if (transaction == null) return NotFound("Không tìm thấy giao dịch");
+        if (transaction == null) return NotFound("Transaction not found");
 
         if (callback.vnp_ResponseCode == "00")
         {
@@ -152,14 +151,13 @@ public class PaymentController : ControllerBase
         transaction.PaymentGatewayResponse = JsonConvert.SerializeObject(callback);
         await _paymentRepo.UpdateTransactionAsync(transaction);
 
-
         return Content("responseCode=00");
     }
 
 
     // ================== MOMO ==================
 
-    // Tạo đơn MoMo (sandbox V3)
+    // Create MoMo order (sandbox V3)
     [HttpPost("momo-create")]
     public async Task<IActionResult> CreateMomoPayment([FromBody] MomoPaymentRequestDTO model)
     {
@@ -178,7 +176,7 @@ public class PaymentController : ControllerBase
             ipnUrl: config["NotifyUrl"],        // ipnUrl
             amount: Convert.ToInt64(model.Amount),
             orderId: model.OrderId,
-            orderInfo: $"Thanh toán đơn hàng {model.OrderId}",
+            orderInfo: $"Order payment {model.OrderId}",
             requestType: config["RequestType"]
         );
 
@@ -187,7 +185,7 @@ public class PaymentController : ControllerBase
             return Ok(new
             {
                 paymentUrl = momoResp.payUrl,
-                message = "Tạo thanh toán thành công với MOMO!",
+                message = "Payment created successfully with MOMO!",
                 orderId = momoResp.orderId
             });
         }
@@ -196,24 +194,25 @@ public class PaymentController : ControllerBase
             return BadRequest(new { momoResp.resultCode, momoResp.message });
         }
     }
-    // Callback: Khi user thanh toán xong, MoMo redirect về link này (FE dùng GET)
+
+    // Callback: After payment, MoMo redirects here (FE uses GET)
     [HttpGet("momo-callback")]
     public IActionResult MomoCallback([FromQuery] MomoCallbackDTO callback)
     {
-        // Có thể redirect về trang FE hoặc trả nội dung luôn tuỳ bạn
+        // You can redirect to FE page or return content directly
         if (callback.resultCode == 0)
             return Redirect($"/payment-success?orderId={callback.orderId}");
         else
             return Redirect($"/payment-failed?orderId={callback.orderId}&message={callback.message}");
-        // Nếu muốn test API thuần, có thể trả về Ok:
+        // For API test, you can also:
         // return Ok($"OrderId: {callback.orderId}, Error: {callback.errorCode}, Message: {callback.message}");
     }
 
-    // Xử lý IPN/Notify từ MoMo (khi thanh toán xong MoMo sẽ POST về đây)
+    // Handle IPN/Notify from MoMo (MoMo POSTs here after payment)
     [HttpPost("momo-notify")]
     public async Task<IActionResult> MomoNotify([FromBody] MomoIPNRequestDTO request)
     {
-        // build rawData cho signature
+        // build rawData for signature
         string rawData = $"amount={request.amount}" +
                          $"&extraData={request.extraData}" +
                          $"&message={request.message}" +
@@ -234,7 +233,7 @@ public class PaymentController : ControllerBase
             return BadRequest("Invalid signature");
 
         var transaction = await _paymentRepo.GetByOrderIdAsync(request.orderId);
-        if (transaction == null) return NotFound("Không tìm thấy giao dịch");
+        if (transaction == null) return NotFound("Transaction not found");
 
         if (transaction.Status == "Success")
             return Ok(new { message = "Already processed" });
@@ -254,13 +253,13 @@ public class PaymentController : ControllerBase
         });
     }
 
-    // ================== TRA CỨU TRẠNG THÁI ==================
+    // ================== CHECK PAYMENT STATUS ==================
 
     [HttpGet("status/{orderId}")]
     public async Task<IActionResult> GetPaymentStatus(string orderId)
     {
         var transaction = await _paymentRepo.GetByOrderIdAsync(orderId);
-        if (transaction == null) return NotFound();
+        if (transaction == null) return NotFound(new { message = "Transaction not found" });
         return Ok(new { transaction.OrderId, transaction.Status, transaction.CreatedAt });
     }
 }
