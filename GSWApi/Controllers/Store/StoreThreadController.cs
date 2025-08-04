@@ -62,5 +62,40 @@ namespace GSWApi.Controllers.Store
 
             return Ok(new { success = true, message = "Thread deleted." });
         }
+
+        [HttpPost("upvote")]
+        public async Task<IActionResult> ToggleUpvote([FromBody] StoreThreadUpvoteHistoryDTO dto)
+        {
+            if (string.IsNullOrWhiteSpace(dto.UserID) || dto.ThreadID <= 0)
+                return BadRequest(new { success = false, message = "User ID and Thread ID are required." });
+
+            var added = await _repository.ToggleUpvoteAsync(dto.UserID, dto.ThreadID);
+
+            return Ok(new
+            {
+                success = true,
+                message = added ? "Upvote added." : "Upvote removed.",
+                upvoted = added
+            });
+        }
+
+        // GET: api/storethread/upvotes
+        [HttpGet("upvotes")]
+        public async Task<IActionResult> GetAllUpvoteHistories()
+        {
+            var histories = await _repository.GetAllUpvoteHistoriesAsync();
+            return Ok(new { success = true, data = histories });
+        }
+
+        // GET: api/storethread/upvotes/{id}
+        [HttpGet("upvotes/{id}")]
+        public async Task<IActionResult> GetUpvoteHistoryById(int id)
+        {
+            var history = await _repository.GetUpvoteHistoryByIdAsync(id);
+            if (history == null)
+                return NotFound(new { success = false, message = "Upvote history not found." });
+
+            return Ok(new { success = true, data = history });
+        }
     }
 }

@@ -20,7 +20,12 @@ namespace DataAccess.Repository.IRepository
         Task<bool> SetActiveStatusAsync(int id, bool isActive);
         Task<bool> UpdateStatusAsync(int id, string status);
         Task UpdateAsync(GamesInfo game);
-        
+
+        Task<IEnumerable<StoreWishlistDTO>> GetWishlistsByUserAsync(string userId);
+        Task<bool> ToggleWishlistAsync(string userId, int gameId);
+        Task<bool> IsGameInWishlistAsync(string userId, int gameId);
+
+
         // Discount-related
         //Task<GamesInfoDTO> GetByIdWithDiscountsAsync(int id);
         //Task<IEnumerable<GamesInfoDTO>> GetAllWithDiscountsAsync();

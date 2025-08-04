@@ -17,6 +17,8 @@ namespace DataAccess.DTOs
         public string InstallerFilePath { get; set; }
         public string CoverImagePath { get; set; }
         public string Status { get; set; }
+        public int WishlistCount { get; set; }
+        public int PurchaseCount { get; set; }
         public string CreatedBy { get; set; }
         public bool IsActive { get; set; }
 
@@ -32,11 +34,13 @@ namespace DataAccess.DTOs
         public string InstallerFilePath { get; set; }
         public string CoverImagePath { get; set; }
         public string Status { get; set; }
+        public int WishlistCount { get; set; }
+        public int PurchaseCount { get; set; }
         public string CreatedBy { get; set; }
         public bool IsActive { get; set; }
         public List<GamesReviewDTO> Reviews { get; set; }
         public List<GamesMediaDTO> Media { get; set; }
-        
+
         public List<GamesDiscountDTO> ActiveDiscounts { get; set; }
         public List<GamesCategoryDTO> Categories { get; set; }
         public List<GamesTagDTO> Tags { get; set; }

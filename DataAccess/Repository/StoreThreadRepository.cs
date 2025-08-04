@@ -90,5 +90,62 @@ namespace DataAccess.Repository
             await _context.SaveChangesAsync();
             return true;
         }
+
+        public async Task<IEnumerable<StoreThreadUpvoteHistoryDTO>> GetAllUpvoteHistoriesAsync()
+        {
+            return await _context.Store_ThreadUpvoteHistories
+                .Select(u => new StoreThreadUpvoteHistoryDTO
+                {
+                    Id = u.Id,
+                    UserID = u.UserID,
+                    ThreadID = u.ThreadID,
+                    CreatedAt = u.CreatedAt
+                }).ToListAsync();
+        }
+
+        public async Task<StoreThreadUpvoteHistoryDTO?> GetUpvoteHistoryByIdAsync(int id)
+        {
+            var history = await _context.Store_ThreadUpvoteHistories.FindAsync(id);
+            if (history == null) return null;
+
+            return new StoreThreadUpvoteHistoryDTO
+            {
+                Id = history.Id,
+                UserID = history.UserID,
+                ThreadID = history.ThreadID,
+                CreatedAt = history.CreatedAt
+            };
+        }
+        public async Task<bool> ToggleUpvoteAsync(string userId, int threadId)
+        {
+            var history = await _context.Store_ThreadUpvoteHistories
+                .FirstOrDefaultAsync(h => h.UserID == userId && h.ThreadID == threadId);
+
+            var thread = await _context.Store_Threads.FindAsync(threadId);
+            if (thread == null) return false;
+
+            if (history != null)
+            {
+                // User has already upvoted → remove it
+                _context.Store_ThreadUpvoteHistories.Remove(history);
+                thread.UpvoteCount = Math.Max(0, thread.UpvoteCount - 1);
+                await _context.SaveChangesAsync();
+                return false; // removed upvote
+            }
+            else
+            {
+                // New upvote
+                var newHistory = new StoreThreadUpvoteHistory
+                {
+                    UserID = userId,
+                    ThreadID = threadId,
+                    CreatedAt = DateTime.UtcNow
+                };
+                _context.Store_ThreadUpvoteHistories.Add(newHistory);
+                thread.UpvoteCount += 1;
+                await _context.SaveChangesAsync();
+                return true; // added upvote
+            }
+        }
     }
 }

@@ -12,6 +12,7 @@ namespace DataAccess.DTOs
         public int Id { get; set; }
         public string ThreadTitle { get; set; }
         public string ThreadDescription { get; set; }
+        public string? ThreadImageUrl { get; set; }
         public int UpvoteCount { get; set; }
         public string CreatedBy { get; set; }
         public DateTime CreatedAt { get; set; }

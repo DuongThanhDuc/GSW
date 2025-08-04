@@ -61,5 +61,89 @@ namespace DataAccess.Repository
             await _context.SaveChangesAsync();
             return true;
         }
+
+        public async Task<IEnumerable<StoreThreadReplyUpvoteHistoryDTO>> GetAllReplyUpvotesAsync()
+        {
+            return await _context.Store_ThreadReplyUpvoteHistories
+                .Select(u => new StoreThreadReplyUpvoteHistoryDTO
+                {
+                    Id = u.Id,
+                    UserId = u.UserId,
+                    ThreadCommentId = u.ThreadCommentId,
+                    CreatedAt = u.CreatedAt
+                }).ToListAsync();
+        }
+
+        public async Task<StoreThreadReplyUpvoteHistoryDTO?> GetReplyUpvoteByIdAsync(int id)
+        {
+            var record = await _context.Store_ThreadReplyUpvoteHistories.FindAsync(id);
+            if (record == null) return null;
+
+            return new StoreThreadReplyUpvoteHistoryDTO
+            {
+                Id = record.Id,
+                UserId = record.UserId,
+                ThreadCommentId = record.ThreadCommentId,
+                CreatedAt = record.CreatedAt
+            };
+        }
+
+        public async Task<StoreThreadReplyUpvoteHistoryDTO> CreateReplyUpvoteAsync(StoreThreadReplyUpvoteHistoryDTO dto)
+        {
+            var entity = new StoreThreadReplyUpvoteHistory
+            {
+                UserId = dto.UserId,
+                ThreadCommentId = dto.ThreadCommentId,
+                CreatedAt = dto.CreatedAt
+            };
+
+            _context.Store_ThreadReplyUpvoteHistories.Add(entity);
+            await _context.SaveChangesAsync();
+
+            dto.Id = entity.Id;
+            return dto;
+        }
+
+        public async Task<bool> DeleteReplyUpvoteAsync(int id)
+        {
+            var record = await _context.Store_ThreadReplyUpvoteHistories.FindAsync(id);
+            if (record == null) return false;
+
+            _context.Store_ThreadReplyUpvoteHistories.Remove(record);
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> ToggleReplyUpvoteAsync(string userId, int replyId)
+        {
+            var reply = await _context.Store_ThreadReplies.FindAsync(replyId);
+            if (reply == null) return false;
+
+            var existingUpvote = await _context.Store_ThreadReplyUpvoteHistories
+                .FirstOrDefaultAsync(u => u.UserId == userId && u.ThreadCommentId == replyId);
+
+            if (existingUpvote != null)
+            {
+
+                _context.Store_ThreadReplyUpvoteHistories.Remove(existingUpvote);
+                reply.UpvoteCount = Math.Max(0, reply.UpvoteCount - 1);
+                await _context.SaveChangesAsync();
+                return false;
+            }
+            else
+            {
+
+                var newUpvote = new StoreThreadReplyUpvoteHistory
+                {
+                    UserId = userId,
+                    ThreadCommentId = replyId,
+                    CreatedAt = DateTime.UtcNow
+                };
+                _context.Store_ThreadReplyUpvoteHistories.Add(newUpvote);
+                reply.UpvoteCount += 1;
+                await _context.SaveChangesAsync();
+                return true;
+            }
+        }
     }
 }
