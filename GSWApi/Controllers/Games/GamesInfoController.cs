@@ -203,5 +203,29 @@ namespace GSWApi.Controllers.Games
             }
         }
 
+        // POST: api/GamesInfo/{gameId}/wishlist/toggle?userId=abc
+        [HttpPost("{gameId}/wishlist/toggle")]
+        public async Task<IActionResult> ToggleWishlist(int gameId, [FromQuery] string userId)
+        {
+            var result = await _repository.ToggleWishlistAsync(userId, gameId);
+            return Ok(new { success = result, message = "Wishlist toggled." });
+        }
+
+        // GET: api/GamesInfo/{gameId}/wishlist/check?userId=abc
+        [HttpGet("{gameId}/wishlist/check")]
+        public async Task<IActionResult> IsGameInWishlist(int gameId, [FromQuery] string userId)
+        {
+            var isWishlisted = await _repository.IsGameInWishlistAsync(userId, gameId);
+            return Ok(new { success = true, isWishlisted });
+        }
+
+        // GET: api/GamesInfo/wishlist?userId=abc
+        [HttpGet("wishlist")]
+        public async Task<IActionResult> GetWishlistByUser([FromQuery] string userId)
+        {
+            var wishlists = await _repository.GetWishlistsByUserAsync(userId);
+            return Ok(new { success = true, data = wishlists });
+        }
+
     }
 }

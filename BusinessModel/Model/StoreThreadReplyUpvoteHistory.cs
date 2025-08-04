@@ -13,6 +13,5 @@ namespace BusinessModel.Model
         public int ThreadCommentId { get; set; }
         public StoreThreadReply ThreadReply { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.Now;
-        p
     }
 }

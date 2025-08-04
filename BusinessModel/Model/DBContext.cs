@@ -54,6 +54,10 @@ namespace BusinessModel.Model
 
         public DbSet<DepositWithdrawTransaction> DepositWithdrawTransactions { get; set; }
 
+        public DbSet<StoreThreadReplyUpvoteHistory> Store_ThreadReplyUpvoteHistories { get; set; }
+        public DbSet<StoreThreadUpvoteHistory> Store_ThreadUpvoteHistories { get; set; }
+        public DbSet<StoreWishlist> Store_Wishlists { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -211,6 +215,37 @@ namespace BusinessModel.Model
                 .HasForeignKey(l => l.GamesID)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            modelBuilder.Entity<StoreThreadReplyUpvoteHistory>()
+                .Property(u => u.CreatedAt)
+                .HasDefaultValueSql("GETDATE()");
+
+            modelBuilder.Entity<StoreThreadReplyUpvoteHistory>()
+                .HasOne(u => u.ThreadReply)
+                .WithMany() // Assuming no collection navigation in StoreThreadReply
+                .HasForeignKey(u => u.ThreadCommentId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<StoreThreadUpvoteHistory>()
+                .Property(u => u.CreatedAt)
+                .HasDefaultValueSql("GETDATE()");
+
+            modelBuilder.Entity<StoreThreadUpvoteHistory>()
+                .HasOne(u => u.StoreThread)
+                .WithMany() // Assuming no collection nav in StoreThread
+                .HasForeignKey(u => u.ThreadID)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<StoreWishlist>()
+                .Property(w => w.CreatedAt)
+                .HasDefaultValueSql("GETDATE()");
+
+            modelBuilder.Entity<StoreWishlist>()
+                .HasOne(w => w.GamesInfo)
+                .WithMany() // Assuming no collection in GamesInfo
+                .HasForeignKey(w => w.GameId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+
 
             // Seeding Datas
 
@@ -329,35 +364,35 @@ namespace BusinessModel.Model
         ID = 1,
         CategoryName = "RPG",
         CreatedAt = DateTime.UtcNow,
-       CreatedBy = adminUserId
+        CreatedBy = adminUserId
     },
     new SystemCategory
     {
         ID = 2,
         CategoryName = "FPS",
         CreatedAt = DateTime.UtcNow,
-       CreatedBy = adminUserId
+        CreatedBy = adminUserId
     },
     new SystemCategory
     {
         ID = 3,
         CategoryName = "Puzzle",
         CreatedAt = DateTime.UtcNow,
-       CreatedBy = adminUserId
+        CreatedBy = adminUserId
     },
     new SystemCategory
     {
         ID = 4,
         CategoryName = "Simulation",
         CreatedAt = DateTime.UtcNow,
-       CreatedBy = adminUserId
+        CreatedBy = adminUserId
     },
     new SystemCategory
     {
         ID = 5,
         CategoryName = "Horror",
         CreatedAt = DateTime.UtcNow,
-       CreatedBy = adminUserId
+        CreatedBy = adminUserId
     }
 );
         }

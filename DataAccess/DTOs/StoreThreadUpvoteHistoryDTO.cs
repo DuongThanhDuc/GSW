@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace DataAccess.DTOs
 {
-    internal class StoreThreadUpvoteHistory
+    public class StoreThreadUpvoteHistoryDTO
     {
         public int Id { get; set; }
         public string UserID { get; set; }

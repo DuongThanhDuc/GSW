@@ -50,6 +50,8 @@ namespace DataAccess.Repository
                     Status = g.Status,
                     IsActive = g.IsActive,
                     CreatedBy = g.CreatedBy,
+                    WishlistCount = _context.Store_Wishlists.Count(w => w.GameId == g.Id),
+                    PurchaseCount = _context.Store_OrderDetails.Count(o => o.GameID == g.Id),
 
                     Media = g.Media.Select(m => new GamesMediaDTO
                     {
@@ -109,7 +111,6 @@ namespace DataAccess.Repository
                 .ToListAsync();
         }
 
-        // --- Hàm cũ: GetByIdAsync dạng ReadOnly ---
         public async Task<GamesInfoDTOReadOnly?> GetByIdAsync(int id)
         {
             var g = await _context.Games_Info
@@ -135,6 +136,8 @@ namespace DataAccess.Repository
                 Status = g.Status,
                 IsActive = g.IsActive,
                 CreatedBy = g.CreatedBy,
+                WishlistCount = await _context.Store_Wishlists.CountAsync(w => w.GameId == g.Id),
+                PurchaseCount = await _context.Store_OrderDetails.CountAsync(o => o.GameID == g.Id),
 
                 Media = g.Media.Select(m => new GamesMediaDTO
                 {
@@ -193,8 +196,9 @@ namespace DataAccess.Repository
             };
         }
 
-      
-        
+
+
+
 
         // Các hàm CRUD khác (GIỮ NGUYÊN)
         public async Task<GamesInfoDTO> CreateAsync(GamesInfoDTO dto)
@@ -272,6 +276,52 @@ namespace DataAccess.Repository
         {
             _context.Games_Info.Update(game);
             await _context.SaveChangesAsync();
+        }
+
+        public async Task<IEnumerable<StoreWishlistDTO>> GetWishlistsByUserAsync(string userId)
+        {
+            return await _context.Store_Wishlists
+                .Where(w => w.UserId == userId)
+                .Select(w => new StoreWishlistDTO
+                {
+                    Id = w.Id,
+                    UserId = w.UserId,
+                    WishlistGameId = w.GameId,
+                    CreatedAt = w.CreatedAt
+                })
+                .ToListAsync();
+        }
+
+        public async Task<bool> ToggleWishlistAsync(string userId, int gameId)
+        {
+            var wishlistItem = await _context.Store_Wishlists
+                .FirstOrDefaultAsync(w => w.UserId == userId && w.GameId == gameId);
+
+            if (wishlistItem != null)
+            {
+                // If exists, remove it (toggle off)
+                _context.Store_Wishlists.Remove(wishlistItem);
+            }
+            else
+            {
+                // If doesn't exist, add it (toggle on)
+                wishlistItem = new StoreWishlist
+                {
+                    UserId = userId,
+                    GameId = gameId,
+                    CreatedAt = DateTime.UtcNow
+                };
+                _context.Store_Wishlists.Add(wishlistItem);
+            }
+
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> IsGameInWishlistAsync(string userId, int gameId)
+        {
+            return await _context.Store_Wishlists
+                .AnyAsync(w => w.UserId == userId && w.GameId == gameId);
         }
     }
 }

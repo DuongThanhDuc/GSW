@@ -10,7 +10,7 @@ namespace BusinessModel.Model
     {
         public int Id { get; set; }
         public string UserId { get; set; }
-        public string WishlistGameId { get; set; }
+        public int GameId { get; set; }
         public GamesInfo GamesInfo { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.Now;
     }
