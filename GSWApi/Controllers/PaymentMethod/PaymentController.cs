@@ -139,17 +139,21 @@ public class PaymentController : ControllerBase
         var transaction = await _paymentRepo.GetByOrderIdAsync(orderId);
         if (transaction == null) return NotFound("Transaction not found");
 
-        if (callback.vnp_ResponseCode == "00")
+        if (callback.vnp_ResponseCode == "00" && transaction.Status != "Success")
         {
             transaction.Status = "Success";
+            transaction.PaymentGatewayResponse = JsonConvert.SerializeObject(callback);
+            await _paymentRepo.UpdateTransactionAsync(transaction);
+
+            // ==== Add game vào StoreLibrary tại đây ====
+            await _paymentRepo.GrantGameToLibraryAsync(orderId);
         }
         else
         {
             transaction.Status = "Failed";
+            transaction.PaymentGatewayResponse = JsonConvert.SerializeObject(callback);
+            await _paymentRepo.UpdateTransactionAsync(transaction);
         }
-
-        transaction.PaymentGatewayResponse = JsonConvert.SerializeObject(callback);
-        await _paymentRepo.UpdateTransactionAsync(transaction);
 
         return Content("responseCode=00");
     }
