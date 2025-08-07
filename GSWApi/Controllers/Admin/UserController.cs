@@ -7,6 +7,7 @@ using DataAccess.DTOs;
 using CloudinaryDotNet;
 using DataAccess.Repository.IRepository;
 using CloudinaryDotNet.Actions;
+using GSWApi.Utility;
 
 namespace GSWApi.Controllers.Admin
 {
@@ -19,19 +20,21 @@ namespace GSWApi.Controllers.Admin
         private readonly Cloudinary _cloudinary;
         private readonly IStoreLibraryRepository _libraryRepo;
         private readonly IGamesInfoRepository _gamesRepo;
-
+        private readonly EmailService _emailService;
         public UserController(
             UserManager<IdentityUser> userManager,
             ISystemProfilePictureRepository repo,
             IStoreLibraryRepository libraryRepo,
             IGamesInfoRepository gamesRepo,
-            Cloudinary cloudinary)
+            Cloudinary cloudinary,
+            EmailService emailService) 
         {
             _userManager = userManager;
             _repo = repo;
             _cloudinary = cloudinary;
             _libraryRepo = libraryRepo;
             _gamesRepo = gamesRepo;
+            _emailService = emailService; 
         }
 
 
@@ -389,5 +392,43 @@ namespace GSWApi.Controllers.Admin
                 }
             });
         }
+
+        // POST: admin/user/ban/{id}
+        [HttpPost("ban/{id}")]
+        public async Task<IActionResult> BanUser(string id, [FromQuery] int days = 5)
+        {
+            var user = await _userManager.FindByIdAsync(id);
+            if (user == null)
+                return NotFound(new { success = false, message = "User not found." });
+
+            await _userManager.SetLockoutEnabledAsync(user, true);
+            var unlockDate = DateTimeOffset.UtcNow.AddDays(days);
+            await _userManager.SetLockoutEndDateAsync(user, unlockDate);
+
+            // -- Send notification email --
+            await _emailService.SendEmailAsync(
+                user.Email,
+                "Your account has been temporarily banned",
+                $"Your account has been banned for {days} days and will be unlocked on {unlockDate:yyyy-MM-dd}."
+            );
+
+            return Ok(new { success = true, message = $"User has been banned for {days} days (until {unlockDate:yyyy-MM-dd})." });
+        }
+
+        // POST: admin/user/unban/{id}
+        [HttpPost("unban/{id}")]
+        public async Task<IActionResult> UnbanUser(string id)
+        {
+            var user = await _userManager.FindByIdAsync(id);
+            if (user == null)
+                return NotFound(new { success = false, message = "User not found." });
+
+            await _userManager.SetLockoutEndDateAsync(user, null);
+
+            // Optionally send notification email here
+
+            return Ok(new { success = true, message = "User has been unbanned." });
+        }
+
     }
 }
