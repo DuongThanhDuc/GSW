@@ -92,13 +92,17 @@ namespace DataAccess.Repository
                 OrderDate = dto.OrderDate == default ? DateTime.Now : dto.OrderDate,
                 TotalAmount = dto.TotalAmount,
                 Status = dto.Status ?? "COMPLETED",
-                CreatedAt = DateTime.Now
+                CreatedAt = DateTime.Now,
+                OrderCode = !string.IsNullOrEmpty(dto.OrderId)
+                    ? dto.OrderId
+                    : Guid.NewGuid().ToString("N")
             };
 
             _context.Store_Orders.Add(order);
             await _context.SaveChangesAsync();
             return order;
         }
+
 
 
 
