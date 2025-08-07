@@ -28,13 +28,29 @@ namespace GSWApi.Controllers.User
             if (user == null)
                 return NotFound(new { success = false, message = "Account not found." });
 
+            // Update basic properties
             user.UserName = dto.Username;
             user.Email = dto.Email;
             user.PhoneNumber = dto.PhoneNumber;
 
-            var result = await _userManager.UpdateAsync(user);
-            if (!result.Succeeded)
-                return BadRequest(new { success = false, message = "Update failed.", errors = result.Errors });
+            var updateResult = await _userManager.UpdateAsync(user);
+            if (!updateResult.Succeeded)
+                return BadRequest(new { success = false, message = "Update failed.", errors = updateResult.Errors });
+
+            // Handle DisplayName claim
+            var existingClaims = await _userManager.GetClaimsAsync(user);
+            var displayNameClaim = existingClaims.FirstOrDefault(c => c.Type == "DisplayName");
+
+            if (displayNameClaim != null)
+            {
+                await _userManager.RemoveClaimAsync(user, displayNameClaim);
+            }
+
+            if (!string.IsNullOrWhiteSpace(dto.DisplayName))
+            {
+                var newClaim = new Claim("DisplayName", dto.DisplayName);
+                await _userManager.AddClaimAsync(user, newClaim);
+            }
 
             return Ok(new { success = true, data = "Profile updated successfully." });
         }
