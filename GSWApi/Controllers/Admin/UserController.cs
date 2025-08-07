@@ -319,7 +319,7 @@ namespace GSWApi.Controllers.Admin
             });
         }
 
-        [HttpPut("update/{id}")]
+        [HttpPut("update/displayname/{id}")]
         public async Task<IActionResult> UpdateDisplayName(string id, [FromQuery] string displayName)
         {
             var user = await _userManager.FindByIdAsync(id);
