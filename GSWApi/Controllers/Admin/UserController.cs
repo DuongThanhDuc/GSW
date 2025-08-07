@@ -46,6 +46,8 @@ namespace GSWApi.Controllers.Admin
             {
                 var roles = await _userManager.GetRolesAsync(user);
                 var profile = await _repo.GetByUserIdAsync(user.Id);
+                var claims = await _userManager.GetClaimsAsync(user);
+                var displayName = claims.FirstOrDefault(c => c.Type == "DisplayName")?.Value;
 
                 userList.Add(new
                 {
@@ -53,6 +55,7 @@ namespace GSWApi.Controllers.Admin
                     user.UserName,
                     user.Email,
                     user.PhoneNumber,
+                    DisplayName = displayName,
                     Roles = roles,
                     ProfilePicture = profile?.ImageUrl
                 });
@@ -60,6 +63,7 @@ namespace GSWApi.Controllers.Admin
 
             return Ok(new { success = true, data = userList });
         }
+
 
         // GET: admin/user/id/{id}
         [HttpGet("id/{id}")]
@@ -74,23 +78,27 @@ namespace GSWApi.Controllers.Admin
 
             var roles = await _userManager.GetRolesAsync(user);
             var profile = await _repo.GetByUserIdAsync(user.Id);
+            var claims = await _userManager.GetClaimsAsync(user);
+            var displayName = claims.FirstOrDefault(c => c.Type == "DisplayName")?.Value;
 
             return Ok(new
             {
                 success = true,
                 data = new[]
                 {
-                    new {
-                        user.Id,
-                        user.UserName,
-                        user.Email,
-                        user.PhoneNumber,
-                        Roles = roles,
-                        ProfilePicture = profile?.ImageUrl
-                    }
-                }
+            new {
+                user.Id,
+                user.UserName,
+                user.Email,
+                user.PhoneNumber,
+                DisplayName = displayName,
+                Roles = roles,
+                ProfilePicture = profile?.ImageUrl
+            }
+        }
             });
         }
+
 
         [HttpGet("search")]
         public async Task<IActionResult> GetUser([FromQuery] string by, [FromQuery] string value)
@@ -110,22 +118,26 @@ namespace GSWApi.Controllers.Admin
                 return NotFound(new { success = false, message = "User not found." });
 
             var roles = await _userManager.GetRolesAsync(user);
+            var claims = await _userManager.GetClaimsAsync(user);
+            var displayName = claims.FirstOrDefault(c => c.Type == "DisplayName")?.Value;
 
             return Ok(new
             {
                 success = true,
                 data = new[]
                 {
-                    new {
-                        user.Id,
-                        user.UserName,
-                        user.Email,
-                        user.PhoneNumber,
-                        Roles = roles
-                    }
-                }
+            new {
+                user.Id,
+                user.UserName,
+                user.Email,
+                user.PhoneNumber,
+                DisplayName = displayName,
+                Roles = roles
+            }
+        }
             });
         }
+
 
         // PUT: admin/user/{id}
         [HttpPut("{id}")]
@@ -177,12 +189,22 @@ namespace GSWApi.Controllers.Admin
             if (user == null)
                 return NotFound(new { success = false, message = "User not found." });
 
+            // Remove DisplayName claim
+            var claims = await _userManager.GetClaimsAsync(user);
+            var displayClaim = claims.FirstOrDefault(c => c.Type == "DisplayName");
+            if (displayClaim != null)
+            {
+                await _userManager.RemoveClaimAsync(user, displayClaim);
+            }
+
             var result = await _userManager.DeleteAsync(user);
             if (!result.Succeeded)
                 return BadRequest(new { success = false, errors = result.Errors });
 
             return Ok(new { success = true, data = new[] { new { user.Id, message = "User deleted." } } });
         }
+
+
 
         // POST: admin/user/lock/{id}
         [HttpPost("lock/{id}")]
@@ -296,6 +318,29 @@ namespace GSWApi.Controllers.Admin
                 }
             });
         }
+
+        [HttpPut("update/{id}")]
+        public async Task<IActionResult> UpdateDisplayName(string id, [FromQuery] string displayName)
+        {
+            var user = await _userManager.FindByIdAsync(id);
+            if (user == null)
+                return NotFound("User not found.");
+
+            var claims = await _userManager.GetClaimsAsync(user);
+            var existingClaim = claims.FirstOrDefault(c => c.Type == "DisplayName");
+
+            if (existingClaim != null)
+            {
+                await _userManager.ReplaceClaimAsync(user, existingClaim, new System.Security.Claims.Claim("DisplayName", displayName));
+            }
+            else
+            {
+                await _userManager.AddClaimAsync(user, new System.Security.Claims.Claim("DisplayName", displayName));
+            }
+
+            return Ok("DisplayName updated.");
+        }
+
 
         [HttpGet("with-library")]
         public async Task<IActionResult> GetAllUsersWithLibrary()

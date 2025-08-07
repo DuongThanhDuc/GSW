@@ -28,20 +28,36 @@ namespace GSWApi.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterDTO dto)
         {
-            var user = new IdentityUser { UserName = dto.Username, Email = dto.Email, PhoneNumber = dto.PhoneNumber, EmailConfirmed = false };
-            var result = await _userManager.CreateAsync(user, dto.Password);
+            var existingUser = await _userManager.FindByEmailAsync(dto.Email);
+            if (existingUser != null)
+            {
+                return BadRequest("Email is already registered.");
+            }
 
+            var user = new IdentityUser
+            {
+                UserName = dto.Username,
+                Email = dto.Email,
+                PhoneNumber = dto.PhoneNumber,
+                EmailConfirmed = false
+            };
+
+            var result = await _userManager.CreateAsync(user, dto.Password);
             if (!result.Succeeded)
                 return BadRequest(result.Errors);
 
+
             await _userManager.AddToRoleAsync(user, "User");
 
-            // Generate OTP and send email
+            var displayNameClaim = new Claim("DisplayName", dto.Username); 
+            await _userManager.AddClaimAsync(user, displayNameClaim);
+
             var otp = OtpManager.GenerateOtp(dto.Email);
             await _emailService.SendOtpEmail(dto.Email, otp);
 
             return Ok("An OTP has been sent to your email for verification. Please check your inbox.");
         }
+
 
         [HttpPost("verify-register-otp")]
         public async Task<IActionResult> VerifyRegisterOtp([FromBody] VerifyOtpDto dto)
