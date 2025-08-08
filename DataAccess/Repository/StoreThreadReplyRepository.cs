@@ -19,19 +19,69 @@ namespace DataAccess.Repository
             _context = context;
         }
 
-        public async Task<IEnumerable<StoreThreadReplyDTO>> GetAllByThreadIdAsync(int threadId)
+        public async Task<IEnumerable<StoreThreadReplyDTOReadOnly>> GetAllAsync()
+        {
+            return await _context.Store_ThreadReplies
+                .Join(
+                    _context.Users,
+                    reply => reply.CreatedBy,
+                    user => user.Id,
+                    (reply, user) => new StoreThreadReplyDTOReadOnly
+                    {
+                        Id = reply.Id,
+                        ThreadID = reply.ThreadID,
+                        ThreadComment = reply.ThreadComment,
+                        UpvoteCount = reply.UpvoteCount,
+                        CreatedBy = reply.CreatedBy,
+                        CreatedAt = reply.CreatedAt,
+                        CreatedByUserName = user.UserName,
+                        CreatedByEmail = user.Email
+                    }
+                ).ToListAsync();
+        }
+
+        public async Task<StoreThreadReplyDTOReadOnly?> GetByIdAsync(int id)
+        {
+            return await _context.Store_ThreadReplies
+                .Where(r => r.Id == id)
+                .Join(
+                    _context.Users,
+                    reply => reply.CreatedBy,
+                    user => user.Id,
+                    (reply, user) => new StoreThreadReplyDTOReadOnly
+                    {
+                        Id = reply.Id,
+                        ThreadID = reply.ThreadID,
+                        ThreadComment = reply.ThreadComment,
+                        UpvoteCount = reply.UpvoteCount,
+                        CreatedBy = reply.CreatedBy,
+                        CreatedAt = reply.CreatedAt,
+                        CreatedByUserName = user.UserName,
+                        CreatedByEmail = user.Email
+                    }
+                ).FirstOrDefaultAsync();
+        }
+
+        public async Task<IEnumerable<StoreThreadReplyDTOReadOnly>> GetAllByThreadIdAsync(int threadId)
         {
             return await _context.Store_ThreadReplies
                 .Where(r => r.ThreadID == threadId)
-                .Select(r => new StoreThreadReplyDTO
-                {
-                    Id = r.Id,
-                    ThreadID = r.ThreadID,
-                    ThreadComment = r.ThreadComment,
-                    UpvoteCount = r.UpvoteCount,
-                    CreatedBy = r.CreatedBy,
-                    CreatedAt = r.CreatedAt
-                }).ToListAsync();
+                .Join(
+                    _context.Users,
+                    reply => reply.CreatedBy,
+                    user => user.Id,
+                    (reply, user) => new StoreThreadReplyDTOReadOnly
+                    {
+                        Id = reply.Id,
+                        ThreadID = reply.ThreadID,
+                        ThreadComment = reply.ThreadComment,
+                        UpvoteCount = reply.UpvoteCount,
+                        CreatedBy = reply.CreatedBy,
+                        CreatedAt = reply.CreatedAt,
+                        CreatedByUserName = user.UserName,
+                        CreatedByEmail = user.Email
+                    }
+                ).ToListAsync();
         }
 
         public async Task<StoreThreadReplyDTO> CreateAsync(StoreThreadReplyDTO dto)
@@ -62,31 +112,99 @@ namespace DataAccess.Repository
             return true;
         }
 
-        public async Task<IEnumerable<StoreThreadReplyUpvoteHistoryDTO>> GetAllReplyUpvotesAsync()
+        public async Task<IEnumerable<StoreThreadReplyUpvoteHistoryDTOReadOnly>> GetAllReplyUpvotesAsync()
         {
             return await _context.Store_ThreadReplyUpvoteHistories
-                .Select(u => new StoreThreadReplyUpvoteHistoryDTO
-                {
-                    Id = u.Id,
-                    UserId = u.UserId,
-                    ThreadCommentId = u.ThreadCommentId,
-                    CreatedAt = u.CreatedAt
-                }).ToListAsync();
+                .Join(
+                    _context.Users,
+                    upvote => upvote.UserId,
+                    user => user.Id,
+                    (upvote, user) => new { upvote, user }
+                )
+                .Join(
+                    _context.Store_ThreadReplies,
+                    combined => combined.upvote.ThreadCommentId,
+                    reply => reply.Id,
+                    (combined, reply) => new StoreThreadReplyUpvoteHistoryDTOReadOnly
+                    {
+                        Id = combined.upvote.Id,
+                        UserId = combined.upvote.UserId,
+                        UserName = combined.user.UserName,
+                        Email = combined.user.Email,
+                        ThreadCommentId = combined.upvote.ThreadCommentId,
+                        ThreadComment = reply.ThreadComment,
+                        commentUrl = reply.CommentImageUrl,
+                        CreatedAt = combined.upvote.CreatedAt
+                    }
+                )
+                .ToListAsync();
         }
 
-        public async Task<StoreThreadReplyUpvoteHistoryDTO?> GetReplyUpvoteByIdAsync(int id)
+        public async Task<StoreThreadReplyUpvoteHistoryDTOReadOnly?> GetReplyUpvoteByIdAsync(int id)
         {
-            var record = await _context.Store_ThreadReplyUpvoteHistories.FindAsync(id);
-            if (record == null) return null;
-
-            return new StoreThreadReplyUpvoteHistoryDTO
-            {
-                Id = record.Id,
-                UserId = record.UserId,
-                ThreadCommentId = record.ThreadCommentId,
-                CreatedAt = record.CreatedAt
-            };
+            return await _context.Store_ThreadReplyUpvoteHistories
+                .Where(upvote => upvote.Id == id)
+                .Join(
+                    _context.Users,
+                    upvote => upvote.UserId,
+                    user => user.Id,
+                    (upvote, user) => new { upvote, user }
+                )
+                .Join(
+                    _context.Store_ThreadReplies,
+                    combined => combined.upvote.ThreadCommentId,
+                    reply => reply.Id,
+                    (combined, reply) => new StoreThreadReplyUpvoteHistoryDTOReadOnly
+                    {
+                        Id = combined.upvote.Id,
+                        UserId = combined.upvote.UserId,
+                        UserName = combined.user.UserName,
+                        Email = combined.user.Email,
+                        ThreadCommentId = combined.upvote.ThreadCommentId,
+                        ThreadComment = reply.ThreadComment,
+                        commentUrl = reply.CommentImageUrl,
+                        CreatedAt = combined.upvote.CreatedAt
+                    }
+                )
+                .FirstOrDefaultAsync();
         }
+
+        public async Task<IEnumerable<StoreThreadReplyUpvoteHistoryDTOReadOnly>> SearchReplyUpvotesByUserAsync(string searchTerm)
+        {
+            return await _context.Store_ThreadReplyUpvoteHistories
+                .Join(
+                    _context.Users,
+                    upvote => upvote.UserId,
+                    user => user.Id,
+                    (upvote, user) => new { upvote, user }
+                )
+                .Join(
+                    _context.Store_ThreadReplies,
+                    combined => combined.upvote.ThreadCommentId,
+                    reply => reply.Id,
+                    (combined, reply) => new { combined.upvote, combined.user, reply }
+                )
+                .Where(result =>
+                    result.user.Id.Contains(searchTerm) ||
+                    result.user.UserName.Contains(searchTerm) ||
+                    result.user.Email.Contains(searchTerm) ||
+                    result.user.PhoneNumber.Contains(searchTerm)
+                )
+                .Select(result => new StoreThreadReplyUpvoteHistoryDTOReadOnly
+                {
+                    Id = result.upvote.Id,
+                    UserId = result.upvote.UserId,
+                    UserName = result.user.UserName,
+                    Email = result.user.Email,
+                    ThreadCommentId = result.upvote.ThreadCommentId,
+                    ThreadComment = result.reply.ThreadComment,
+                    commentUrl = result.reply.CommentImageUrl,
+                    CreatedAt = result.upvote.CreatedAt
+                })
+                .ToListAsync();
+        }
+
+
 
         public async Task<StoreThreadReplyUpvoteHistoryDTO> CreateReplyUpvoteAsync(StoreThreadReplyUpvoteHistoryDTO dto)
         {

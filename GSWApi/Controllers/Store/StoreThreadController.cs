@@ -97,5 +97,20 @@ namespace GSWApi.Controllers.Store
 
             return Ok(new { success = true, data = history });
         }
+
+        [HttpGet("user/{userId}")]
+        public async Task<IActionResult> GetAllByUserId(string userId)
+        {
+            var threads = await _repository.GetAllByUserIdAsync(userId);
+            return Ok(new { success = true, data = threads });
+        }
+
+        [HttpGet("upvotes/search")]
+        public async Task<IActionResult> GetAllUpvoteHistoriesByUserSearch([FromQuery] string query)
+        {
+            var upvotes = await _repository.GetAllUpvoteHistoriesByUserSearchAsync(query);
+            return Ok(new { success = true, data = upvotes });
+        }
+
     }
 }

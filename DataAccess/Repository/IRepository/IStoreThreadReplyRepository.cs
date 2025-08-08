@@ -9,12 +9,19 @@ namespace DataAccess.Repository.IRepository
 {
     public interface IStoreThreadReplyRepository
     {
-        Task<IEnumerable<StoreThreadReplyDTO>> GetAllByThreadIdAsync(int threadId);
+        // Thread reply methods
+        Task<IEnumerable<StoreThreadReplyDTOReadOnly>> GetAllAsync();
+        Task<StoreThreadReplyDTOReadOnly?> GetByIdAsync(int id);
+        Task<IEnumerable<StoreThreadReplyDTOReadOnly>> GetAllByThreadIdAsync(int threadId);
         Task<StoreThreadReplyDTO> CreateAsync(StoreThreadReplyDTO dto);
         Task<bool> DeleteAsync(int id);
 
-        Task<IEnumerable<StoreThreadReplyUpvoteHistoryDTO>> GetAllReplyUpvotesAsync();
-        Task<StoreThreadReplyUpvoteHistoryDTO?> GetReplyUpvoteByIdAsync(int id);
+        // Upvote history methods
+        Task<IEnumerable<StoreThreadReplyUpvoteHistoryDTOReadOnly>> GetAllReplyUpvotesAsync();
+        Task<StoreThreadReplyUpvoteHistoryDTOReadOnly?> GetReplyUpvoteByIdAsync(int id);
+        Task<IEnumerable<StoreThreadReplyUpvoteHistoryDTOReadOnly>> SearchReplyUpvotesByUserAsync(string searchTerm);
+        Task<StoreThreadReplyUpvoteHistoryDTO> CreateReplyUpvoteAsync(StoreThreadReplyUpvoteHistoryDTO dto);
+        Task<bool> DeleteReplyUpvoteAsync(int id);
         Task<bool> ToggleReplyUpvoteAsync(string userId, int replyId);
     }
 }
