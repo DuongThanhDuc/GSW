@@ -77,5 +77,13 @@ namespace GSWApi.Controllers.Store
 
             return Ok(new { success = true, data = record });
         }
+
+        // GET: api/StoreThreadReply/upvotes/search?query=...
+        [HttpGet("upvotes/search")]
+        public async Task<IActionResult> SearchReplyUpvotes([FromQuery] string query)
+        {
+            var replies = await _repository.SearchReplyUpvotesByUserAsync(query);
+            return Ok(new { success = true, data = replies });
+        }
     }
 }

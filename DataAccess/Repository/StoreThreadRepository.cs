@@ -19,35 +19,78 @@ namespace DataAccess.Repository
             _context = context;
         }
 
-        public async Task<IEnumerable<StoreThreadDTO>> GetAllAsync()
+        public async Task<IEnumerable<StoreThreadDTOReadOnly>> GetAllAsync()
         {
             return await _context.Store_Threads
-                .Select(t => new StoreThreadDTO
-                {
-                    Id = t.Id,
-                    ThreadTitle = t.ThreadTitle,
-                    ThreadDescription = t.ThreadDescription,
-                    UpvoteCount = t.UpvoteCount,
-                    CreatedBy = t.CreatedBy,
-                    CreatedAt = t.CreatedAt
-                }).ToListAsync();
+                .Join(
+                    _context.Users,
+                    thread => thread.CreatedBy,
+                    user => user.Id,
+                    (thread, user) => new StoreThreadDTOReadOnly
+                    {
+                        Id = thread.Id,
+                        ThreadTitle = thread.ThreadTitle,
+                        ThreadDescription = thread.ThreadDescription,
+                        ThreadImageUrl = thread.ThreadImageUrl,
+                        UpvoteCount = thread.UpvoteCount,
+                        CreatedBy = thread.CreatedBy,
+                        CreatedAt = thread.CreatedAt,
+                        CreatedByUserName = user.UserName,
+                        CreatedByEmail = user.Email
+                    }
+                ).ToListAsync();
         }
 
-        public async Task<StoreThreadDTO?> GetByIdAsync(int id)
+
+        public async Task<StoreThreadDTOReadOnly?> GetByIdAsync(int id)
         {
-            var thread = await _context.Store_Threads.FindAsync(id);
-            if (thread == null) return null;
+            var threadWithUser = await _context.Store_Threads
+                .Where(t => t.Id == id)
+                .Join(
+                    _context.Users,
+                    thread => thread.CreatedBy,
+                    user => user.Id,
+                    (thread, user) => new StoreThreadDTOReadOnly
+                    {
+                        Id = thread.Id,
+                        ThreadTitle = thread.ThreadTitle,
+                        ThreadDescription = thread.ThreadDescription,
+                        ThreadImageUrl = thread.ThreadImageUrl,
+                        UpvoteCount = thread.UpvoteCount,
+                        CreatedBy = thread.CreatedBy,
+                        CreatedAt = thread.CreatedAt,
+                        CreatedByUserName = user.UserName,
+                        CreatedByEmail = user.Email
+                    }
+                ).FirstOrDefaultAsync();
 
-            return new StoreThreadDTO
-            {
-                Id = thread.Id,
-                ThreadTitle = thread.ThreadTitle,
-                ThreadDescription = thread.ThreadDescription,
-                UpvoteCount = thread.UpvoteCount,
-                CreatedBy = thread.CreatedBy,
-                CreatedAt = thread.CreatedAt
-            };
+            return threadWithUser;
         }
+
+
+        public async Task<IEnumerable<StoreThreadDTOReadOnly>> GetAllByUserIdAsync(string userId)
+        {
+            return await _context.Store_Threads
+                .Where(t => t.CreatedBy == userId)
+                .Join(
+                    _context.Users,
+                    thread => thread.CreatedBy,
+                    user => user.Id,
+                    (thread, user) => new StoreThreadDTOReadOnly
+                    {
+                        Id = thread.Id,
+                        ThreadTitle = thread.ThreadTitle,
+                        ThreadDescription = thread.ThreadDescription,
+                        ThreadImageUrl = thread.ThreadImageUrl,
+                        UpvoteCount = thread.UpvoteCount,
+                        CreatedBy = thread.CreatedBy,
+                        CreatedAt = thread.CreatedAt,
+                        CreatedByUserName = user.UserName,
+                        CreatedByEmail = user.Email
+                    }
+                ).ToListAsync();
+        }
+
 
         public async Task<StoreThreadDTO> CreateAsync(StoreThreadDTO dto)
         {
@@ -91,31 +134,49 @@ namespace DataAccess.Repository
             return true;
         }
 
-        public async Task<IEnumerable<StoreThreadUpvoteHistoryDTO>> GetAllUpvoteHistoriesAsync()
+        public async Task<IEnumerable<StoreThreadUpvoteHistoryDTOReadOnly>> GetAllUpvoteHistoriesAsync()
         {
             return await _context.Store_ThreadUpvoteHistories
-                .Select(u => new StoreThreadUpvoteHistoryDTO
-                {
-                    Id = u.Id,
-                    UserID = u.UserID,
-                    ThreadID = u.ThreadID,
-                    CreatedAt = u.CreatedAt
-                }).ToListAsync();
+                .Join(
+                    _context.Users,
+                    history => history.UserID,
+                    user => user.Id,
+                    (history, user) => new StoreThreadUpvoteHistoryDTOReadOnly
+                    {
+                        Id = history.Id,
+                        UserID = history.UserID,
+                        Username = user.UserName,
+                        Email = user.Email,
+                        Phone = user.PhoneNumber,
+                        ThreadID = history.ThreadID,
+                        CreatedAt = history.CreatedAt
+                    }
+                ).ToListAsync();
         }
 
-        public async Task<StoreThreadUpvoteHistoryDTO?> GetUpvoteHistoryByIdAsync(int id)
+        public async Task<StoreThreadUpvoteHistoryDTOReadOnly?> GetUpvoteHistoryByIdAsync(int id)
         {
-            var history = await _context.Store_ThreadUpvoteHistories.FindAsync(id);
-            if (history == null) return null;
+            var result = await _context.Store_ThreadUpvoteHistories
+                .Where(h => h.Id == id)
+                .Join(
+                    _context.Users,
+                    history => history.UserID,
+                    user => user.Id,
+                    (history, user) => new StoreThreadUpvoteHistoryDTOReadOnly
+                    {
+                        Id = history.Id,
+                        UserID = history.UserID,
+                        Username = user.UserName,
+                        Email = user.Email,
+                        Phone = user.PhoneNumber,
+                        ThreadID = history.ThreadID,
+                        CreatedAt = history.CreatedAt
+                    }
+                ).FirstOrDefaultAsync();
 
-            return new StoreThreadUpvoteHistoryDTO
-            {
-                Id = history.Id,
-                UserID = history.UserID,
-                ThreadID = history.ThreadID,
-                CreatedAt = history.CreatedAt
-            };
+            return result;
         }
+
         public async Task<bool> ToggleUpvoteAsync(string userId, int threadId)
         {
             var history = await _context.Store_ThreadUpvoteHistories
@@ -146,6 +207,46 @@ namespace DataAccess.Repository
                 await _context.SaveChangesAsync();
                 return true; // added upvote
             }
+        }
+
+        public async Task<IEnumerable<StoreThreadUpvoteHistoryDTOReadOnly>> GetAllUpvoteHistoriesByUserSearchAsync(string? query)
+        {
+            if (string.IsNullOrWhiteSpace(query))
+                return new List<StoreThreadUpvoteHistoryDTOReadOnly>();
+
+            query = query.ToLower();
+
+            var results = await _context.Store_ThreadUpvoteHistories
+                .Join(
+                    _context.Users,
+                    upvote => upvote.UserID,
+                    user => user.Id,
+                    (upvote, user) => new { upvote, user }
+                )
+                .Where(x =>
+                    (x.user.Id != null && x.user.Id.ToLower().Contains(query)) ||
+                    (x.user.UserName != null && x.user.UserName.ToLower().Contains(query)) ||
+                    (x.user.Email != null && x.user.Email.ToLower().Contains(query)) ||
+                    (x.user.PhoneNumber != null && x.user.PhoneNumber.ToLower().Contains(query))
+                )
+                .Join(
+                    _context.Store_Threads,
+                    combined => combined.upvote.ThreadID,
+                    thread => thread.Id,
+                    (combined, thread) => new StoreThreadUpvoteHistoryDTOReadOnly
+                    {
+                        Id = combined.upvote.Id,
+                        UserID = combined.user.Id,
+                        Username = combined.user.UserName,
+                        Email = combined.user.Email,
+                        Phone = combined.user.PhoneNumber,
+                        ThreadID = combined.upvote.ThreadID,
+                        CreatedAt = combined.upvote.CreatedAt
+                    }
+                )
+                .ToListAsync();
+
+            return results;
         }
     }
 }
