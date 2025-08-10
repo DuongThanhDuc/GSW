@@ -71,6 +71,15 @@ namespace DataAccess.Repository
             }
             await _context.SaveChangesAsync();
         }
+        public async Task UpdateOrderStatusByCodeAsync(string orderCode, string status)
+        {
+            var order = await _context.Store_Orders
+                .FirstOrDefaultAsync(o => o.OrderCode == orderCode);
+            if (order == null) return;
+
+            order.Status = status; 
+            await _context.SaveChangesAsync();
+        }
 
     }
 }
