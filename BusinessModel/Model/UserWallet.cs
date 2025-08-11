@@ -23,6 +23,6 @@ namespace BusinessModel.Model
         [Precision(18, 2)]
         public decimal Balance { get; set; } = 0m;
 
-        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime UpdatedAt { get; set; } = DateTime.Now;
     }
 }

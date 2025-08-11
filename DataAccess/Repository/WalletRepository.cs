@@ -14,7 +14,7 @@ namespace DataAccess.Repository
             var w = await _ctx.User_Wallets.FirstOrDefaultAsync(x => x.UserId == userId, ct);
             if (w == null)
             {
-                w = new UserWallet { UserId = userId, Balance = 0m, UpdatedAt = DateTime.UtcNow };
+                w = new UserWallet { UserId = userId, Balance = 0m, UpdatedAt = DateTime.Now };
                 _ctx.User_Wallets.Add(w);
                 await _ctx.SaveChangesAsync(ct);
             }
@@ -28,7 +28,7 @@ namespace DataAccess.Repository
                 .Where(w => w.UserId == userId)
                 .ExecuteUpdateAsync(s => s
                     .SetProperty(w => w.Balance, w => w.Balance + amount)
-                    .SetProperty(w => w.UpdatedAt, _ => DateTime.UtcNow), ct);
+                    .SetProperty(w => w.UpdatedAt, _ => DateTime.Now), ct);
 
             if (rows == 0)
             {
@@ -38,7 +38,7 @@ namespace DataAccess.Repository
                     .Where(w => w.UserId == userId)
                     .ExecuteUpdateAsync(s => s
                         .SetProperty(w => w.Balance, w => w.Balance + amount)
-                        .SetProperty(w => w.UpdatedAt, _ => DateTime.UtcNow), ct);
+                        .SetProperty(w => w.UpdatedAt, _ => DateTime.Now), ct);
             }
         }
 
@@ -49,7 +49,7 @@ namespace DataAccess.Repository
                 .Where(w => w.UserId == userId && w.Balance >= amount)
                 .ExecuteUpdateAsync(s => s
                     .SetProperty(w => w.Balance, w => w.Balance - amount)
-                    .SetProperty(w => w.UpdatedAt, _ => DateTime.UtcNow), ct);
+                    .SetProperty(w => w.UpdatedAt, _ => DateTime.Now), ct);
 
             if (rows == 0)
             {
@@ -60,7 +60,7 @@ namespace DataAccess.Repository
                     .Where(w => w.UserId == userId && w.Balance >= amount)
                     .ExecuteUpdateAsync(s => s
                         .SetProperty(w => w.Balance, w => w.Balance - amount)
-                        .SetProperty(w => w.UpdatedAt, _ => DateTime.UtcNow), ct);
+                        .SetProperty(w => w.UpdatedAt, _ => DateTime.Now), ct);
             }
 
             return rows > 0;
