@@ -52,12 +52,11 @@ namespace BusinessModel.Model
         public DbSet<PaymentTransaction> PaymentTransactions { get; set; }
         public DbSet<SystemProfilePicture> System_ProfilePictures { get; set; }
 
-        public DbSet<DepositWithdrawTransaction> DepositWithdrawTransactions { get; set; }
-
         public DbSet<StoreThreadReplyUpvoteHistory> Store_ThreadReplyUpvoteHistories { get; set; }
         public DbSet<StoreThreadUpvoteHistory> Store_ThreadUpvoteHistories { get; set; }
         public DbSet<StoreWishlist> Store_Wishlists { get; set; }
-
+        public DbSet<UserWallet> User_Wallets { get; set; }
+        public DbSet<DepositWithdrawTransaction> DepositWithdrawTransactions { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -245,6 +244,25 @@ namespace BusinessModel.Model
                 .HasForeignKey(w => w.GameId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            // ---- Wallet ----
+            modelBuilder.Entity<UserWallet>(b =>
+            {
+                b.HasIndex(x => x.UserId).IsUnique();
+                b.Property(x => x.Balance).HasPrecision(18, 2);
+                b.HasOne(x => x.User)
+                 .WithOne()
+                 .HasForeignKey<UserWallet>(x => x.UserId)
+                 .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // ---- Deposit/Withdraw Tx ----
+            modelBuilder.Entity<DepositWithdrawTransaction>(b =>
+            {
+                b.Property(x => x.Amount).HasPrecision(18, 2);
+                b.Property(x => x.Type).HasMaxLength(10).IsRequired();
+                b.Property(x => x.Status).HasMaxLength(20).IsRequired();
+                b.Property(x => x.CreatedAt).HasDefaultValueSql("GETDATE()");
+            });
 
 
             // Seeding Datas

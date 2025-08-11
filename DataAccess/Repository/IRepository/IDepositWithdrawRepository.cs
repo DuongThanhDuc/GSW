@@ -9,11 +9,11 @@ namespace DataAccess.Repository.IRepository
 {
     public interface IDepositWithdrawRepository
     {
-        Task<DepositWithdrawTransaction> CreateAsync(DepositWithdrawTransaction tx);
-        Task<List<DepositWithdrawTransaction>> GetAllAsync();
-        Task<DepositWithdrawTransaction> GetByIdAsync(int id);
-        Task ApproveAsync(int id, string status, string note, string adminId);
-        Task<List<ApprovalHistory>> GetApprovalHistoryAsync(int entityId);
+        Task<DepositWithdrawTransaction> CreateAsync(DepositWithdrawTransaction tx, CancellationToken ct = default);
+        Task<DepositWithdrawTransaction?> GetByIdAsync(int id, CancellationToken ct = default);
+        Task<List<DepositWithdrawTransaction>> GetByUserAsync(string userId, int take = 50, CancellationToken ct = default);
+        Task<int> CountPendingAsync(CancellationToken ct = default);
+        Task<List<DepositWithdrawTransaction>> GetPendingAsync(int skip, int take, CancellationToken ct = default);
+        Task UpdateAsync(DepositWithdrawTransaction tx, CancellationToken ct = default);
     }
-
 }
