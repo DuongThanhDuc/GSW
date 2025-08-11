@@ -103,6 +103,20 @@ public class PaymentController : ControllerBase
         await _paymentRepo.UpdateOrderStatusByCodeAsync(orderId,
             vnp_ResponseCode == "00" ? "Success" : "Failed");
 
+        // >>> THÊM ĐOẠN NÀY (DEV ONLY): cấp game khi callback success <<<
+        if (vnp_ResponseCode == "00")
+        {
+            try
+            {
+                // orderId phải == Store_Orders.OrderCode
+                await _paymentRepo.GrantGameToLibraryAsync(orderId);
+            }
+            catch (Exception ex)
+            {
+                // Log lại để sau này debug (đừng trả lỗi ra FE)
+                Console.WriteLine($"GrantGameToLibraryAsync error for order {orderId}: {ex}");
+            }
+        }
         // Redirect về FE
         var feUrl = $"http://localhost:5000/payment/result?orderId={orderId}&status={status}";
         return Redirect(feUrl);
