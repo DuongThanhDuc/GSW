@@ -11,7 +11,7 @@ namespace DataAccess.Repository
 
         public async Task<DepositWithdrawTransaction> CreateAsync(DepositWithdrawTransaction tx, CancellationToken ct = default)
         {
-            tx.CreatedAt = DateTime.UtcNow;
+            tx.CreatedAt = DateTime.Now;
             tx.Status = "Pending";
             _context.DepositWithdrawTransactions.Add(tx);
             await _context.SaveChangesAsync(ct);

@@ -24,7 +24,7 @@ namespace BusinessModel.Model
         [Required, MaxLength(20)]
         public string Status { get; set; } = "Pending";
 
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
         public DateTime? ApprovedAt { get; set; }
 
         // Admin duyệt

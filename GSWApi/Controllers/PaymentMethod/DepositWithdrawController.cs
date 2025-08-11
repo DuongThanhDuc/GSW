@@ -86,7 +86,7 @@ namespace GSWApi.Controllers.PaymentMethod
                 EntityId = tx.Id,
                 Status = "Pending",
                 ChangedByUserId = CurrentUserId,
-                ChangedAt = DateTime.UtcNow,
+                ChangedAt = DateTime.Now,
                 Note = "User submitted request"
             });
             await _ctx.SaveChangesAsync(ct);
@@ -132,7 +132,7 @@ namespace GSWApi.Controllers.PaymentMethod
             try
             {
                 tx.Status = status!;
-                tx.ApprovedAt = DateTime.UtcNow;
+                tx.ApprovedAt = DateTime.Now;
                 tx.ApprovedBy = CurrentUserId;
                 if (!string.IsNullOrWhiteSpace(model.Note)) tx.Note = model.Note;
 
@@ -161,7 +161,7 @@ namespace GSWApi.Controllers.PaymentMethod
                     EntityId = tx.Id,
                     Status = tx.Status,
                     ChangedByUserId = CurrentUserId,
-                    ChangedAt = DateTime.UtcNow,
+                    ChangedAt = DateTime.Now,
                     Note = model.Note
                 });
                 await _ctx.SaveChangesAsync(ct);
