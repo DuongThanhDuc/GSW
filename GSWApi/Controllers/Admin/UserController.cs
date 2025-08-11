@@ -444,20 +444,23 @@ namespace GSWApi.Controllers.Admin
         {
             var user = await _userManager.FindByIdAsync(id);
             if (user == null)
-                return NotFound(new { success = false, message = "User not found." });
+                return NotFound(new { success = false, message = "User not found.", status = "not_found" });
 
-            await _userManager.SetLockoutEnabledAsync(user, true);
             var unlockDate = DateTimeOffset.UtcNow.AddDays(days);
             await _userManager.SetLockoutEndDateAsync(user, unlockDate);
 
-            // -- Send notification email --
             await _emailService.SendEmailAsync(
                 user.Email,
                 "Your account has been temporarily banned",
                 $"Your account has been banned for {days} days and will be unlocked on {unlockDate:yyyy-MM-dd}."
             );
 
-            return Ok(new { success = true, message = $"User has been banned for {days} days (until {unlockDate:yyyy-MM-dd})." });
+            return Ok(new
+            {
+                success = true,
+                message = $"User has been banned for {days} days (until {unlockDate:yyyy-MM-dd}).",
+                status = "banned"
+            });
         }
 
         // POST: admin/user/unban/{id}
@@ -466,13 +469,22 @@ namespace GSWApi.Controllers.Admin
         {
             var user = await _userManager.FindByIdAsync(id);
             if (user == null)
-                return NotFound(new { success = false, message = "User not found." });
+                return NotFound(new { success = false, message = "User not found.", status = "not_found" });
 
             await _userManager.SetLockoutEndDateAsync(user, null);
 
-            // Optionally send notification email here
+            await _emailService.SendEmailAsync(
+                user.Email,
+                "Your account has been restored",
+                "Your account has been unbanned and is now active. You can sign in again."
+            );
 
-            return Ok(new { success = true, message = "User has been unbanned." });
+            return Ok(new
+            {
+                success = true,
+                message = "User has been unbanned.",
+                status = "active"
+            });
         }
 
     }

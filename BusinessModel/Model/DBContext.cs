@@ -274,6 +274,7 @@ namespace BusinessModel.Model
             // Admin Users
             var adminUserId = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af";
             var adminUserId2 = "bcbcdd33-9a99-75dv-82d7-0c9e67f9d9af";
+            var adminUserId3 = "bcbcde35-9a98-75dv-82d7-0c9e67f9d9af";
             var hasher = new PasswordHasher<IdentityUser>();
 
             var adminUser = new IdentityUser
@@ -299,9 +300,20 @@ namespace BusinessModel.Model
                 SecurityStamp = Guid.NewGuid().ToString(),
                 PasswordHash = hasher.HashPassword(null!, "AdminPassword@123")
             };
+            var adminUser3 = new IdentityUser
+            {
+                Id = adminUserId3,
+                UserName = "phong",
+                NormalizedUserName = "PHONG",
+                Email = "phong260702@gmail.com",
+                NormalizedEmail = "PHONG260702@GMAIL.COM",
+                EmailConfirmed = true,
+                SecurityStamp = Guid.NewGuid().ToString(),
+                PasswordHash = hasher.HashPassword(null!, "Phong@123")
+            };
 
             // Seed Users
-            modelBuilder.Entity<IdentityUser>().HasData(adminUser, adminUser2);
+            modelBuilder.Entity<IdentityUser>().HasData(adminUser, adminUser2, adminUser3);
 
             // Seed Roles for Users
             modelBuilder.Entity<IdentityUserRole<string>>().HasData(
@@ -314,6 +326,11 @@ namespace BusinessModel.Model
                 {
                     UserId = adminUserId2,
                     RoleId = "b7b9181c-ff61-4d8f-8f6d-5edb3a6d3a11" // Same role or change if needed
+                },
+                new IdentityUserRole<string>
+                {
+                    UserId = adminUserId3,
+                    RoleId = "b7b9181c-ff61-4d8f-8f6d-5edb3a6d3a11" 
                 }
             );
 
