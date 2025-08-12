@@ -4,6 +4,7 @@ using BusinessModel.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BusinessModel.Migrations
 {
     [DbContext(typeof(DBContext))]
-    partial class DBContextModelSnapshot : ModelSnapshot
+    [Migration("20250811175623_AddAdminUsers")]
+    partial class AddAdminUsers
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -68,7 +71,6 @@ namespace BusinessModel.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<decimal>("Amount")
-                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<DateTime?>("ApprovedAt")
@@ -78,23 +80,19 @@ namespace BusinessModel.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
-                        .HasDefaultValueSql("GETDATE()");
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Note")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Type")
                         .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("UserId")
                         .IsRequired()
@@ -338,8 +336,8 @@ namespace BusinessModel.Migrations
                     b.Property<int>("GameID")
                         .HasColumnType("int");
 
-                    b.Property<bool>("IsUpvoted")
-                        .HasColumnType("bit");
+                    b.Property<int>("StarCount")
+                        .HasColumnType("int");
 
                     b.Property<string>("UserID")
                         .IsRequired()
@@ -820,41 +818,41 @@ namespace BusinessModel.Migrations
                     b.ToTable("System_Categories");
 
                     b.HasData(
-                         new
-  {
-      ID = 1,
-      CategoryName = "RPG",
-      CreatedAt = new DateTime(2025, 8, 12, 14, 55, 26, 45, DateTimeKind.Utc).AddTicks(4574),
-      CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af"
-  },
-  new
-  {
-      ID = 2,
-      CategoryName = "FPS",
-      CreatedAt = new DateTime(2025, 8, 12, 14, 55, 26, 45, DateTimeKind.Utc).AddTicks(4575),
-      CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af"
-  },
-  new
-  {
-      ID = 3,
-      CategoryName = "Puzzle",
-      CreatedAt = new DateTime(2025, 8, 12, 14, 55, 26, 45, DateTimeKind.Utc).AddTicks(4577),
-      CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af"
-  },
-  new
-  {
-      ID = 4,
-      CategoryName = "Simulation",
-      CreatedAt = new DateTime(2025, 8, 12, 14, 55, 26, 45, DateTimeKind.Utc).AddTicks(4578),
-      CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af"
-  },
-  new
-  {
-      ID = 5,
-      CategoryName = "Horror",
-      CreatedAt = new DateTime(2025, 8, 12, 14, 55, 26, 45, DateTimeKind.Utc).AddTicks(4579),
-      CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af"
-  });
+                        new
+                        {
+                            ID = 1,
+                            CategoryName = "RPG",
+                            CreatedAt = new DateTime(2025, 8, 11, 17, 56, 23, 429, DateTimeKind.Utc).AddTicks(8994),
+                            CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af"
+                        },
+                        new
+                        {
+                            ID = 2,
+                            CategoryName = "FPS",
+                            CreatedAt = new DateTime(2025, 8, 11, 17, 56, 23, 429, DateTimeKind.Utc).AddTicks(8995),
+                            CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af"
+                        },
+                        new
+                        {
+                            ID = 3,
+                            CategoryName = "Puzzle",
+                            CreatedAt = new DateTime(2025, 8, 11, 17, 56, 23, 429, DateTimeKind.Utc).AddTicks(8996),
+                            CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af"
+                        },
+                        new
+                        {
+                            ID = 4,
+                            CategoryName = "Simulation",
+                            CreatedAt = new DateTime(2025, 8, 11, 17, 56, 23, 429, DateTimeKind.Utc).AddTicks(8997),
+                            CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af"
+                        },
+                        new
+                        {
+                            ID = 5,
+                            CategoryName = "Horror",
+                            CreatedAt = new DateTime(2025, 8, 11, 17, 56, 23, 429, DateTimeKind.Utc).AddTicks(8998),
+                            CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af"
+                        });
                 });
 
             modelBuilder.Entity("BusinessModel.Model.SystemProfilePicture", b =>
@@ -907,68 +905,41 @@ namespace BusinessModel.Migrations
                     b.ToTable("System_Tags");
 
                     b.HasData(
-                       new
- {
-     ID = 1,
-     CreatedAt = new DateTime(2025, 8, 12, 14, 55, 26, 45, DateTimeKind.Utc).AddTicks(4544),
-     CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af",
-     TagName = "Action"
- },
- new
- {
-     ID = 2,
-     CreatedAt = new DateTime(2025, 8, 12, 14, 55, 26, 45, DateTimeKind.Utc).AddTicks(4545),
-     CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af",
-     TagName = "Adventure"
- },
- new
- {
-     ID = 3,
-     CreatedAt = new DateTime(2025, 8, 12, 14, 55, 26, 45, DateTimeKind.Utc).AddTicks(4546),
-     CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af",
-     TagName = "Multiplayer"
- },
- new
- {
-     ID = 4,
-     CreatedAt = new DateTime(2025, 8, 12, 14, 55, 26, 45, DateTimeKind.Utc).AddTicks(4547),
-     CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af",
-     TagName = "Indie"
- },
- new
- {
-     ID = 5,
-     CreatedAt = new DateTime(2025, 8, 12, 14, 55, 26, 45, DateTimeKind.Utc).AddTicks(4549),
-     CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af",
-     TagName = "Strategy"
- });
-                });
-
-            modelBuilder.Entity("BusinessModel.Model.UserWallet", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<decimal>("Balance")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId")
-                        .IsUnique();
-
-                    b.ToTable("User_Wallets");
+                        new
+                        {
+                            ID = 1,
+                            CreatedAt = new DateTime(2025, 8, 11, 17, 56, 23, 429, DateTimeKind.Utc).AddTicks(8963),
+                            CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af",
+                            TagName = "Action"
+                        },
+                        new
+                        {
+                            ID = 2,
+                            CreatedAt = new DateTime(2025, 8, 11, 17, 56, 23, 429, DateTimeKind.Utc).AddTicks(8965),
+                            CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af",
+                            TagName = "Adventure"
+                        },
+                        new
+                        {
+                            ID = 3,
+                            CreatedAt = new DateTime(2025, 8, 11, 17, 56, 23, 429, DateTimeKind.Utc).AddTicks(8966),
+                            CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af",
+                            TagName = "Multiplayer"
+                        },
+                        new
+                        {
+                            ID = 4,
+                            CreatedAt = new DateTime(2025, 8, 11, 17, 56, 23, 429, DateTimeKind.Utc).AddTicks(8967),
+                            CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af",
+                            TagName = "Indie"
+                        },
+                        new
+                        {
+                            ID = 5,
+                            CreatedAt = new DateTime(2025, 8, 11, 17, 56, 23, 429, DateTimeKind.Utc).AddTicks(8968),
+                            CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af",
+                            TagName = "Strategy"
+                        });
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -999,26 +970,26 @@ namespace BusinessModel.Migrations
 
                     b.HasData(
                         new
- {
-     Id = "b7b9181c-ff61-4d8f-8f6d-5edb3a6d3a11",
-     ConcurrencyStamp = "02e6cac3-bd68-4887-a4c8-893769b73bc9",
-     Name = "Admin",
-     NormalizedName = "ADMIN"
- },
- new
- {
-     Id = "0f6781b2-4564-4bb3-8d85-92e4c194a2cb",
-     ConcurrencyStamp = "33ecb838-4fad-4e38-a806-f1da70eb3964",
-     Name = "Staff",
-     NormalizedName = "STAFF"
- },
- new
- {
-     Id = "26e5f054-e9fd-489f-891f-cf2b57fa9a1c",
-     ConcurrencyStamp = "09e38b9f-b7b6-455d-936d-07fb5070a122",
-     Name = "User",
-     NormalizedName = "USER"
- });
+                        {
+                            Id = "b7b9181c-ff61-4d8f-8f6d-5edb3a6d3a11",
+                            ConcurrencyStamp = "49775eee-5832-4979-be84-bf19075b3732",
+                            Name = "Admin",
+                            NormalizedName = "ADMIN"
+                        },
+                        new
+                        {
+                            Id = "0f6781b2-4564-4bb3-8d85-92e4c194a2cb",
+                            ConcurrencyStamp = "1d6aedec-26a9-46ff-b110-83004d4ca430",
+                            Name = "Staff",
+                            NormalizedName = "STAFF"
+                        },
+                        new
+                        {
+                            Id = "26e5f054-e9fd-489f-891f-cf2b57fa9a1c",
+                            ConcurrencyStamp = "b1d0180b-9de9-456a-bb73-5f72c3dd68cd",
+                            Name = "User",
+                            NormalizedName = "USER"
+                        });
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -1111,51 +1082,51 @@ namespace BusinessModel.Migrations
                     b.ToTable("AspNetUsers", (string)null);
 
                     b.HasData(
-                       new
-{
-    Id = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af",
-    AccessFailedCount = 0,
-    ConcurrencyStamp = "48093873-162f-43e1-b16a-72055425e6ef",
-    Email = "admin@gameshop.com",
-    EmailConfirmed = true,
-    LockoutEnabled = false,
-    NormalizedEmail = "ADMIN@GAMESHOP.COM",
-    NormalizedUserName = "ADMIN",
-    PasswordHash = "AQAAAAEAACcQAAAAECy3Vlsdzz2+SktqKUbGL2NmAF0zCaBt7byxB+TZY1QsO/o4l11JIOPuCEIwPrLmAg==",
-    PhoneNumberConfirmed = false,
-    SecurityStamp = "69ac77be-7c7e-479f-81af-186216bbb1d0",
-    TwoFactorEnabled = false,
-    UserName = "admin"
-},
-new
-{
-    Id = "bcbcdd33-9a99-75dv-82d7-0c9e67f9d9af",
-    AccessFailedCount = 0,
-    ConcurrencyStamp = "a2e39115-ad43-4d31-8485-daae7eac693e",
-    Email = "trananhtuan180202@gmail.com",
-    EmailConfirmed = true,
-    LockoutEnabled = false,
-    NormalizedEmail = "TRANANHTUAN180202@GMAIL.COM",
-    NormalizedUserName = "TRANANHTUAN180202",
-    PasswordHash = "AQAAAAEAACcQAAAAEALZAqEya18R5JXfwhzhwIncyLdX9LDuH7K++/j96U0cUPgWMuvCR2fglhNV4ILQ/w==",
-    PhoneNumberConfirmed = false,
-    SecurityStamp = "b101687c-b29a-4858-b4b5-1a6114f70f3e",
-    TwoFactorEnabled = false,
-    UserName = "trananhtuan180202"
-});
+                        new
+                        {
+                            Id = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af",
+                            AccessFailedCount = 0,
+                            ConcurrencyStamp = "79509a4e-5ae7-4b96-862b-d515da3addb0",
+                            Email = "admin@gameshop.com",
+                            EmailConfirmed = true,
+                            LockoutEnabled = false,
+                            NormalizedEmail = "ADMIN@GAMESHOP.COM",
+                            NormalizedUserName = "ADMIN",
+                            PasswordHash = "AQAAAAEAACcQAAAAEDqmb9FVJ1qevquxSqZlMZZ/x8ey2NyMZgLb3/6KP4jE7afQmmHFbECC/s07XxOGOw==",
+                            PhoneNumberConfirmed = false,
+                            SecurityStamp = "1da0c20b-0db2-4249-be0e-2af2403d9dc5",
+                            TwoFactorEnabled = false,
+                            UserName = "admin"
+                        },
+                        new
+                        {
+                            Id = "bcbcdd33-9a99-75dv-82d7-0c9e67f9d9af",
+                            AccessFailedCount = 0,
+                            ConcurrencyStamp = "9399b3de-00d5-4864-9595-3c80fe9498d5",
+                            Email = "trananhtuan180202@gmail.com",
+                            EmailConfirmed = true,
+                            LockoutEnabled = false,
+                            NormalizedEmail = "TRANANHTUAN180202@GMAIL.COM",
+                            NormalizedUserName = "TRANANHTUAN180202",
+                            PasswordHash = "AQAAAAEAACcQAAAAEDIi5LeHw3zKd7Oj8TTfsvV57Z3MQSUXnv7E0a6gicaewkN4b54xqzoa4B9D+9ZZBA==",
+                            PhoneNumberConfirmed = false,
+                            SecurityStamp = "cdfcffc0-ad38-4884-bb6a-137feb5e07fb",
+                            TwoFactorEnabled = false,
+                            UserName = "trananhtuan180202"
+                        },
                         new
                         {
                             Id = "bcbcde35-9a98-75dv-82d7-0c9e67f9d9af",
                             AccessFailedCount = 0,
-                            ConcurrencyStamp = "fbbeed5e-560a-4ba7-b51e-7592c0004218",
+                            ConcurrencyStamp = "fed5653f-1e64-44f5-ad90-da7fb73461c9",
                             Email = "phong260702@gmail.com",
                             EmailConfirmed = true,
                             LockoutEnabled = false,
                             NormalizedEmail = "PHONG260702@GMAIL.COM",
                             NormalizedUserName = "PHONG",
-                            PasswordHash = "AQAAAAEAACcQAAAAEJU4QMh9OPBzFNJpDKMVHeCjGq/R01G3YHd64XjmqS/xtZDl8nasYAaNkThe6lwLWA==",
+                            PasswordHash = "AQAAAAEAACcQAAAAEDk9pcV/3AgMP+srGo35ktvwgEPm/6OplGIzFsH+/5vFSyQqjA3W7iVCSW8oUNPbLQ==",
                             PhoneNumberConfirmed = false,
-                            SecurityStamp = "97ffa362-e70e-4daa-9343-9d519ed18f81",
+                            SecurityStamp = "a12d447b-7c4f-4cfc-b8fc-295b882079f9",
                             TwoFactorEnabled = false,
                             UserName = "phong"
                         });
@@ -1490,17 +1461,6 @@ new
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "User")
                         .WithOne()
                         .HasForeignKey("BusinessModel.Model.SystemProfilePicture", "UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("BusinessModel.Model.UserWallet", b =>
-                {
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "User")
-                        .WithOne()
-                        .HasForeignKey("BusinessModel.Model.UserWallet", "UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 

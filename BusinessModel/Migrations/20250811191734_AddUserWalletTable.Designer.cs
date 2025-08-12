@@ -4,6 +4,7 @@ using BusinessModel.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BusinessModel.Migrations
 {
     [DbContext(typeof(DBContext))]
-    partial class DBContextModelSnapshot : ModelSnapshot
+    [Migration("20250811191734_AddUserWalletTable")]
+    partial class AddUserWalletTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -80,7 +83,7 @@ namespace BusinessModel.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime2")
-                        .HasDefaultValueSql("GETDATE()");
+                        .HasDefaultValueSql("GETUTCDATE()");
 
                     b.Property<string>("Note")
                         .HasMaxLength(1000)
@@ -338,8 +341,8 @@ namespace BusinessModel.Migrations
                     b.Property<int>("GameID")
                         .HasColumnType("int");
 
-                    b.Property<bool>("IsUpvoted")
-                        .HasColumnType("bit");
+                    b.Property<int>("StarCount")
+                        .HasColumnType("int");
 
                     b.Property<string>("UserID")
                         .IsRequired()
@@ -820,41 +823,41 @@ namespace BusinessModel.Migrations
                     b.ToTable("System_Categories");
 
                     b.HasData(
-                         new
-  {
-      ID = 1,
-      CategoryName = "RPG",
-      CreatedAt = new DateTime(2025, 8, 12, 14, 55, 26, 45, DateTimeKind.Utc).AddTicks(4574),
-      CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af"
-  },
-  new
-  {
-      ID = 2,
-      CategoryName = "FPS",
-      CreatedAt = new DateTime(2025, 8, 12, 14, 55, 26, 45, DateTimeKind.Utc).AddTicks(4575),
-      CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af"
-  },
-  new
-  {
-      ID = 3,
-      CategoryName = "Puzzle",
-      CreatedAt = new DateTime(2025, 8, 12, 14, 55, 26, 45, DateTimeKind.Utc).AddTicks(4577),
-      CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af"
-  },
-  new
-  {
-      ID = 4,
-      CategoryName = "Simulation",
-      CreatedAt = new DateTime(2025, 8, 12, 14, 55, 26, 45, DateTimeKind.Utc).AddTicks(4578),
-      CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af"
-  },
-  new
-  {
-      ID = 5,
-      CategoryName = "Horror",
-      CreatedAt = new DateTime(2025, 8, 12, 14, 55, 26, 45, DateTimeKind.Utc).AddTicks(4579),
-      CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af"
-  });
+                        new
+                        {
+                            ID = 1,
+                            CategoryName = "RPG",
+                            CreatedAt = new DateTime(2025, 8, 11, 19, 17, 34, 115, DateTimeKind.Utc).AddTicks(2234),
+                            CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af"
+                        },
+                        new
+                        {
+                            ID = 2,
+                            CategoryName = "FPS",
+                            CreatedAt = new DateTime(2025, 8, 11, 19, 17, 34, 115, DateTimeKind.Utc).AddTicks(2236),
+                            CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af"
+                        },
+                        new
+                        {
+                            ID = 3,
+                            CategoryName = "Puzzle",
+                            CreatedAt = new DateTime(2025, 8, 11, 19, 17, 34, 115, DateTimeKind.Utc).AddTicks(2237),
+                            CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af"
+                        },
+                        new
+                        {
+                            ID = 4,
+                            CategoryName = "Simulation",
+                            CreatedAt = new DateTime(2025, 8, 11, 19, 17, 34, 115, DateTimeKind.Utc).AddTicks(2238),
+                            CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af"
+                        },
+                        new
+                        {
+                            ID = 5,
+                            CategoryName = "Horror",
+                            CreatedAt = new DateTime(2025, 8, 11, 19, 17, 34, 115, DateTimeKind.Utc).AddTicks(2239),
+                            CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af"
+                        });
                 });
 
             modelBuilder.Entity("BusinessModel.Model.SystemProfilePicture", b =>
@@ -907,41 +910,41 @@ namespace BusinessModel.Migrations
                     b.ToTable("System_Tags");
 
                     b.HasData(
-                       new
- {
-     ID = 1,
-     CreatedAt = new DateTime(2025, 8, 12, 14, 55, 26, 45, DateTimeKind.Utc).AddTicks(4544),
-     CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af",
-     TagName = "Action"
- },
- new
- {
-     ID = 2,
-     CreatedAt = new DateTime(2025, 8, 12, 14, 55, 26, 45, DateTimeKind.Utc).AddTicks(4545),
-     CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af",
-     TagName = "Adventure"
- },
- new
- {
-     ID = 3,
-     CreatedAt = new DateTime(2025, 8, 12, 14, 55, 26, 45, DateTimeKind.Utc).AddTicks(4546),
-     CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af",
-     TagName = "Multiplayer"
- },
- new
- {
-     ID = 4,
-     CreatedAt = new DateTime(2025, 8, 12, 14, 55, 26, 45, DateTimeKind.Utc).AddTicks(4547),
-     CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af",
-     TagName = "Indie"
- },
- new
- {
-     ID = 5,
-     CreatedAt = new DateTime(2025, 8, 12, 14, 55, 26, 45, DateTimeKind.Utc).AddTicks(4549),
-     CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af",
-     TagName = "Strategy"
- });
+                        new
+                        {
+                            ID = 1,
+                            CreatedAt = new DateTime(2025, 8, 11, 19, 17, 34, 115, DateTimeKind.Utc).AddTicks(2201),
+                            CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af",
+                            TagName = "Action"
+                        },
+                        new
+                        {
+                            ID = 2,
+                            CreatedAt = new DateTime(2025, 8, 11, 19, 17, 34, 115, DateTimeKind.Utc).AddTicks(2203),
+                            CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af",
+                            TagName = "Adventure"
+                        },
+                        new
+                        {
+                            ID = 3,
+                            CreatedAt = new DateTime(2025, 8, 11, 19, 17, 34, 115, DateTimeKind.Utc).AddTicks(2204),
+                            CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af",
+                            TagName = "Multiplayer"
+                        },
+                        new
+                        {
+                            ID = 4,
+                            CreatedAt = new DateTime(2025, 8, 11, 19, 17, 34, 115, DateTimeKind.Utc).AddTicks(2205),
+                            CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af",
+                            TagName = "Indie"
+                        },
+                        new
+                        {
+                            ID = 5,
+                            CreatedAt = new DateTime(2025, 8, 11, 19, 17, 34, 115, DateTimeKind.Utc).AddTicks(2206),
+                            CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af",
+                            TagName = "Strategy"
+                        });
                 });
 
             modelBuilder.Entity("BusinessModel.Model.UserWallet", b =>
@@ -999,26 +1002,26 @@ namespace BusinessModel.Migrations
 
                     b.HasData(
                         new
- {
-     Id = "b7b9181c-ff61-4d8f-8f6d-5edb3a6d3a11",
-     ConcurrencyStamp = "02e6cac3-bd68-4887-a4c8-893769b73bc9",
-     Name = "Admin",
-     NormalizedName = "ADMIN"
- },
- new
- {
-     Id = "0f6781b2-4564-4bb3-8d85-92e4c194a2cb",
-     ConcurrencyStamp = "33ecb838-4fad-4e38-a806-f1da70eb3964",
-     Name = "Staff",
-     NormalizedName = "STAFF"
- },
- new
- {
-     Id = "26e5f054-e9fd-489f-891f-cf2b57fa9a1c",
-     ConcurrencyStamp = "09e38b9f-b7b6-455d-936d-07fb5070a122",
-     Name = "User",
-     NormalizedName = "USER"
- });
+                        {
+                            Id = "b7b9181c-ff61-4d8f-8f6d-5edb3a6d3a11",
+                            ConcurrencyStamp = "10e8e74e-f16a-4ccb-b54c-ade6b8628c38",
+                            Name = "Admin",
+                            NormalizedName = "ADMIN"
+                        },
+                        new
+                        {
+                            Id = "0f6781b2-4564-4bb3-8d85-92e4c194a2cb",
+                            ConcurrencyStamp = "38f0612d-a59e-4432-bc0f-d392a62d06f3",
+                            Name = "Staff",
+                            NormalizedName = "STAFF"
+                        },
+                        new
+                        {
+                            Id = "26e5f054-e9fd-489f-891f-cf2b57fa9a1c",
+                            ConcurrencyStamp = "ac15de78-23f1-4e75-b001-d02824d65f2c",
+                            Name = "User",
+                            NormalizedName = "USER"
+                        });
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -1111,51 +1114,51 @@ namespace BusinessModel.Migrations
                     b.ToTable("AspNetUsers", (string)null);
 
                     b.HasData(
-                       new
-{
-    Id = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af",
-    AccessFailedCount = 0,
-    ConcurrencyStamp = "48093873-162f-43e1-b16a-72055425e6ef",
-    Email = "admin@gameshop.com",
-    EmailConfirmed = true,
-    LockoutEnabled = false,
-    NormalizedEmail = "ADMIN@GAMESHOP.COM",
-    NormalizedUserName = "ADMIN",
-    PasswordHash = "AQAAAAEAACcQAAAAECy3Vlsdzz2+SktqKUbGL2NmAF0zCaBt7byxB+TZY1QsO/o4l11JIOPuCEIwPrLmAg==",
-    PhoneNumberConfirmed = false,
-    SecurityStamp = "69ac77be-7c7e-479f-81af-186216bbb1d0",
-    TwoFactorEnabled = false,
-    UserName = "admin"
-},
-new
-{
-    Id = "bcbcdd33-9a99-75dv-82d7-0c9e67f9d9af",
-    AccessFailedCount = 0,
-    ConcurrencyStamp = "a2e39115-ad43-4d31-8485-daae7eac693e",
-    Email = "trananhtuan180202@gmail.com",
-    EmailConfirmed = true,
-    LockoutEnabled = false,
-    NormalizedEmail = "TRANANHTUAN180202@GMAIL.COM",
-    NormalizedUserName = "TRANANHTUAN180202",
-    PasswordHash = "AQAAAAEAACcQAAAAEALZAqEya18R5JXfwhzhwIncyLdX9LDuH7K++/j96U0cUPgWMuvCR2fglhNV4ILQ/w==",
-    PhoneNumberConfirmed = false,
-    SecurityStamp = "b101687c-b29a-4858-b4b5-1a6114f70f3e",
-    TwoFactorEnabled = false,
-    UserName = "trananhtuan180202"
-});
+                        new
+                        {
+                            Id = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af",
+                            AccessFailedCount = 0,
+                            ConcurrencyStamp = "b5c67234-da33-4168-8ff0-684855e96bc1",
+                            Email = "admin@gameshop.com",
+                            EmailConfirmed = true,
+                            LockoutEnabled = false,
+                            NormalizedEmail = "ADMIN@GAMESHOP.COM",
+                            NormalizedUserName = "ADMIN",
+                            PasswordHash = "AQAAAAEAACcQAAAAEB3DR8+pxSIoEm6rnoa9Rm1iVXzQEeQixlksrf2NZZ5InVxwOOKVKL7cpCVd2MiK1A==",
+                            PhoneNumberConfirmed = false,
+                            SecurityStamp = "6f8d749c-f704-4f38-ae2a-2074acb6b893",
+                            TwoFactorEnabled = false,
+                            UserName = "admin"
+                        },
+                        new
+                        {
+                            Id = "bcbcdd33-9a99-75dv-82d7-0c9e67f9d9af",
+                            AccessFailedCount = 0,
+                            ConcurrencyStamp = "df5a3265-d5f5-4b8e-a1e3-04f06dca00e7",
+                            Email = "trananhtuan180202@gmail.com",
+                            EmailConfirmed = true,
+                            LockoutEnabled = false,
+                            NormalizedEmail = "TRANANHTUAN180202@GMAIL.COM",
+                            NormalizedUserName = "TRANANHTUAN180202",
+                            PasswordHash = "AQAAAAEAACcQAAAAEPSOWZMFECBPE++Fg9L5TJFys9llwNVuLo6Wzi6cf/N1OvRYYTJsSLDkcxg8ZSodWw==",
+                            PhoneNumberConfirmed = false,
+                            SecurityStamp = "5e1bde05-9f48-4cc4-8fb9-3728badae751",
+                            TwoFactorEnabled = false,
+                            UserName = "trananhtuan180202"
+                        },
                         new
                         {
                             Id = "bcbcde35-9a98-75dv-82d7-0c9e67f9d9af",
                             AccessFailedCount = 0,
-                            ConcurrencyStamp = "fbbeed5e-560a-4ba7-b51e-7592c0004218",
+                            ConcurrencyStamp = "fbd0e33c-f5b3-4ad6-b740-25592612045f",
                             Email = "phong260702@gmail.com",
                             EmailConfirmed = true,
                             LockoutEnabled = false,
                             NormalizedEmail = "PHONG260702@GMAIL.COM",
                             NormalizedUserName = "PHONG",
-                            PasswordHash = "AQAAAAEAACcQAAAAEJU4QMh9OPBzFNJpDKMVHeCjGq/R01G3YHd64XjmqS/xtZDl8nasYAaNkThe6lwLWA==",
+                            PasswordHash = "AQAAAAEAACcQAAAAEEXr5Ih1pJ6KJHv+mFM+u1NS2dqIMLFcUDiSubeT201mJBswLlaWUQlFbvJoycTLSg==",
                             PhoneNumberConfirmed = false,
-                            SecurityStamp = "97ffa362-e70e-4daa-9343-9d519ed18f81",
+                            SecurityStamp = "70b166a8-fb8c-4c64-bf1d-52e99800072b",
                             TwoFactorEnabled = false,
                             UserName = "phong"
                         });
