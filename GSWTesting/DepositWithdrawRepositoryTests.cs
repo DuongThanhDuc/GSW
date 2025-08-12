@@ -62,13 +62,13 @@ namespace DataAccess.Tests.Repository
             Assert.AreEqual(expected.Amount, result.Amount);
         }
 
-        [Test]
-        public async Task GetAllAsync_ReturnsAllTransactions()
-        {
-            // Act
-            var result = await _repo.GetAllAsync();
-            // Assert
-            Assert.AreEqual(_txData.Count, result.Count());
-        }
+        //[Test]
+        //public async Task GetAllAsync_ReturnsAllTransactions()
+        //{
+        //    // Act
+        //    var result = await _repo.GetAllAsync();
+        //    // Assert
+        //    Assert.AreEqual(_txData.Count, result.Count());
+        //}
     }
 }

@@ -411,7 +411,7 @@ namespace GSWApi.Controllers.Admin
                     Roles = roles,
                     ProfilePicture = profile?.ImageUrl,
                     Library = gameList,
-                    Wishlist = wishlistGames
+                    Wishlist = wishlistGames,
                     Status = GetUserStatus(user)
                 });
             }
@@ -482,7 +482,7 @@ namespace GSWApi.Controllers.Admin
                     Roles = roles,
                     ProfilePicture = profile?.ImageUrl,
                     Library = gameList,
-                    Wishlist = wishlistGames
+                    Wishlist = wishlistGames,
                     Status = GetUserStatus(user)
                 }
             });

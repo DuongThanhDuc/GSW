@@ -2,7 +2,6 @@
 using DataAccess.DTOs;
 using DataAccess.Repository.IRepository;
 using Microsoft.EntityFrameworkCore;
-using Repository.Repository.IRepository;
 
 namespace DataAccess.Repository
 {
