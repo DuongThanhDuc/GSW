@@ -1,4 +1,6 @@
-﻿using DataAccess.DTOs;
+﻿using CloudinaryDotNet;
+using CloudinaryDotNet.Actions;
+using DataAccess.DTOs;
 using DataAccess.Repository.IRepository;
 using Microsoft.AspNetCore.Mvc;
 
@@ -9,12 +11,20 @@ namespace GSWApi.Controllers.Store
     public class StoreThreadReplyController : ControllerBase
     {
         private readonly IStoreThreadReplyRepository _repository;
+        private readonly Cloudinary _cloudinary;
 
-        public StoreThreadReplyController(IStoreThreadReplyRepository repository)
+        public StoreThreadReplyController(IStoreThreadReplyRepository repository, IConfiguration configuration)
         {
             _repository = repository;
-        }
 
+            // Setup Cloudinary
+            var account = new Account(
+                configuration["Cloudinary:CloudName"],
+                configuration["Cloudinary:ApiKey"],
+                configuration["Cloudinary:ApiSecret"]
+            );
+            _cloudinary = new Cloudinary(account);
+        }
         [HttpGet("thread/{threadId}")]
         public async Task<IActionResult> GetRepliesByThreadId(int threadId)
         {
@@ -23,10 +33,31 @@ namespace GSWApi.Controllers.Store
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] StoreThreadReplyDTO dto)
+        public async Task<IActionResult> Create([FromForm] StoreThreadReplyDTO dto, IFormFile? imageFile)
         {
-            if (string.IsNullOrWhiteSpace(dto.ThreadComment))
-                return BadRequest(new { success = false, message = "Comment is required." });
+            if (string.IsNullOrWhiteSpace(dto.ThreadComment) && imageFile == null)
+                return BadRequest(new { success = false, message = "Either a comment or an image is required." });
+
+            // Upload image to Cloudinary if provided
+            if (imageFile != null && imageFile.Length > 0)
+            {
+                using var stream = imageFile.OpenReadStream();
+                var uploadParams = new CloudinaryDotNet.Actions.ImageUploadParams
+                {
+                    File = new CloudinaryDotNet.FileDescription(imageFile.FileName, stream),
+                    Folder = "store_thread_replies" // Optional: Cloudinary folder
+                };
+
+                var cloudinary = new Cloudinary(Environment.GetEnvironmentVariable("CLOUDINARY_URL"));
+                cloudinary.Api.Secure = true;
+
+                var uploadResult = await cloudinary.UploadAsync(uploadParams);
+
+                if (uploadResult.Error != null)
+                    return BadRequest(new { success = false, message = $"Image upload failed: {uploadResult.Error.Message}" });
+
+                dto.CommentImageUrl = uploadResult.SecureUrl.ToString();
+            }
 
             var result = await _repository.CreateAsync(dto);
             return Ok(new { success = true, message = "Reply created.", data = result });

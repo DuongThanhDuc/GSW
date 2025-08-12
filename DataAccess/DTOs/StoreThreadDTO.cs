@@ -28,6 +28,7 @@ namespace DataAccess.DTOs
         public string CreatedBy { get; set; }
         public string? CreatedByUserName { get; set; }
         public string? CreatedByEmail { get; set; }
+        public string CreatedByProfilePic { get; set; }
         public DateTime CreatedAt { get; set; }
     }
 }

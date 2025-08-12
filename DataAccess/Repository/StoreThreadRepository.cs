@@ -26,47 +26,61 @@ namespace DataAccess.Repository
                     _context.Users,
                     thread => thread.CreatedBy,
                     user => user.Id,
-                    (thread, user) => new StoreThreadDTOReadOnly
-                    {
-                        Id = thread.Id,
-                        ThreadTitle = thread.ThreadTitle,
-                        ThreadDescription = thread.ThreadDescription,
-                        ThreadImageUrl = thread.ThreadImageUrl,
-                        UpvoteCount = thread.UpvoteCount,
-                        CreatedBy = thread.CreatedBy,
-                        CreatedAt = thread.CreatedAt,
-                        CreatedByUserName = user.UserName,
-                        CreatedByEmail = user.Email
-                    }
-                ).ToListAsync();
+                    (thread, user) => new { thread, user }
+                )
+                .GroupJoin(
+                    _context.System_ProfilePictures,
+                    tu => tu.user.Id,
+                    pic => pic.UserId,
+                    (tu, pics) => new { tu.thread, tu.user, pic = pics.FirstOrDefault() }
+                )
+                .Select(x => new StoreThreadDTOReadOnly
+                {
+                    Id = x.thread.Id,
+                    ThreadTitle = x.thread.ThreadTitle,
+                    ThreadDescription = x.thread.ThreadDescription,
+                    ThreadImageUrl = x.thread.ThreadImageUrl,
+                    UpvoteCount = x.thread.UpvoteCount,
+                    CreatedBy = x.thread.CreatedBy,
+                    CreatedAt = x.thread.CreatedAt,
+                    CreatedByUserName = x.user.UserName,
+                    CreatedByEmail = x.user.Email,
+                    CreatedByProfilePic = x.pic != null ? x.pic.ImageUrl : null
+                })
+                .ToListAsync();
         }
-
 
         public async Task<StoreThreadDTOReadOnly?> GetByIdAsync(int id)
         {
-            var threadWithUser = await _context.Store_Threads
+            return await _context.Store_Threads
                 .Where(t => t.Id == id)
                 .Join(
                     _context.Users,
                     thread => thread.CreatedBy,
                     user => user.Id,
-                    (thread, user) => new StoreThreadDTOReadOnly
-                    {
-                        Id = thread.Id,
-                        ThreadTitle = thread.ThreadTitle,
-                        ThreadDescription = thread.ThreadDescription,
-                        ThreadImageUrl = thread.ThreadImageUrl,
-                        UpvoteCount = thread.UpvoteCount,
-                        CreatedBy = thread.CreatedBy,
-                        CreatedAt = thread.CreatedAt,
-                        CreatedByUserName = user.UserName,
-                        CreatedByEmail = user.Email
-                    }
-                ).FirstOrDefaultAsync();
-
-            return threadWithUser;
+                    (thread, user) => new { thread, user }
+                )
+                .GroupJoin(
+                    _context.System_ProfilePictures,
+                    tu => tu.user.Id,
+                    pic => pic.UserId,
+                    (tu, pics) => new { tu.thread, tu.user, pic = pics.FirstOrDefault() }
+                )
+                .Select(x => new StoreThreadDTOReadOnly
+                {
+                    Id = x.thread.Id,
+                    ThreadTitle = x.thread.ThreadTitle,
+                    ThreadDescription = x.thread.ThreadDescription,
+                    ThreadImageUrl = x.thread.ThreadImageUrl,
+                    UpvoteCount = x.thread.UpvoteCount,
+                    CreatedBy = x.thread.CreatedBy,
+                    CreatedAt = x.thread.CreatedAt,
+                    CreatedByUserName = x.user.UserName,
+                    CreatedByEmail = x.user.Email,
+                    CreatedByProfilePic = x.pic != null ? x.pic.ImageUrl : null
+                })
+                .FirstOrDefaultAsync();
         }
-
 
         public async Task<IEnumerable<StoreThreadDTOReadOnly>> GetAllByUserIdAsync(string userId)
         {
@@ -76,20 +90,30 @@ namespace DataAccess.Repository
                     _context.Users,
                     thread => thread.CreatedBy,
                     user => user.Id,
-                    (thread, user) => new StoreThreadDTOReadOnly
-                    {
-                        Id = thread.Id,
-                        ThreadTitle = thread.ThreadTitle,
-                        ThreadDescription = thread.ThreadDescription,
-                        ThreadImageUrl = thread.ThreadImageUrl,
-                        UpvoteCount = thread.UpvoteCount,
-                        CreatedBy = thread.CreatedBy,
-                        CreatedAt = thread.CreatedAt,
-                        CreatedByUserName = user.UserName,
-                        CreatedByEmail = user.Email
-                    }
-                ).ToListAsync();
+                    (thread, user) => new { thread, user }
+                )
+                .GroupJoin(
+                    _context.System_ProfilePictures,
+                    tu => tu.user.Id,
+                    pic => pic.UserId,
+                    (tu, pics) => new { tu.thread, tu.user, pic = pics.FirstOrDefault() }
+                )
+                .Select(x => new StoreThreadDTOReadOnly
+                {
+                    Id = x.thread.Id,
+                    ThreadTitle = x.thread.ThreadTitle,
+                    ThreadDescription = x.thread.ThreadDescription,
+                    ThreadImageUrl = x.thread.ThreadImageUrl,
+                    UpvoteCount = x.thread.UpvoteCount,
+                    CreatedBy = x.thread.CreatedBy,
+                    CreatedAt = x.thread.CreatedAt,
+                    CreatedByUserName = x.user.UserName,
+                    CreatedByEmail = x.user.Email,
+                    CreatedByProfilePic = x.pic != null ? x.pic.ImageUrl : null
+                })
+                .ToListAsync();
         }
+
 
 
         public async Task<StoreThreadDTO> CreateAsync(StoreThreadDTO dto)
@@ -98,6 +122,7 @@ namespace DataAccess.Repository
             {
                 ThreadTitle = dto.ThreadTitle,
                 ThreadDescription = dto.ThreadDescription,
+                ThreadImageUrl = dto.ThreadImageUrl,
                 CreatedBy = dto.CreatedBy,
                 UpvoteCount = 0
             };

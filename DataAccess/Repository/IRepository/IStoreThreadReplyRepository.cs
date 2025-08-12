@@ -12,6 +12,7 @@ namespace DataAccess.Repository.IRepository
         // Thread reply methods
         Task<IEnumerable<StoreThreadReplyDTOReadOnly>> GetAllAsync();
         Task<StoreThreadReplyDTOReadOnly?> GetByIdAsync(int id);
+        Task<IEnumerable<StoreThreadReplyDTOReadOnly>> GetAllByUserIdAsync(string userId);
         Task<IEnumerable<StoreThreadReplyDTOReadOnly>> GetAllByThreadIdAsync(int threadId);
         Task<StoreThreadReplyDTO> CreateAsync(StoreThreadReplyDTO dto);
         Task<bool> DeleteAsync(int id);
