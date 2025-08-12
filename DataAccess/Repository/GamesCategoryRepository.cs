@@ -1,8 +1,8 @@
 ﻿using BusinessModel.Model;
 using Microsoft.EntityFrameworkCore;
-using Repository.Repository.IRepository;
+using DataAccess.Repository.IRepository;
 
-namespace Repository.Repository
+namespace DataAccess.Repository
 {
     public class GamesCategoryRepository : IGamesCategoryRepository
     {

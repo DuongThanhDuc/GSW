@@ -1,7 +1,7 @@
 ﻿using BusinessModel.Model;
 using DataAccess.DTOs;
 using Microsoft.AspNetCore.Mvc;
-using Repository.Repository.IRepository;
+using DataAccess.Repository.IRepository;
 
 namespace GSWApi.Controllers.Games
 {

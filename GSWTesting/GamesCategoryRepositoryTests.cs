@@ -1,11 +1,12 @@
 using NUnit.Framework;
-using Repository.Repository;
+using DataAccess.Repository;
 using Moq;
 using BusinessModel.Model;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
+using Repository.Repository;
 
 namespace DataAccess.Tests.Repository
 {
