@@ -13,5 +13,6 @@ namespace DataAccess.Repository.IRepository
         Task<PaymentTransaction> GetByOrderIdAsync(string orderId);
         Task UpdateTransactionAsync(PaymentTransaction transaction);
         Task GrantGameToLibraryAsync(string orderId);
+        Task UpdateOrderStatusByCodeAsync(string orderCode, string status);
     }
 }

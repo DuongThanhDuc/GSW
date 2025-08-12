@@ -60,12 +60,14 @@ namespace GSWApi.Controllers.Admin
                     user.PhoneNumber,
                     DisplayName = displayName,
                     Roles = roles,
-                    ProfilePicture = profile?.ImageUrl
+                    ProfilePicture = profile?.ImageUrl,
+                    Status = GetUserStatus(user) 
                 });
             }
 
             return Ok(new { success = true, data = userList });
         }
+
 
 
         // GET: admin/user/id/{id}
@@ -96,11 +98,13 @@ namespace GSWApi.Controllers.Admin
                 user.PhoneNumber,
                 DisplayName = displayName,
                 Roles = roles,
-                ProfilePicture = profile?.ImageUrl
+                ProfilePicture = profile?.ImageUrl,
+                Status = GetUserStatus(user) 
             }
         }
             });
         }
+
 
 
         [HttpGet("search")]
@@ -135,11 +139,13 @@ namespace GSWApi.Controllers.Admin
                 user.Email,
                 user.PhoneNumber,
                 DisplayName = displayName,
-                Roles = roles
+                Roles = roles,
+                Status = GetUserStatus(user) 
             }
         }
             });
         }
+
 
 
         // PUT: admin/user/{id}
@@ -406,6 +412,7 @@ namespace GSWApi.Controllers.Admin
                     ProfilePicture = profile?.ImageUrl,
                     Library = gameList,
                     Wishlist = wishlistGames
+                    Status = GetUserStatus(user)
                 });
             }
 
@@ -476,8 +483,19 @@ namespace GSWApi.Controllers.Admin
                     ProfilePicture = profile?.ImageUrl,
                     Library = gameList,
                     Wishlist = wishlistGames
+                    Status = GetUserStatus(user)
                 }
             });
+        }
+
+        private static string GetUserStatus(IdentityUser user)
+        {
+            if (user.LockoutEnd.HasValue)
+            {
+                if (user.LockoutEnd.Value == DateTimeOffset.MaxValue) return "locked";
+                if (user.LockoutEnd.Value > DateTimeOffset.UtcNow) return "banned";
+            }
+            return "active";
         }
 
         // POST: admin/user/ban/{id}
@@ -486,20 +504,31 @@ namespace GSWApi.Controllers.Admin
         {
             var user = await _userManager.FindByIdAsync(id);
             if (user == null)
-                return NotFound(new { success = false, message = "User not found." });
+                return NotFound(new { success = false, message = "User not found.", status = "not_found" });
 
             await _userManager.SetLockoutEnabledAsync(user, true);
             var unlockDate = DateTimeOffset.UtcNow.AddDays(days);
             await _userManager.SetLockoutEndDateAsync(user, unlockDate);
 
-            // -- Send notification email --
-            await _emailService.SendEmailAsync(
-                user.Email,
-                "Your account has been temporarily banned",
-                $"Your account has been banned for {days} days and will be unlocked on {unlockDate:yyyy-MM-dd}."
-            );
+            if (!string.IsNullOrWhiteSpace(user.Email))
+            {
+                await _emailService.SendEmailAsync(
+                    user.Email,
+                    "Your account has been temporarily banned",
+                    $"Your account has been banned for {days} days and will be unlocked on {unlockDate:yyyy-MM-dd}."
+                );
+            }
 
-            return Ok(new { success = true, message = $"User has been banned for {days} days (until {unlockDate:yyyy-MM-dd})." });
+            var dto = new UserDTOReadonly
+            {
+                Id = user.Id,
+                UserName = user.UserName,
+                Status = GetUserStatus(user),
+                LockoutEnd = unlockDate,
+                Message = $"User has been banned for {days} days (until {unlockDate:yyyy-MM-dd})."
+            };
+
+            return Ok(new { success = true, data = dto });
         }
 
         // POST: admin/user/unban/{id}
@@ -508,13 +537,29 @@ namespace GSWApi.Controllers.Admin
         {
             var user = await _userManager.FindByIdAsync(id);
             if (user == null)
-                return NotFound(new { success = false, message = "User not found." });
+                return NotFound(new { success = false, message = "User not found.", status = "not_found" });
 
             await _userManager.SetLockoutEndDateAsync(user, null);
 
-            // Optionally send notification email here
+            if (!string.IsNullOrWhiteSpace(user.Email))
+            {
+                await _emailService.SendEmailAsync(
+                    user.Email,
+                    "Your account has been restored",
+                    "Your account has been unbanned and is now active. You can sign in again."
+                );
+            }
 
-            return Ok(new { success = true, message = "User has been unbanned." });
+            var dto = new UserDTOReadonly
+            {
+                Id = user.Id,
+                UserName = user.UserName,
+                Status = GetUserStatus(user),
+                LockoutEnd = null,
+                Message = "User has been unbanned and notified via email."
+            };
+
+            return Ok(new { success = true, data = dto });
         }
 
     }
