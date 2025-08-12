@@ -29,6 +29,7 @@ namespace DataAccess.Repository
                     OrderID = d.OrderID,
                     GameID = d.GameID,
                     GameName = d.Game.Title,
+                    GamePicture=d.Game.CoverImagePath,
                     UnitPrice = d.UnitPrice,
                     CreatedAt = d.CreatedAt
                 })
@@ -46,6 +47,7 @@ namespace DataAccess.Repository
                     OrderID = d.OrderID,
                     GameID = d.GameID,
                     GameName = d.Game.Title,
+                    GamePicture = d.Game.CoverImagePath,
                     UnitPrice = d.UnitPrice,
                     CreatedAt = d.CreatedAt
                 })

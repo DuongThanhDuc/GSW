@@ -26,18 +26,28 @@ namespace DataAccess.Repository
                     _context.Users,
                     reply => reply.CreatedBy,
                     user => user.Id,
-                    (reply, user) => new StoreThreadReplyDTOReadOnly
-                    {
-                        Id = reply.Id,
-                        ThreadID = reply.ThreadID,
-                        ThreadComment = reply.ThreadComment,
-                        UpvoteCount = reply.UpvoteCount,
-                        CreatedBy = reply.CreatedBy,
-                        CreatedAt = reply.CreatedAt,
-                        CreatedByUserName = user.UserName,
-                        CreatedByEmail = user.Email
-                    }
-                ).ToListAsync();
+                    (reply, user) => new { reply, user }
+                )
+                .GroupJoin(
+                    _context.System_ProfilePictures,
+                    ru => ru.user.Id,
+                    pic => pic.UserId,
+                    (ru, pics) => new { ru.reply, ru.user, pic = pics.FirstOrDefault() }
+                )
+                .Select(x => new StoreThreadReplyDTOReadOnly
+                {
+                    Id = x.reply.Id,
+                    ThreadID = x.reply.ThreadID,
+                    ThreadComment = x.reply.ThreadComment,
+                    CommentImageUrl = x.reply.CommentImageUrl, // Direct from DB
+                    UpvoteCount = x.reply.UpvoteCount,
+                    CreatedBy = x.reply.CreatedBy,
+                    CreatedAt = x.reply.CreatedAt,
+                    CreatedByUserName = x.user.UserName,
+                    CreatedByEmail = x.user.Email,
+                    CreatedByProfilePic = x.pic != null ? x.pic.ImageUrl : null
+                })
+                .ToListAsync();
         }
 
         public async Task<StoreThreadReplyDTOReadOnly?> GetByIdAsync(int id)
@@ -48,41 +58,62 @@ namespace DataAccess.Repository
                     _context.Users,
                     reply => reply.CreatedBy,
                     user => user.Id,
-                    (reply, user) => new StoreThreadReplyDTOReadOnly
-                    {
-                        Id = reply.Id,
-                        ThreadID = reply.ThreadID,
-                        ThreadComment = reply.ThreadComment,
-                        UpvoteCount = reply.UpvoteCount,
-                        CreatedBy = reply.CreatedBy,
-                        CreatedAt = reply.CreatedAt,
-                        CreatedByUserName = user.UserName,
-                        CreatedByEmail = user.Email
-                    }
-                ).FirstOrDefaultAsync();
+                    (reply, user) => new { reply, user }
+                )
+                .GroupJoin(
+                    _context.System_ProfilePictures,
+                    ru => ru.user.Id,
+                    pic => pic.UserId,
+                    (ru, pics) => new { ru.reply, ru.user, pic = pics.FirstOrDefault() }
+                )
+                .Select(x => new StoreThreadReplyDTOReadOnly
+                {
+                    Id = x.reply.Id,
+                    ThreadID = x.reply.ThreadID,
+                    ThreadComment = x.reply.ThreadComment,
+                    CommentImageUrl = x.reply.CommentImageUrl,
+                    UpvoteCount = x.reply.UpvoteCount,
+                    CreatedBy = x.reply.CreatedBy,
+                    CreatedAt = x.reply.CreatedAt,
+                    CreatedByUserName = x.user.UserName,
+                    CreatedByEmail = x.user.Email,
+                    CreatedByProfilePic = x.pic != null ? x.pic.ImageUrl : null
+                })
+                .FirstOrDefaultAsync();
         }
 
-        public async Task<IEnumerable<StoreThreadReplyDTOReadOnly>> GetAllByThreadIdAsync(int threadId)
+        public async Task<IEnumerable<StoreThreadReplyDTOReadOnly>> GetAllByUserIdAsync(string userId)
         {
             return await _context.Store_ThreadReplies
-                .Where(r => r.ThreadID == threadId)
+                .Where(r => r.CreatedBy == userId)
                 .Join(
                     _context.Users,
                     reply => reply.CreatedBy,
                     user => user.Id,
-                    (reply, user) => new StoreThreadReplyDTOReadOnly
-                    {
-                        Id = reply.Id,
-                        ThreadID = reply.ThreadID,
-                        ThreadComment = reply.ThreadComment,
-                        UpvoteCount = reply.UpvoteCount,
-                        CreatedBy = reply.CreatedBy,
-                        CreatedAt = reply.CreatedAt,
-                        CreatedByUserName = user.UserName,
-                        CreatedByEmail = user.Email
-                    }
-                ).ToListAsync();
+                    (reply, user) => new { reply, user }
+                )
+                .GroupJoin(
+                    _context.System_ProfilePictures,
+                    ru => ru.user.Id,
+                    pic => pic.UserId,
+                    (ru, pics) => new { ru.reply, ru.user, pic = pics.FirstOrDefault() }
+                )
+                .Select(x => new StoreThreadReplyDTOReadOnly
+                {
+                    Id = x.reply.Id,
+                    ThreadID = x.reply.ThreadID,
+                    ThreadComment = x.reply.ThreadComment,
+                    CommentImageUrl = x.reply.CommentImageUrl,
+                    UpvoteCount = x.reply.UpvoteCount,
+                    CreatedBy = x.reply.CreatedBy,
+                    CreatedAt = x.reply.CreatedAt,
+                    CreatedByUserName = x.user.UserName,
+                    CreatedByEmail = x.user.Email,
+                    CreatedByProfilePic = x.pic != null ? x.pic.ImageUrl : null
+                })
+                .ToListAsync();
         }
+
 
         public async Task<StoreThreadReplyDTO> CreateAsync(StoreThreadReplyDTO dto)
         {
@@ -90,6 +121,7 @@ namespace DataAccess.Repository
             {
                 ThreadID = dto.ThreadID,
                 ThreadComment = dto.ThreadComment,
+                CommentImageUrl = dto.CommentImageUrl,
                 CreatedBy = dto.CreatedBy,
                 UpvoteCount = 0
             };

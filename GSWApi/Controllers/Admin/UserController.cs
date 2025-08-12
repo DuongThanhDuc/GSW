@@ -376,6 +376,26 @@ namespace GSWApi.Controllers.Admin
                     }
                 }
 
+                var userWishlist = await _gamesRepo.GetWishlistsByUserAsync(user.Id);
+                var wishlistGames = new List<object>();
+                foreach (var wish in userWishlist)
+                {
+                    var game = await _gamesRepo.GetByIdAsync(wish.WishlistGameId);
+                    if (game != null)
+                    {
+                        wishlistGames.Add(new
+                        {
+                            game.ID,
+                            game.Title,
+                            game.Description,
+                            game.Price,
+                            game.Genre,
+                            game.CoverImagePath,
+                            game.InstallerFilePath
+                        });
+                    }
+                }
+
                 result.Add(new
                 {
                     user.Id,
@@ -384,7 +404,8 @@ namespace GSWApi.Controllers.Admin
                     user.PhoneNumber,
                     Roles = roles,
                     ProfilePicture = profile?.ImageUrl,
-                    Library = gameList
+                    Library = gameList,
+                    Wishlist = wishlistGames
                 });
             }
 
@@ -422,6 +443,26 @@ namespace GSWApi.Controllers.Admin
                 }
             }
 
+            var userWishlist = await _gamesRepo.GetWishlistsByUserAsync(user.Id);
+            var wishlistGames = new List<object>();
+            foreach (var wish in userWishlist)
+            {
+                var game = await _gamesRepo.GetByIdAsync(wish.WishlistGameId);
+                if (game != null)
+                {
+                    wishlistGames.Add(new
+                    {
+                        game.ID,
+                        game.Title,
+                        game.Description,
+                        game.Price,
+                        game.Genre,
+                        game.CoverImagePath,
+                        game.InstallerFilePath
+                    });
+                }
+            }
+
             return Ok(new
             {
                 success = true,
@@ -433,7 +474,8 @@ namespace GSWApi.Controllers.Admin
                     user.PhoneNumber,
                     Roles = roles,
                     ProfilePicture = profile?.ImageUrl,
-                    Library = gameList
+                    Library = gameList,
+                    Wishlist = wishlistGames
                 }
             });
         }
