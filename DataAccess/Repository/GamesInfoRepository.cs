@@ -66,7 +66,7 @@ namespace DataAccess.Repository
                         ID = r.ID,
                         GameID = r.GameID,
                         UserID = r.UserID,
-                        StarCount = r.StarCount,
+                        IsUpvoted = r.IsUpvoted,
                         Comment = r.Comment,
                         CreatedAt = r.CreatedAt
                     }).ToList(),
@@ -152,7 +152,7 @@ namespace DataAccess.Repository
                     ID = r.ID,
                     GameID = r.GameID,
                     UserID = r.UserID,
-                    StarCount = r.StarCount,
+                    IsUpvoted = r.IsUpvoted,
                     Comment = r.Comment,
                     CreatedAt = r.CreatedAt
                 }).ToList(),

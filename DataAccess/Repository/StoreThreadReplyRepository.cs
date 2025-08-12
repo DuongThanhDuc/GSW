@@ -114,6 +114,39 @@ namespace DataAccess.Repository
                 .ToListAsync();
         }
 
+        public async Task<IEnumerable<StoreThreadReplyDTOReadOnly>> GetAllByThreadIdAsync(int threadId)
+        {
+            return await _context.Store_ThreadReplies
+                .Where(r => r.ThreadID == threadId)
+                .Join(
+                    _context.Users,
+                    reply => reply.CreatedBy,
+                    user => user.Id,
+                    (reply, user) => new { reply, user }
+                )
+                .GroupJoin(
+                    _context.System_ProfilePictures,
+                    ru => ru.user.Id,
+                    pic => pic.UserId,
+                    (ru, pics) => new { ru.reply, ru.user, pic = pics.FirstOrDefault() }
+                )
+                .Select(x => new StoreThreadReplyDTOReadOnly
+                {
+                    Id = x.reply.Id,
+                    ThreadID = x.reply.ThreadID,
+                    ThreadComment = x.reply.ThreadComment,
+                    CommentImageUrl = x.reply.CommentImageUrl, // Already stored in DB
+                    UpvoteCount = x.reply.UpvoteCount,
+                    CreatedBy = x.reply.CreatedBy,
+                    CreatedAt = x.reply.CreatedAt,
+                    CreatedByUserName = x.user.UserName,
+                    CreatedByEmail = x.user.Email,
+                    CreatedByProfilePic = x.pic != null ? x.pic.ImageUrl : null
+                })
+                .ToListAsync();
+        }
+
+
 
         public async Task<StoreThreadReplyDTO> CreateAsync(StoreThreadReplyDTO dto)
         {

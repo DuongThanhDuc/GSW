@@ -20,34 +20,31 @@ namespace GSWApi.Controllers.Games
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<GamesReviewDTO>>> GetAll()
+        public async Task<ActionResult<IEnumerable<GamesReviewDTOReadOnly>>> GetAll()
         {
-            var reviews = await _repository.GetAllAsync();
-            var dtos = reviews.Select(MapToDTO).ToList();
+            var dtos = await _repository.GetAllAsync();
             return Ok(dtos);
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<GamesReviewDTO>> GetById(int id)
+        public async Task<ActionResult<GamesReviewDTOReadOnly>> GetById(int id)
         {
-            var review = await _repository.GetByIdAsync(id);
-            if (review == null) return NotFound();
-            return Ok(MapToDTO(review));
+            var dto = await _repository.GetByIdAsync(id);
+            if (dto == null) return NotFound();
+            return Ok(dto);
         }
 
         [HttpGet("by-game/{gameId}")]
-        public async Task<ActionResult<IEnumerable<GamesReviewDTO>>> GetByGameId(int gameId)
+        public async Task<ActionResult<IEnumerable<GamesReviewDTOReadOnly>>> GetByGameId(int gameId)
         {
-            var reviews = await _repository.GetByGameIdAsync(gameId);
-            var dtos = reviews.Select(MapToDTO).ToList();
+            var dtos = await _repository.GetByGameIdAsync(gameId);
             return Ok(dtos);
         }
 
         [HttpGet("by-user/{userId}")]
-        public async Task<ActionResult<IEnumerable<GamesReviewDTO>>> GetByUserId(string userId)
+        public async Task<ActionResult<IEnumerable<GamesReviewDTOReadOnly>>> GetByUserId(string userId)
         {
-            var reviews = await _repository.GetByUserIdAsync(userId);
-            var dtos = reviews.Select(MapToDTO).ToList();
+            var dtos = await _repository.GetByUserIdAsync(userId);
             return Ok(dtos);
         }
 
@@ -58,7 +55,7 @@ namespace GSWApi.Controllers.Games
             {
                 GameID = dto.GameID,
                 UserID = dto.UserID,
-                StarCount = dto.StarCount,
+                IsUpvoted = dto.IsUpvoted,
                 Comment = dto.Comment,
                 CreatedAt = DateTime.Now
             };
@@ -71,14 +68,21 @@ namespace GSWApi.Controllers.Games
         [HttpPut("{id}")]
         public async Task<ActionResult> Update(int id, [FromBody] GamesReviewDTO dto)
         {
-            var review = await _repository.GetByIdAsync(id);
-            if (review == null) return NotFound();
+            var existing = await _repository.GetByIdAsync(id);
+            if (existing == null) return NotFound();
 
-            // Chỉ cho phép update StarCount và Comment
-            review.StarCount = dto.StarCount;
-            review.Comment = dto.Comment;
-            await _repository.UpdateAsync(review);
+            // Load entity version for update
+            var reviewEntity = new GamesReview
+            {
+                ID = id,
+                GameID = dto.GameID,
+                UserID = dto.UserID,
+                IsUpvoted = dto.IsUpvoted,
+                Comment = dto.Comment,
+                CreatedAt = dto.CreatedAt
+            };
 
+            await _repository.UpdateAsync(reviewEntity);
             return NoContent();
         }
 
@@ -95,7 +99,7 @@ namespace GSWApi.Controllers.Games
                 ID = r.ID,
                 GameID = r.GameID,
                 UserID = r.UserID,
-                StarCount = r.StarCount,
+                IsUpvoted = r.IsUpvoted,
                 Comment = r.Comment,
                 CreatedAt = r.CreatedAt
             };
