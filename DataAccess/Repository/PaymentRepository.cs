@@ -1,5 +1,5 @@
-﻿using BusinessModel.Migrations;
-using BusinessModel.Model;
+﻿using BusinessModel.Model;
+using DataAccess.DTOs;
 using DataAccess.Repository.IRepository;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -94,45 +94,60 @@ namespace DataAccess.Repository
             _context.PaymentTransactions.Update(transaction);
             await _context.SaveChangesAsync();
         }
+
         public async Task GrantGameToLibraryAsync(string orderCode)
         {
-            // Lấy đơn + chi tiết
-            var order = await _context.Store_Orders
-                .Include(o => o.OrderDetails)
-                .FirstOrDefaultAsync(o => o.OrderCode == orderCode);
-            if (order == null) return;
+            // Get order as DTO
+            var orderDto = await _context.Store_Orders
+                .Where(o => o.OrderCode == orderCode)
+                .Select(o => new StoreOrderDTO
+                {
+                    ID = o.ID,
+                    UserID = o.UserID,
+                    OrderId = o.OrderCode,
+                    OrderDate = o.OrderDate,
+                    TotalAmount = o.TotalAmount,
+                    Status = o.Status,
+                    CreatedAt = o.CreatedAt
+                })
+                .FirstOrDefaultAsync();
 
-            // Nếu là guest (chưa có UserID) thì chưa cấp – chờ user claim sau
-            if (string.IsNullOrEmpty(order.UserID)) return;
+            if (orderDto == null)
+                return;
 
-            var userId = order.UserID;
-
-            // Lấy danh sách game trong đơn
-            var gameIds = order.OrderDetails?
-                .Select(d => d.GameID)
-                .Distinct()
-                .ToList() ?? new List<int>();
-            if (gameIds.Count == 0) return;
-
-            // Tránh cấp trùng – lấy các game đã có trong Library
-            var existingGameIds = await _context.Store_Library
-                .Where(l => l.UserID == userId && gameIds.Contains(l.GamesID))
-                .Select(l => l.GamesID)
+            // Get games from order
+            var gameIds = await _context.Store_OrderDetails
+                .Where(od => od.OrderID == orderDto.ID)
+                .Select(od => od.GameID)
                 .ToListAsync();
 
-            var toAdd = gameIds.Except(existingGameIds);
-            foreach (var gameId in toAdd)
+            // Check existing library
+            var existingGameIds = await _context.Store_Library
+                .Where(lib => lib.UserID == orderDto.UserID)
+                .Select(lib => lib.GamesID)
+                .ToListAsync();
+
+            foreach (var gameId in gameIds)
             {
-                _context.Store_Library.Add(new BusinessModel.Model.StoreLibrary
+                if (!existingGameIds.Contains(gameId))
                 {
-                    UserID = userId,
-                    GamesID = gameId,
-                    CreatedAt = DateTime.Now
-                });
+                    var entity = new StoreLibrary
+                    {
+                        UserID = orderDto.UserID,
+                        GamesID = gameId,
+                        CreatedAt = DateTime.UtcNow
+                    };
+
+                    await _context.Store_Library.AddAsync(entity);
+                }
             }
 
             await _context.SaveChangesAsync();
         }
+
+
+
+
 
         public async Task UpdateOrderStatusByCodeAsync(string orderCode, string status)
         {
