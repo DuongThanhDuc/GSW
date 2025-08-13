@@ -10,6 +10,9 @@ namespace DataAccess.DTOs
     {
         public string OrderId { get; set; }
         public decimal Amount { get; set; }
+
+        public string? BuyerEmail { get; set; }
+        public string? BuyerName { get; set; }
     }
 
     public class PaymentResponseDTO

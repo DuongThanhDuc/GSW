@@ -13,8 +13,13 @@ namespace BusinessModel.Model
         public int OrderID { get; set; }
         public StoreOrder Order { get; set; }
 
+        public int? PaymentTransactionId { get; set; }
+        public PaymentTransaction? PaymentTransaction { get; set; }
+
         public string PaymentMethod { get; set; }
         public string Status { get; set; } = "PENDING";
         public DateTime TransactionDate { get; set; } = DateTime.Now;
+        public ICollection<PaymentTransaction> PaymentTransactions { get; set; }
+
     }
 }
