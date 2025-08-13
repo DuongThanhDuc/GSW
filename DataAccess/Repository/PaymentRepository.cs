@@ -1,5 +1,6 @@
 ﻿using BusinessModel.Migrations;
 using BusinessModel.Model;
+using DataAccess.DTOs;
 using DataAccess.Repository.IRepository;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -36,32 +37,37 @@ namespace DataAccess.Repository
             _context.PaymentTransactions.Update(transaction);
             await _context.SaveChangesAsync();
         }
+
         public async Task GrantGameToLibraryAsync(string orderCode)
         {
-            // Tìm order theo OrderCode (trùng với OrderId bên PaymentTransaction)
-            var order = await _context.Store_Orders.FirstOrDefaultAsync(o => o.OrderCode == orderCode);
-            if (order == null) return;
+            // Find order by OrderCode
+            var order = await _context.Set<StoreOrderDTO>()
+                .FirstOrDefaultAsync(o => o.OrderId == orderCode);
+
+            if (order == null)
+                return;
 
             var orderDbId = order.ID;
             var userId = order.UserID;
 
-            // Lấy danh sách game trong đơn hàng
-            var gameIds = await _context.Store_OrderDetails
+            // Get list of game IDs from the order
+            var gameIds = await _context.Set<StoreOrderDetailDTO>()
                 .Where(od => od.OrderID == orderDbId)
                 .Select(od => od.GameID)
                 .ToListAsync();
 
-            // Lấy các game đã có trong Store_Library của user
-            var existingGameIds = await _context.Store_Library
+            // Get list of existing game IDs in user's library
+            var existingGameIds = await _context.Set<StoreLibraryDTO>()
                 .Where(lib => lib.UserID == userId)
                 .Select(lib => lib.GamesID)
                 .ToListAsync();
 
+            // Add games that aren't already in the library
             foreach (var gameId in gameIds)
             {
                 if (!existingGameIds.Contains(gameId))
                 {
-                    _context.Store_Library.Add(new BusinessModel.Model.StoreLibrary
+                    _context.Set<StoreLibraryDTO>().Add(new StoreLibraryDTO
                     {
                         UserID = userId,
                         GamesID = gameId,
@@ -69,8 +75,10 @@ namespace DataAccess.Repository
                     });
                 }
             }
+
             await _context.SaveChangesAsync();
         }
+
         public async Task UpdateOrderStatusByCodeAsync(string orderCode, string status)
         {
             var order = await _context.Store_Orders
