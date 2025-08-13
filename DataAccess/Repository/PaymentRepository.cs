@@ -1,5 +1,4 @@
-﻿using BusinessModel.Migrations;
-using BusinessModel.Model;
+﻿using BusinessModel.Model;
 using DataAccess.DTOs;
 using DataAccess.Repository.IRepository;
 using Microsoft.EntityFrameworkCore;
@@ -20,17 +19,75 @@ namespace DataAccess.Repository
             _context = context;
         }
 
-        public async Task<PaymentTransaction> CreateTransactionAsync(PaymentTransaction transaction)
+        public async Task<PaymentTransaction?> GetByOrderCodeAsync(string orderCode)
         {
-            _context.PaymentTransactions.Add(transaction);
-            await _context.SaveChangesAsync();
-            return transaction;
+            var order = await _context.Store_Orders
+                .AsNoTracking()
+                .FirstOrDefaultAsync(o => o.OrderCode == orderCode);
+            if (order == null) return null;
+
+            return await _context.PaymentTransactions
+                .Where(p => p.StoreOrderId == order.ID)
+                .OrderByDescending(p => p.CreatedAt)
+                .FirstOrDefaultAsync();
         }
 
-        public async Task<PaymentTransaction> GetByOrderIdAsync(string orderId)
+        public async Task<IEnumerable<PaymentTransaction>> GetByStoreOrderIdAsync(int storeOrderId)
         {
-            return await _context.PaymentTransactions.FirstOrDefaultAsync(x => x.OrderId == orderId);
+            return await _context.PaymentTransactions
+                .Where(p => p.StoreOrderId == storeOrderId)
+                .OrderByDescending(p => p.CreatedAt)
+                .ToListAsync();
         }
+
+        public async Task<StoreOrder?> FindOrderByCodeAsync(string orderCode)
+        {
+            return await _context.Store_Orders.FirstOrDefaultAsync(o => o.OrderCode == orderCode);
+        }
+
+        public async Task<PaymentTransaction> CreateTransactionAsync(PaymentTransaction tx)
+        {
+            _context.PaymentTransactions.Add(tx);
+            await _context.SaveChangesAsync();
+            return tx;
+        }
+
+        public async Task<StoreOrder> CreateProvisionalOrderAsync(
+    string orderCode, string? userId, decimal amount,
+    string? buyerEmail = null, string? buyerName = null)
+        {
+            var exist = await _context.Store_Orders
+                .FirstOrDefaultAsync(o => o.OrderCode == orderCode);
+            if (exist != null)
+            {
+                // Nếu đơn đã tồn tại mà thiếu thông tin người mua, có thể cập nhật bù
+                if (string.IsNullOrEmpty(exist.BuyerEmail) && !string.IsNullOrEmpty(buyerEmail))
+                    exist.BuyerEmail = buyerEmail;
+                if (string.IsNullOrEmpty(exist.BuyerName) && !string.IsNullOrEmpty(buyerName))
+                    exist.BuyerName = buyerName;
+
+                await _context.SaveChangesAsync();
+                return exist;
+            }
+
+            var order = new StoreOrder
+            {
+                UserID = userId,                 // null nếu guest
+                OrderCode = orderCode,
+                OrderDate = DateTime.Now,
+                CreatedAt = DateTime.Now,
+                TotalAmount = amount,
+                Status = "PENDING",
+                BuyerEmail = buyerEmail,
+                BuyerName = buyerName,
+                OrderDetails = new List<StoreOrderDetail>()
+            };
+
+            _context.Store_Orders.Add(order);
+            await _context.SaveChangesAsync();
+            return order;
+        }
+
 
         public async Task UpdateTransactionAsync(PaymentTransaction transaction)
         {
@@ -40,44 +97,57 @@ namespace DataAccess.Repository
 
         public async Task GrantGameToLibraryAsync(string orderCode)
         {
-            // Find order by OrderCode
-            var order = await _context.Set<StoreOrderDTO>()
-                .FirstOrDefaultAsync(o => o.OrderId == orderCode);
+            // Get order as DTO
+            var orderDto = await _context.Store_Orders
+                .Where(o => o.OrderCode == orderCode)
+                .Select(o => new StoreOrderDTO
+                {
+                    ID = o.ID,
+                    UserID = o.UserID,
+                    OrderId = o.OrderCode,
+                    OrderDate = o.OrderDate,
+                    TotalAmount = o.TotalAmount,
+                    Status = o.Status,
+                    CreatedAt = o.CreatedAt
+                })
+                .FirstOrDefaultAsync();
 
-            if (order == null)
+            if (orderDto == null)
                 return;
 
-            var orderDbId = order.ID;
-            var userId = order.UserID;
-
-            // Get list of game IDs from the order
-            var gameIds = await _context.Set<StoreOrderDetailDTO>()
-                .Where(od => od.OrderID == orderDbId)
+            // Get games from order
+            var gameIds = await _context.Store_OrderDetails
+                .Where(od => od.OrderID == orderDto.ID)
                 .Select(od => od.GameID)
                 .ToListAsync();
 
-            // Get list of existing game IDs in user's library
-            var existingGameIds = await _context.Set<StoreLibraryDTO>()
-                .Where(lib => lib.UserID == userId)
+            // Check existing library
+            var existingGameIds = await _context.Store_Library
+                .Where(lib => lib.UserID == orderDto.UserID)
                 .Select(lib => lib.GamesID)
                 .ToListAsync();
 
-            // Add games that aren't already in the library
             foreach (var gameId in gameIds)
             {
                 if (!existingGameIds.Contains(gameId))
                 {
-                    _context.Set<StoreLibraryDTO>().Add(new StoreLibraryDTO
+                    var entity = new StoreLibrary
                     {
-                        UserID = userId,
+                        UserID = orderDto.UserID,
                         GamesID = gameId,
                         CreatedAt = DateTime.UtcNow
-                    });
+                    };
+
+                    await _context.Store_Library.AddAsync(entity);
                 }
             }
 
             await _context.SaveChangesAsync();
         }
+
+
+
+
 
         public async Task UpdateOrderStatusByCodeAsync(string orderCode, string status)
         {

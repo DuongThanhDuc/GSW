@@ -264,6 +264,40 @@ namespace BusinessModel.Model
                 b.Property(x => x.CreatedAt).HasDefaultValueSql("GETDATE()");
             });
 
+            // PaymentTransaction ↔ StoreOrder
+            modelBuilder.Entity<PaymentTransaction>(b =>
+            {
+                // ...
+                b.HasOne(x => x.StoreOrder)
+                 .WithMany(o => o.PaymentTransactions)
+                 .HasForeignKey(x => x.StoreOrderId)
+                 .OnDelete(DeleteBehavior.NoAction); 
+            });
+
+            // StoreTransaction ↔ StoreOrder
+            modelBuilder.Entity<StoreTransaction>(b =>
+            {
+                // ...
+                b.HasOne(x => x.Order)
+                 .WithMany(o => o.Transactions)
+                 .HasForeignKey(x => x.OrderID)
+                 .OnDelete(DeleteBehavior.NoAction); 
+
+                b.HasOne(x => x.PaymentTransaction)
+                 .WithMany()
+                 .HasForeignKey(x => x.PaymentTransactionId)
+                 .OnDelete(DeleteBehavior.SetNull); 
+            });
+
+            modelBuilder.Entity<StoreOrder>(b =>
+            {
+                b.Property(x => x.OrderCode).HasMaxLength(64).IsRequired();
+                b.HasIndex(x => x.OrderCode).IsUnique();     
+
+                b.Property(x => x.BuyerEmail).HasMaxLength(256);
+                b.Property(x => x.BuyerName).HasMaxLength(128);
+            });
+
 
             // Seeding Datas
 

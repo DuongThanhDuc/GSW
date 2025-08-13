@@ -24,8 +24,8 @@ namespace DataAccess.Tests.Repository
             _txSetMock = new Mock<DbSet<PaymentTransaction>>();
             _txData = new List<PaymentTransaction>
             {
-                new PaymentTransaction { Id = 1, OrderId = "ORDER1" },
-                new PaymentTransaction { Id = 2, OrderId = "ORDER2" }
+                new PaymentTransaction { Id = 1, GatewayOrderId = "ORDER1" },
+                new PaymentTransaction { Id = 2, GatewayOrderId = "ORDER2" }
             };
             var queryable = _txData.AsQueryable();
             _txSetMock.As<IQueryable<PaymentTransaction>>().Setup(m => m.Provider).Returns(queryable.Provider);
@@ -43,7 +43,7 @@ namespace DataAccess.Tests.Repository
             string notFoundOrderId = "NOTFOUND";
             _txSetMock.Setup(x => x.FirstOrDefaultAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<PaymentTransaction, bool>>>(), default)).ReturnsAsync((PaymentTransaction)null);
             // Act
-            var result = await _repo.GetByOrderIdAsync(notFoundOrderId);
+            var result = await _repo.GetByOrderCodeAsync(notFoundOrderId);
             // Assert
             Assert.IsNull(result);
         }
@@ -53,13 +53,13 @@ namespace DataAccess.Tests.Repository
         {
             // Arrange
             string foundOrderId = "ORDER1";
-            var expected = _txData.First(t => t.OrderId == foundOrderId);
+            var expected = _txData.First(t => t.GatewayOrderId == foundOrderId);
             _txSetMock.Setup(x => x.FirstOrDefaultAsync(It.IsAny<System.Linq.Expressions.Expression<System.Func<PaymentTransaction, bool>>>(), default)).ReturnsAsync(expected);
             // Act
-            var result = await _repo.GetByOrderIdAsync(foundOrderId);
+            var result = await _repo.GetByOrderCodeAsync(foundOrderId);
             // Assert
             Assert.IsNotNull(result);
-            Assert.AreEqual(expected.OrderId, result.OrderId);
+            Assert.AreEqual(expected.GatewayOrderId, result.GatewayOrderId);
         }
     }
 }
