@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using System.Web;
 using BusinessModel.Model;
@@ -8,6 +9,7 @@ using DataAccess.Repository.IRepository;
 using GSWApi.Utility;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 
@@ -30,40 +32,46 @@ public class PaymentController : ControllerBase
     }
 
     // ================== VNPAY ==================
-
     [HttpPost("vnpay-create")]
     public async Task<IActionResult> CreatePayment([FromBody] PaymentRequestDTO model)
     {
-        // Auto-generate OrderId nếu FE gửi "string" hoặc rỗng
-        if (string.IsNullOrEmpty(model.OrderId) || model.OrderId.Trim().ToLower() == "string")
-        {
+        // 1) Chuẩn hoá OrderCode
+        if (string.IsNullOrWhiteSpace(model.OrderId) || model.OrderId.Trim().ToLower() == "string")
             model.OrderId = Guid.NewGuid().ToString("N").Substring(0, 10);
-        }
+        var orderCode = model.OrderId;
 
-        // Tạo payment transaction
+        // 2) Lấy userId nếu có đăng nhập, nếu không thì null (guest)
+        var userId = User?.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        // 3) Tạo đơn tạm (guest hoặc user)
+        var order = await _paymentRepo.FindOrderByCodeAsync(orderCode)
+                ?? await _paymentRepo.CreateProvisionalOrderAsync(orderCode, userId, model.Amount, model.BuyerEmail, model.BuyerName);
+
+        // 4) Tạo PaymentTransaction
         var transaction = new PaymentTransaction
         {
-            OrderId = model.OrderId,
+            StoreOrderId = order.ID,
+            GatewayOrderId = orderCode,          // vnp_TxnRef
             Amount = model.Amount,
             PaymentMethod = "VNPAY",
             Status = "Pending",
             CreatedAt = DateTime.Now
         };
-
         await _paymentRepo.CreateTransactionAsync(transaction);
 
+        // 5) Build URL VNPay
         string hostName = System.Net.Dns.GetHostName();
         string clientIPAddress = System.Net.Dns.GetHostAddresses(hostName).GetValue(0).ToString();
-
         string paymentUrl = VnPayHelper.CreatePaymentUrl(model, _config, clientIPAddress);
 
         return Ok(new PaymentResponseDTO
         {
             PaymentUrl = paymentUrl,
-            OrderId = model.OrderId,
-            Message = "Payment created successfully. Please scan the QR code or click the link to proceed with payment."
+            OrderId = orderCode,
+            Message = "Payment created successfully."
         });
     }
+
 
     // Người dùng bị redirect về đây sau khi thanh toán
     // (Prod nên chỉ hiển thị/redirect FE; cập nhật trạng thái ưu tiên ở IPN)
@@ -88,7 +96,7 @@ public class PaymentController : ControllerBase
         if (!isValid) return BadRequest("Invalid signature!");
 
         // Lấy transaction
-        var transaction = await _paymentRepo.GetByOrderIdAsync(orderId);
+        var transaction = await _paymentRepo.GetByOrderCodeAsync(orderId);
         if (transaction == null) return NotFound("Transaction not found");
 
         // Xác định trạng thái
@@ -145,7 +153,7 @@ public class PaymentController : ControllerBase
         if (!isValid) return BadRequest("Invalid signature!");
 
         var orderId = callback.vnp_TxnRef; // chính là OrderCode
-        var transaction = await _paymentRepo.GetByOrderIdAsync(orderId);
+        var transaction = await _paymentRepo.GetByOrderCodeAsync(orderId);
         if (transaction == null) return NotFound("Transaction not found");
 
         if (callback.vnp_ResponseCode == "00" && transaction.Status != "Success")
@@ -154,10 +162,9 @@ public class PaymentController : ControllerBase
             transaction.PaymentGatewayResponse = JsonConvert.SerializeObject(callback);
             await _paymentRepo.UpdateTransactionAsync(transaction);
 
-            //  Cập nhật trạng thái Order
             await _paymentRepo.UpdateOrderStatusByCodeAsync(orderId, "Success");
 
-            //  Cấp game vào thư viện
+            // ➜ CẤP LIBRARY SAU KHI ORDER SUCCESS
             await _paymentRepo.GrantGameToLibraryAsync(orderId);
         }
         else
@@ -166,7 +173,6 @@ public class PaymentController : ControllerBase
             transaction.PaymentGatewayResponse = JsonConvert.SerializeObject(callback);
             await _paymentRepo.UpdateTransactionAsync(transaction);
 
-            //  Đánh fail cho Order
             await _paymentRepo.UpdateOrderStatusByCodeAsync(orderId, "Failed");
         }
 
@@ -176,11 +182,18 @@ public class PaymentController : ControllerBase
 
     // ================== CHECK PAYMENT STATUS ==================
 
-    [HttpGet("status/{orderId}")]
-    public async Task<IActionResult> GetPaymentStatus(string orderId)
+    [HttpGet("status/{orderCode}")]
+    public async Task<IActionResult> GetPaymentStatus(string orderCode)
     {
-        var transaction = await _paymentRepo.GetByOrderIdAsync(orderId);
+        var transaction = await _paymentRepo.GetByOrderCodeAsync(orderCode);
         if (transaction == null) return NotFound(new { message = "Transaction not found" });
-        return Ok(new { transaction.OrderId, transaction.Status, transaction.CreatedAt });
+
+        return Ok(new
+        {
+            orderCode,
+            transaction.Status,
+            transaction.CreatedAt
+        });
     }
+
 }

@@ -10,9 +10,15 @@ namespace DataAccess.Repository.IRepository
     public interface IPaymentRepository
     {
         Task<PaymentTransaction> CreateTransactionAsync(PaymentTransaction transaction);
-        Task<PaymentTransaction> GetByOrderIdAsync(string orderId);
+        Task<PaymentTransaction?> GetByOrderCodeAsync(string orderCode);
+        Task<IEnumerable<PaymentTransaction>> GetByStoreOrderIdAsync(int storeOrderId);
+        Task<StoreOrder?> FindOrderByCodeAsync(string orderCode);
         Task UpdateTransactionAsync(PaymentTransaction transaction);
-        Task GrantGameToLibraryAsync(string orderId);
+        Task GrantGameToLibraryAsync(string orderCode);
         Task UpdateOrderStatusByCodeAsync(string orderCode, string status);
+        Task<StoreOrder> CreateProvisionalOrderAsync(string orderCode, string? userId, decimal amount,string? buyerEmail = null, string? buyerName = null);
+
+
     }
+
 }
