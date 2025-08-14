@@ -97,7 +97,6 @@ namespace DataAccess.Repository
 
         public async Task GrantGameToLibraryAsync(string orderCode)
         {
-            // Get order as DTO
             var orderDto = await _context.Store_Orders
                 .Where(o => o.OrderCode == orderCode)
                 .Select(o => new StoreOrderDTO
@@ -113,15 +112,26 @@ namespace DataAccess.Repository
                 .FirstOrDefaultAsync();
 
             if (orderDto == null)
+            {
+                Console.WriteLine($"[GrantLibrary] Order not found: {orderCode}");
                 return;
+            }
 
-            // Get games from order
+            if (string.IsNullOrEmpty(orderDto.UserID))
+            {
+                Console.WriteLine($"[GrantLibrary] Order {orderCode} has no UserID, skipping.");
+                return; // or handle guest library
+            }
+
             var gameIds = await _context.Store_OrderDetails
                 .Where(od => od.OrderID == orderDto.ID)
                 .Select(od => od.GameID)
                 .ToListAsync();
 
-            // Check existing library
+            Console.WriteLine($"[GrantLibrary] Found {gameIds.Count} games for order {orderCode}");
+
+            if (!gameIds.Any()) return;
+
             var existingGameIds = await _context.Store_Library
                 .Where(lib => lib.UserID == orderDto.UserID)
                 .Select(lib => lib.GamesID)
@@ -131,19 +141,19 @@ namespace DataAccess.Repository
             {
                 if (!existingGameIds.Contains(gameId))
                 {
-                    var entity = new StoreLibrary
+                    _context.Store_Library.Add(new StoreLibrary
                     {
                         UserID = orderDto.UserID,
                         GamesID = gameId,
                         CreatedAt = DateTime.UtcNow
-                    };
-
-                    await _context.Store_Library.AddAsync(entity);
+                    });
                 }
             }
 
             await _context.SaveChangesAsync();
+            Console.WriteLine($"[GrantLibrary] Added games to library for user {orderDto.UserID}");
         }
+
 
 
 
