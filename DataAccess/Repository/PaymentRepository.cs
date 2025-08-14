@@ -5,9 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-
 
 namespace DataAccess.Repository
 {
@@ -53,20 +51,30 @@ namespace DataAccess.Repository
         }
 
         public async Task<StoreOrder> CreateProvisionalOrderAsync(
-    string orderCode, string? userId, decimal amount,
-    string? buyerEmail = null, string? buyerName = null)
+            string orderCode, string? userId, decimal amount,
+            string? buyerEmail = null, string? buyerName = null)
         {
             var exist = await _context.Store_Orders
                 .FirstOrDefaultAsync(o => o.OrderCode == orderCode);
+
             if (exist != null)
             {
-                // Nếu đơn đã tồn tại mà thiếu thông tin người mua, có thể cập nhật bù
-                if (string.IsNullOrEmpty(exist.BuyerEmail) && !string.IsNullOrEmpty(buyerEmail))
-                    exist.BuyerEmail = buyerEmail;
-                if (string.IsNullOrEmpty(exist.BuyerName) && !string.IsNullOrEmpty(buyerName))
-                    exist.BuyerName = buyerName;
+                bool changed = false;
 
-                await _context.SaveChangesAsync();
+                if (string.IsNullOrEmpty(exist.BuyerEmail) && !string.IsNullOrEmpty(buyerEmail))
+                {
+                    exist.BuyerEmail = buyerEmail;
+                    changed = true;
+                }
+                if (string.IsNullOrEmpty(exist.BuyerName) && !string.IsNullOrEmpty(buyerName))
+                {
+                    exist.BuyerName = buyerName;
+                    changed = true;
+                }
+
+                if (changed)
+                    await _context.SaveChangesAsync();
+
                 return exist;
             }
 
@@ -77,7 +85,7 @@ namespace DataAccess.Repository
                 OrderDate = DateTime.Now,
                 CreatedAt = DateTime.Now,
                 TotalAmount = amount,
-                Status = "PENDING",
+                Status = "Pending",              
                 BuyerEmail = buyerEmail,
                 BuyerName = buyerName,
                 OrderDetails = new List<StoreOrderDetail>()
@@ -87,7 +95,6 @@ namespace DataAccess.Repository
             await _context.SaveChangesAsync();
             return order;
         }
-
 
         public async Task UpdateTransactionAsync(PaymentTransaction transaction)
         {
@@ -155,19 +162,25 @@ namespace DataAccess.Repository
         }
 
 
-
-
-
-
         public async Task UpdateOrderStatusByCodeAsync(string orderCode, string status)
         {
             var order = await _context.Store_Orders
                 .FirstOrDefaultAsync(o => o.OrderCode == orderCode);
             if (order == null) return;
 
-            order.Status = status; 
-            await _context.SaveChangesAsync();
-        }
+            // Chuẩn hoá casing để nhất quán với Controller
+            string normalized = status?.Trim().ToLowerInvariant() switch
+            {
+                "success" => "Success",
+                "failed" => "Failed",
+                _ => "Pending"
+            };
 
+            if (!string.Equals(order.Status, normalized, StringComparison.Ordinal))
+            {
+                order.Status = normalized;              
+                await _context.SaveChangesAsync();
+            }
+        }
     }
 }
