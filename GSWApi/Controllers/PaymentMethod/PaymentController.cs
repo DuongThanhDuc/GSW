@@ -35,23 +35,53 @@ public class PaymentController : ControllerBase
     [HttpPost("vnpay-create")]
     public async Task<IActionResult> CreatePayment([FromBody] PaymentRequestDTO model)
     {
-        // 1) Chuẩn hoá OrderCode
-        if (string.IsNullOrWhiteSpace(model.OrderId) || model.OrderId.Trim().ToLower() == "string")
-            model.OrderId = Guid.NewGuid().ToString("N").Substring(0, 10);
-        var orderCode = model.OrderId;
+        // 1) Auto-generate orderCode nếu FE không truyền hoặc là "string"
+        if (string.IsNullOrWhiteSpace(model.OrderId) ||
+            model.OrderId.Trim().Equals("string", StringComparison.OrdinalIgnoreCase))
+        {
+            // Ví dụ: ORD-20250814-063735-AB12
+            var suffix = Guid.NewGuid().ToString("N").Substring(0, 4).ToUpperInvariant();
+            model.OrderId = $"ORD-{DateTime.Now:yyyyMMdd-HHmmss}-{suffix}";
+        }
+        var orderCode = model.OrderId.Trim();
 
-        // 2) Lấy userId nếu có đăng nhập, nếu không thì null (guest)
+        // 2) Lấy userId (nếu có), guest => null
         var userId = User?.FindFirstValue(ClaimTypes.NameIdentifier);
 
-        // 3) Tạo đơn tạm (guest hoặc user)
+        // 3) Tạo/lấy đơn tạm theo orderCode (idempotent ở repository)
         var order = await _paymentRepo.FindOrderByCodeAsync(orderCode)
-                ?? await _paymentRepo.CreateProvisionalOrderAsync(orderCode, userId, model.Amount, model.BuyerEmail, model.BuyerName);
+                  ?? await _paymentRepo.CreateProvisionalOrderAsync(
+                        orderCode, userId, model.Amount, model.BuyerEmail, model.BuyerName);
 
-        // 4) Tạo PaymentTransaction
+        // 4) Nếu đơn đã thanh toán/đã fail thì không cho tạo tiếp
+        if (string.Equals(order.Status, "Success", StringComparison.OrdinalIgnoreCase))
+            return Conflict(new { message = "Order already paid." });
+
+        if (string.Equals(order.Status, "Failed", StringComparison.OrdinalIgnoreCase))
+            return Conflict(new { message = "Order was marked as failed. Please create a new order." });
+
+        // 5) Idempotent cho transaction:
+        //    Nếu đã có transaction Pending cho order này thì reuse, không tạo bản ghi mới.
+        var latestTx = await _paymentRepo.GetByOrderCodeAsync(orderCode);
+        if (latestTx != null && string.Equals(latestTx.Status, "Pending", StringComparison.OrdinalIgnoreCase))
+        {
+            string hostName = System.Net.Dns.GetHostName();
+            string clientIP = System.Net.Dns.GetHostAddresses(hostName).GetValue(0).ToString();
+            string reuseUrl = VnPayHelper.CreatePaymentUrl(model, _config, clientIP);
+
+            return Ok(new PaymentResponseDTO
+            {
+                PaymentUrl = reuseUrl,
+                OrderId = orderCode,
+                Message = "Payment is pending. Reusing existing transaction."
+            });
+        }
+
+        // 6) Chưa có Pending -> tạo transaction mới
         var transaction = new PaymentTransaction
         {
             StoreOrderId = order.ID,
-            GatewayOrderId = orderCode,          // vnp_TxnRef
+            GatewayOrderId = orderCode,       // vnp_TxnRef
             Amount = model.Amount,
             PaymentMethod = "VNPAY",
             Status = "Pending",
@@ -59,9 +89,9 @@ public class PaymentController : ControllerBase
         };
         await _paymentRepo.CreateTransactionAsync(transaction);
 
-        // 5) Build URL VNPay
-        string hostName = System.Net.Dns.GetHostName();
-        string clientIPAddress = System.Net.Dns.GetHostAddresses(hostName).GetValue(0).ToString();
+        // 7) Build URL VNPay
+        string host = System.Net.Dns.GetHostName();
+        string clientIPAddress = System.Net.Dns.GetHostAddresses(host).GetValue(0).ToString();
         string paymentUrl = VnPayHelper.CreatePaymentUrl(model, _config, clientIPAddress);
 
         return Ok(new PaymentResponseDTO
@@ -78,65 +108,50 @@ public class PaymentController : ControllerBase
     [HttpGet("vnpay-callback")]
     public async Task<IActionResult> VnPayCallback()
     {
-        // Lấy full query string
         var queryString = Request.QueryString.Value;
-
-        // Parse các tham số
         var json = HttpUtility.ParseQueryString(queryString);
-        string orderId = json["vnp_TxnRef"];                 // Order ID (chính là OrderCode)
-        string vnp_ResponseCode = json["vnp_ResponseCode"];  // "00" = success
-        string vnp_SecureHash = json["vnp_SecureHash"];      // Secure hash từ VNPay
+        string orderId = json["vnp_TxnRef"];
+        string vnp_ResponseCode = json["vnp_ResponseCode"];
+        string vnp_SecureHash = json["vnp_SecureHash"];
 
-        // Vị trí kết thúc phần ký trước vnp_SecureHash
         var pos = queryString.IndexOf("&vnp_SecureHash");
         var hashSecret = _config["VnPay:HashSecret"];
 
-        // Validate signature
         bool isValid = VnPayHelper.ValidateSignature(queryString.Substring(1, pos - 1), vnp_SecureHash, hashSecret);
         if (!isValid) return BadRequest("Invalid signature!");
 
-        // Lấy transaction
         var transaction = await _paymentRepo.GetByOrderCodeAsync(orderId);
         if (transaction == null) return NotFound("Transaction not found");
 
-        // Xác định trạng thái
-        string status = vnp_ResponseCode == "00" ? "success" : "failed";
-
-        // Cập nhật transaction
-        transaction.Status = status == "success" ? "Success" : "Failed";
+        bool isSuccess = vnp_ResponseCode == "00";
+        transaction.Status = isSuccess ? "Success" : "Failed";
         transaction.PaymentGatewayResponse = JsonConvert.SerializeObject(Request.Query);
         await _paymentRepo.UpdateTransactionAsync(transaction);
 
-        // (Tùy chọn DEV) Cập nhật Order luôn ở Callback để dễ test local (prod nên dựa vào IPN)
-        await _paymentRepo.UpdateOrderStatusByCodeAsync(orderId,
-            vnp_ResponseCode == "00" ? "Success" : "Failed");
+        await _paymentRepo.UpdateOrderStatusByCodeAsync(orderId, transaction.Status);
 
-        // >>> THÊM ĐOẠN NÀY (DEV ONLY): cấp game khi callback success <<<
-        if (vnp_ResponseCode == "00")
+        if (isSuccess)
         {
             try
             {
-                // orderId phải == Store_Orders.OrderCode
                 await _paymentRepo.GrantGameToLibraryAsync(orderId);
             }
             catch (Exception ex)
             {
-                // Log lại để sau này debug (đừng trả lỗi ra FE)
                 Console.WriteLine($"GrantGameToLibraryAsync error for order {orderId}: {ex}");
             }
         }
-        // Redirect về FE
-        var feUrl = $"http://localhost:5000/payment/result?orderId={orderId}&status={status}";
+
+        var feUrl = $"http://localhost:5000/payment/result?orderId={orderId}&status={transaction.Status.ToLower()}";
         return Redirect(feUrl);
     }
 
-    // IPN từ VNPay (nguồn đáng tin cậy để flip trạng thái)
+    // IPN từ VNPay 
     [HttpGet("vnpay-ipn")]
     public async Task<IActionResult> VnPayIpn([FromQuery] VnPayCallbackDTO callback)
     {
         var hashSecret = _config["VnPay:HashSecret"];
 
-        // 1) Build raw data (bỏ vnp_SecureHash & vnp_SecureHashType)
         var query = HttpContext.Request.Query;
         var sorted = query
             .Where(kv => kv.Key != "vnp_SecureHash" && kv.Key != "vnp_SecureHashType")
@@ -145,38 +160,27 @@ public class PaymentController : ControllerBase
             .ToArray();
         string rspraw = string.Join("&", sorted);
 
-        // 2) input hash
         string inputHash = HttpContext.Request.Query["vnp_SecureHash"];
 
-        // 3) validate
         var isValid = VnPayHelper.ValidateSignature(rspraw, inputHash, hashSecret);
         if (!isValid) return BadRequest("Invalid signature!");
 
-        var orderId = callback.vnp_TxnRef; // chính là OrderCode
+        var orderId = callback.vnp_TxnRef;
         var transaction = await _paymentRepo.GetByOrderCodeAsync(orderId);
         if (transaction == null) return NotFound("Transaction not found");
 
-        if (callback.vnp_ResponseCode == "00" && transaction.Status != "Success")
+        bool isSuccess = callback.vnp_ResponseCode == "00" && transaction.Status != "Success";
+        transaction.Status = isSuccess ? "Success" : "Failed";
+        transaction.PaymentGatewayResponse = JsonConvert.SerializeObject(callback);
+        await _paymentRepo.UpdateTransactionAsync(transaction);
+
+        await _paymentRepo.UpdateOrderStatusByCodeAsync(orderId, transaction.Status);
+
+        if (isSuccess)
         {
-            transaction.Status = "Success";
-            transaction.PaymentGatewayResponse = JsonConvert.SerializeObject(callback);
-            await _paymentRepo.UpdateTransactionAsync(transaction);
-
-            await _paymentRepo.UpdateOrderStatusByCodeAsync(orderId, "Success");
-
-            // ➜ CẤP LIBRARY SAU KHI ORDER SUCCESS
             await _paymentRepo.GrantGameToLibraryAsync(orderId);
         }
-        else
-        {
-            transaction.Status = "Failed";
-            transaction.PaymentGatewayResponse = JsonConvert.SerializeObject(callback);
-            await _paymentRepo.UpdateTransactionAsync(transaction);
 
-            await _paymentRepo.UpdateOrderStatusByCodeAsync(orderId, "Failed");
-        }
-
-        // VNPay yêu cầu trả content xác nhận
         return Content("responseCode=00");
     }
 
