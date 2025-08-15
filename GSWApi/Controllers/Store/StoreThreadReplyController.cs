@@ -2,7 +2,9 @@
 using CloudinaryDotNet.Actions;
 using DataAccess.DTOs;
 using DataAccess.Repository.IRepository;
+using GSWApi.Utility;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 
 namespace GSWApi.Controllers.Store
 {
@@ -13,16 +15,18 @@ namespace GSWApi.Controllers.Store
         private readonly IStoreThreadReplyRepository _repository;
         private readonly Cloudinary _cloudinary;
 
-        public StoreThreadReplyController(IStoreThreadReplyRepository repository, IConfiguration configuration)
+        public StoreThreadReplyController(IStoreThreadReplyRepository repository, IOptions<CloudinarySettings> settings)
         {
-            _repository = repository;
 
             // Setup Cloudinary
+            _repository = repository;
+
             var account = new Account(
-                configuration["Cloudinary:CloudName"],
-                configuration["Cloudinary:ApiKey"],
-                configuration["Cloudinary:ApiSecret"]
+                settings.Value.CloudName,
+                settings.Value.ApiKey,
+                settings.Value.ApiSecret
             );
+
             _cloudinary = new Cloudinary(account);
         }
         [HttpGet("thread/{threadId}")]
@@ -42,16 +46,13 @@ namespace GSWApi.Controllers.Store
             if (imageFile != null && imageFile.Length > 0)
             {
                 using var stream = imageFile.OpenReadStream();
-                var uploadParams = new CloudinaryDotNet.Actions.ImageUploadParams
+                var uploadParams = new ImageUploadParams
                 {
-                    File = new CloudinaryDotNet.FileDescription(imageFile.FileName, stream),
-                    Folder = "store_thread_replies" // Optional: Cloudinary folder
+                    File = new FileDescription(imageFile.FileName, stream),
+                    Folder = "store_thread_replies" // Optional
                 };
 
-                var cloudinary = new Cloudinary(Environment.GetEnvironmentVariable("CLOUDINARY_URL"));
-                cloudinary.Api.Secure = true;
-
-                var uploadResult = await cloudinary.UploadAsync(uploadParams);
+                var uploadResult = await _cloudinary.UploadAsync(uploadParams);
 
                 if (uploadResult.Error != null)
                     return BadRequest(new { success = false, message = $"Image upload failed: {uploadResult.Error.Message}" });
@@ -62,6 +63,7 @@ namespace GSWApi.Controllers.Store
             var result = await _repository.CreateAsync(dto);
             return Ok(new { success = true, message = "Reply created.", data = result });
         }
+
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
