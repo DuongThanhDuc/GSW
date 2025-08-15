@@ -104,6 +104,9 @@ namespace DataAccess.Repository
 
         public async Task GrantGameToLibraryAsync(string orderCode)
         {
+            Console.WriteLine($"[GrantLibrary] Processing order {orderCode}...");
+
+            // 1. Get order info
             var orderDto = await _context.Store_Orders
                 .Where(o => o.OrderCode == orderCode)
                 .Select(o => new StoreOrderDTO
@@ -124,26 +127,36 @@ namespace DataAccess.Repository
                 return;
             }
 
-            if (string.IsNullOrEmpty(orderDto.UserID))
+            if (string.IsNullOrWhiteSpace(orderDto.UserID))
             {
-                Console.WriteLine($"[GrantLibrary] Order {orderCode} has no UserID, skipping.");
-                return; // or handle guest library
+                Console.WriteLine($"[GrantLibrary] Order {orderCode} has no UserID — skipping (guest order?)");
+                return;
             }
 
+            // 2. Get all game IDs in this order
             var gameIds = await _context.Store_OrderDetails
                 .Where(od => od.OrderID == orderDto.ID)
                 .Select(od => od.GameID)
+                .Distinct()
                 .ToListAsync();
 
             Console.WriteLine($"[GrantLibrary] Found {gameIds.Count} games for order {orderCode}");
 
-            if (!gameIds.Any()) return;
+            if (!gameIds.Any())
+            {
+                Console.WriteLine($"[GrantLibrary] No games found for order {orderCode}");
+                return;
+            }
 
+            // 3. Get user's current library
             var existingGameIds = await _context.Store_Library
                 .Where(lib => lib.UserID == orderDto.UserID)
                 .Select(lib => lib.GamesID)
                 .ToListAsync();
 
+            int addedCount = 0;
+
+            // 4. Add missing games to library
             foreach (var gameId in gameIds)
             {
                 if (!existingGameIds.Contains(gameId))
@@ -154,12 +167,27 @@ namespace DataAccess.Repository
                         GamesID = gameId,
                         CreatedAt = DateTime.UtcNow
                     });
+                    addedCount++;
+                    Console.WriteLine($"[GrantLibrary] Added game {gameId} to library");
+                }
+                else
+                {
+                    Console.WriteLine($"[GrantLibrary] Game {gameId} already in library — skipping");
                 }
             }
 
-            await _context.SaveChangesAsync();
-            Console.WriteLine($"[GrantLibrary] Added games to library for user {orderDto.UserID}");
+            // 5. Commit changes
+            if (addedCount > 0)
+            {
+                await _context.SaveChangesAsync();
+                Console.WriteLine($"[GrantLibrary] Added {addedCount} games to user {orderDto.UserID}'s library");
+            }
+            else
+            {
+                Console.WriteLine($"[GrantLibrary] No new games to add for order {orderCode}");
+            }
         }
+
 
 
         public async Task UpdateOrderStatusByCodeAsync(string orderCode, string status)

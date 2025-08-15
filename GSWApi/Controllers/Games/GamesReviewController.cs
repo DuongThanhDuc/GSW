@@ -2,6 +2,7 @@
 using DataAccess.DTOs;
 using DataAccess.Repository.IRepository;
 using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -20,32 +21,50 @@ namespace GSWApi.Controllers.Games
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<GamesReviewDTOReadOnly>>> GetAll()
+        public async Task<ActionResult> GetAll()
         {
             var dtos = await _repository.GetAllAsync();
-            return Ok(dtos);
+            return Ok(new
+            {
+                success = true,
+                data = dtos
+            });
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<GamesReviewDTOReadOnly>> GetById(int id)
+        public async Task<ActionResult> GetById(int id)
         {
             var dto = await _repository.GetByIdAsync(id);
-            if (dto == null) return NotFound();
-            return Ok(dto);
+            if (dto == null)
+                return NotFound(new { success = false, message = "Review not found" });
+
+            return Ok(new
+            {
+                success = true,
+                data = dto
+            });
         }
 
         [HttpGet("by-game/{gameId}")]
-        public async Task<ActionResult<IEnumerable<GamesReviewDTOReadOnly>>> GetByGameId(int gameId)
+        public async Task<ActionResult> GetByGameId(int gameId)
         {
             var dtos = await _repository.GetByGameIdAsync(gameId);
-            return Ok(dtos);
+            return Ok(new
+            {
+                success = true,
+                data = dtos
+            });
         }
 
         [HttpGet("by-user/{userId}")]
-        public async Task<ActionResult<IEnumerable<GamesReviewDTOReadOnly>>> GetByUserId(string userId)
+        public async Task<ActionResult> GetByUserId(string userId)
         {
             var dtos = await _repository.GetByUserIdAsync(userId);
-            return Ok(dtos);
+            return Ok(new
+            {
+                success = true,
+                data = dtos
+            });
         }
 
         [HttpPost]
@@ -59,19 +78,26 @@ namespace GSWApi.Controllers.Games
                 Comment = dto.Comment,
                 CreatedAt = DateTime.Now
             };
+
             await _repository.AddAsync(review);
+
             dto.ID = review.ID;
             dto.CreatedAt = review.CreatedAt;
-            return CreatedAtAction(nameof(GetById), new { id = review.ID }, dto);
+
+            return Ok(new
+            {
+                success = true,
+                data = dto
+            });
         }
 
         [HttpPut("{id}")]
         public async Task<ActionResult> Update(int id, [FromBody] GamesReviewDTO dto)
         {
             var existing = await _repository.GetByIdAsync(id);
-            if (existing == null) return NotFound();
+            if (existing == null)
+                return NotFound(new { success = false, message = "Review not found" });
 
-            // Load entity version for update
             var reviewEntity = new GamesReview
             {
                 ID = id,
@@ -83,25 +109,28 @@ namespace GSWApi.Controllers.Games
             };
 
             await _repository.UpdateAsync(reviewEntity);
-            return NoContent();
+
+            return Ok(new
+            {
+                success = true,
+                message = "Review updated successfully"
+            });
         }
 
         [HttpDelete("{id}")]
         public async Task<ActionResult> Delete(int id)
         {
-            await _repository.DeleteAsync(id);
-            return NoContent();
-        }
+            var existing = await _repository.GetByIdAsync(id);
+            if (existing == null)
+                return NotFound(new { success = false, message = "Review not found" });
 
-        private static GamesReviewDTO MapToDTO(GamesReview r) =>
-            new GamesReviewDTO
+            await _repository.DeleteAsync(id);
+
+            return Ok(new
             {
-                ID = r.ID,
-                GameID = r.GameID,
-                UserID = r.UserID,
-                IsUpvoted = r.IsUpvoted,
-                Comment = r.Comment,
-                CreatedAt = r.CreatedAt
-            };
+                success = true,
+                message = "Review deleted successfully"
+            });
+        }
     }
 }

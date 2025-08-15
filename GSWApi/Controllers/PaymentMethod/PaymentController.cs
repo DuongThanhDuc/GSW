@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 
 [ApiController]
@@ -165,7 +166,7 @@ public class PaymentController : ControllerBase
         var isValid = VnPayHelper.ValidateSignature(rspraw, inputHash, hashSecret);
         if (!isValid) return BadRequest("Invalid signature!");
 
-        var orderId = callback.vnp_TxnRef;
+        var orderId = callback.vnp_TxnRef; 
         var transaction = await _paymentRepo.GetByOrderCodeAsync(orderId);
         if (transaction == null) return NotFound("Transaction not found");
 
