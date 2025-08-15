@@ -6,7 +6,6 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using GSWApi.Utility;
 using DataAccess.Repository.IRepository;
-using Repository.Repository.IRepository;
 using Repository.Repository;
 using DataAccess.Repository;
 using CloudinaryDotNet;
@@ -44,9 +43,9 @@ builder.Services.AddScoped<IApprovalRepository, ApprovalRepository>();
 builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
 builder.Services.AddScoped<ISystemProfilePictureRepository, SystemProfilePictureRepository>();
 builder.Services.AddScoped<IStoreLibraryRepository, StoreLibraryRepository>();
-builder.Services.AddScoped<GoogleDriveUploader>();
+builder.Services.AddScoped<MegaUploader>();
 builder.Services.AddScoped<IDepositWithdrawRepository, DepositWithdrawRepository>();
-
+builder.Services.AddScoped<IWalletRepository, WalletRepository>();
 
 
 
@@ -128,6 +127,12 @@ builder.Services.AddCors(options =>
               .AllowAnyMethod();
     });
 });
+
+builder.Services.Configure<MegaSettings>(
+    builder.Configuration.GetSection("MegaSettings"));
+
+builder.Services.AddScoped<MegaUploader>();
+
 
 var app = builder.Build();
 

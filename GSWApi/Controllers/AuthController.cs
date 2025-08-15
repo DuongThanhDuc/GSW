@@ -24,22 +24,38 @@ namespace GSWApi.Controllers
             _tokenGenerator = tokenGenerator;
             _emailService = emailService;
         }
+
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterDTO dto)
         {
-            var user = new IdentityUser { UserName = dto.Username, Email = dto.Email, PhoneNumber= dto.PhoneNumber, EmailConfirmed = false };
-            var result = await _userManager.CreateAsync(user, dto.Password);
+            var existingUser = await _userManager.FindByEmailAsync(dto.Email);
+            if (existingUser != null)
+            {
+                return BadRequest("Email is already registered.");
+            }
 
+            var user = new IdentityUser
+            {
+                UserName = dto.Username,
+                Email = dto.Email,
+                PhoneNumber = dto.PhoneNumber,
+                EmailConfirmed = false
+            };
+
+            var result = await _userManager.CreateAsync(user, dto.Password);
             if (!result.Succeeded)
                 return BadRequest(result.Errors);
 
+
             await _userManager.AddToRoleAsync(user, "User");
 
-            // Sinh OTP, gửi mail
+            var displayNameClaim = new Claim("DisplayName", dto.Username); 
+            await _userManager.AddClaimAsync(user, displayNameClaim);
+
             var otp = OtpManager.GenerateOtp(dto.Email);
             await _emailService.SendOtpEmail(dto.Email, otp);
 
-            return Ok("Đã gửi OTP xác thực đến email. Vui lòng kiểm tra hộp thư.");
+            return Ok("An OTP has been sent to your email for verification. Please check your inbox.");
         }
 
 
@@ -49,33 +65,32 @@ namespace GSWApi.Controllers
             if (OtpManager.VerifyOtp(dto.Email, dto.Otp))
             {
                 var user = await _userManager.FindByEmailAsync(dto.Email);
-                if (user == null) return BadRequest("Không tìm thấy tài khoản!");
+                if (user == null) return BadRequest("Account not found!");
 
-                user.EmailConfirmed = true; // đánh dấu đã xác thực mail
+                user.EmailConfirmed = true; // mark email as confirmed
                 await _userManager.UpdateAsync(user);
 
-                return Ok("Đăng ký thành công, tài khoản đã kích hoạt!");
+                return Ok("Registration successful, your account has been activated!");
             }
-            return BadRequest("OTP không đúng hoặc đã hết hạn.");
+            return BadRequest("OTP is incorrect or has expired.");
         }
-
 
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDTO dto)
         {
             var user = await _userManager.FindByNameAsync(dto.Username);
             if (user == null || !user.EmailConfirmed)
-                return BadRequest("Tài khoản không hợp lệ hoặc chưa xác thực email!");
+                return BadRequest("Invalid account or email not verified!");
 
             var result = await _signInManager.CheckPasswordSignInAsync(user, dto.Password, false);
             if (!result.Succeeded)
-                return BadRequest("Sai tài khoản hoặc mật khẩu!");
+                return BadRequest("Incorrect username or password!");
 
-            // Gửi OTP đăng nhập
+            // Send login OTP
             var otp = OtpManager.GenerateOtp(user.Email);
             await _emailService.SendOtpEmail(user.Email, otp);
 
-            return Ok("OTP đã gửi về email!");
+            return Ok("An OTP has been sent to your email!");
         }
 
         [HttpPost("verify-login-otp")]
@@ -87,7 +102,7 @@ namespace GSWApi.Controllers
                 return BadRequest(new
                 {
                     success = false,
-                    message = "Không tìm thấy tài khoản"
+                    message = "Account not found."
                 });
             }
 
@@ -101,22 +116,22 @@ namespace GSWApi.Controllers
                     success = true,
                     data = new[]
                     {
-                new
-                {
-                    token,
-                    userid = user.Id,
-                    username = user.UserName,
-                    email = user.Email,
-                    roles = roles
-                }
-            }
+                        new
+                        {
+                            token,
+                            userid = user.Id,
+                            username = user.UserName,
+                            email = user.Email,
+                            roles = roles
+                        }
+                    }
                 });
             }
 
             return BadRequest(new
             {
                 success = false,
-                message = "OTP sai hoặc hết hạn!"
+                message = "OTP is incorrect or has expired."
             });
         }
 
@@ -125,38 +140,35 @@ namespace GSWApi.Controllers
         {
             var user = await _userManager.FindByEmailAsync(dto.Email);
             if (user == null || !user.EmailConfirmed)
-                return BadRequest(new { success = false, message = "Email không tồn tại hoặc chưa xác thực!" });
+                return BadRequest(new { success = false, message = "Email does not exist or is not verified!" });
 
             var otp = OtpManager.GenerateOtp(dto.Email);
             await _emailService.SendOtpEmail(dto.Email, otp);
 
-            return Ok(new { success = true, data = "Đã gửi OTP đặt lại mật khẩu đến email." });
+            return Ok(new { success = true, data = "An OTP for password reset has been sent to your email." });
         }
 
         [HttpPost("reset-password")]
         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDTO dto)
         {
-            var email = OtpManager.GetEmailByOtp(dto.Otp); // 🔸 new method you’ll add
+            var email = OtpManager.GetEmailByOtp(dto.Otp); //  custom method
             if (string.IsNullOrEmpty(email))
-                return BadRequest(new { success = false, message = "OTP không đúng hoặc đã hết hạn!" });
+                return BadRequest(new { success = false, message = "OTP is incorrect or has expired." });
 
             var user = await _userManager.FindByEmailAsync(email);
             if (user == null)
-                return BadRequest(new { success = false, message = "Không tìm thấy tài khoản!" });
+                return BadRequest(new { success = false, message = "Account not found." });
 
             if (dto.NewPassword != dto.ConfirmPassword)
-                return BadRequest(new { success = false, message = "Mật khẩu xác nhận không khớp!" });
+                return BadRequest(new { success = false, message = "Password confirmation does not match!" });
 
             var token = await _userManager.GeneratePasswordResetTokenAsync(user);
             var result = await _userManager.ResetPasswordAsync(user, token, dto.NewPassword);
 
             if (!result.Succeeded)
-                return BadRequest(new { success = false, message = "Đặt lại mật khẩu thất bại", errors = result.Errors });
+                return BadRequest(new { success = false, message = "Password reset failed.", errors = result.Errors });
 
-            return Ok(new { success = true, data = "Đặt lại mật khẩu thành công!" });
+            return Ok(new { success = true, data = "Password has been reset successfully!" });
         }
-
-
     }
 }
-

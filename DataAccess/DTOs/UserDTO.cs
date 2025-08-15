@@ -22,4 +22,14 @@ namespace DataAccess.DTOs
         public string? Role { get; set; } = null!;
 
     }
+    
+    public class UserDTOReadonly
+    {
+        public string Id { get; set; } = null!;
+        public string UserName { get; set; } = null!;
+        public string Status { get; set; } = "active"; // active|banned|locked
+        public DateTimeOffset? LockoutEnd { get; set; }
+        public string Message { get; set; } = null!;
+    }
+
 }

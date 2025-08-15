@@ -92,13 +92,17 @@ namespace DataAccess.Repository
                 OrderDate = dto.OrderDate == default ? DateTime.Now : dto.OrderDate,
                 TotalAmount = dto.TotalAmount,
                 Status = dto.Status ?? "COMPLETED",
-                CreatedAt = DateTime.Now
+                CreatedAt = DateTime.Now,
+                OrderCode = !string.IsNullOrEmpty(dto.OrderId)
+                    ? dto.OrderId
+                    : Guid.NewGuid().ToString("N")
             };
 
             _context.Store_Orders.Add(order);
             await _context.SaveChangesAsync();
             return order;
         }
+
 
 
 
@@ -128,6 +132,17 @@ namespace DataAccess.Repository
             _context.Store_Orders.Remove(order);
             await _context.SaveChangesAsync();
             return true;
+        }
+
+        public async Task<bool> UpdateOrderStatusAsync(int id, string status)
+        {
+            var order = await _context.Store_Orders.FindAsync(id);
+            if (order == null) return false;
+
+            order.Status = status;
+            _context.Store_Orders.Update(order);
+
+            return await _context.SaveChangesAsync() > 0;
         }
     }
 }

@@ -22,6 +22,7 @@ namespace DataAccess.DTOs
         public int OrderID { get; set; }
         public int GameID { get; set; }
         public string? GameName { get; set; }
+        public string? GamePicture { get; set; }
         public decimal UnitPrice { get; set; }
         public DateTime CreatedAt { get; set; }
 

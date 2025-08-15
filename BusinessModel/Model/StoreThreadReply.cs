@@ -12,6 +12,7 @@ namespace BusinessModel.Model
         public int ThreadID { get; set; }
         public StoreThread StoreThread { get; set; }
         public string ThreadComment { get; set; }
+        public string? CommentImageUrl {  get; set; }    
         public int UpvoteCount { get; set; }
         public string CreatedBy { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.Now;

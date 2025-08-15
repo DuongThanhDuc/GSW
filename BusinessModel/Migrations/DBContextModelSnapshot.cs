@@ -68,6 +68,7 @@ namespace BusinessModel.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<DateTime?>("ApprovedAt")
@@ -77,19 +78,23 @@ namespace BusinessModel.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETDATE()");
 
                     b.Property<string>("Note")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<string>("Type")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
 
                     b.Property<string>("UserId")
                         .IsRequired()
@@ -333,8 +338,8 @@ namespace BusinessModel.Migrations
                     b.Property<int>("GameID")
                         .HasColumnType("int");
 
-                    b.Property<int>("StarCount")
-                        .HasColumnType("int");
+                    b.Property<bool>("IsUpvoted")
+                        .HasColumnType("bit");
 
                     b.Property<string>("UserID")
                         .IsRequired()
@@ -428,8 +433,7 @@ namespace BusinessModel.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("OrderId")
-                        .IsRequired()
+                    b.Property<string>("GatewayOrderId")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("PaymentGatewayResponse")
@@ -443,7 +447,17 @@ namespace BusinessModel.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("StoreOrderId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("StoreTransactionID")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("StoreOrderId");
+
+                    b.HasIndex("StoreTransactionID");
 
                     b.ToTable("PaymentTransactions");
                 });
@@ -508,10 +522,23 @@ namespace BusinessModel.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ID"));
 
+                    b.Property<string>("BuyerEmail")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("BuyerName")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime2")
                         .HasDefaultValueSql("GETDATE()");
+
+                    b.Property<string>("OrderCode")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
 
                     b.Property<DateTime>("OrderDate")
                         .ValueGeneratedOnAdd()
@@ -526,10 +553,12 @@ namespace BusinessModel.Migrations
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("UserID")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("ID");
+
+                    b.HasIndex("OrderCode")
+                        .IsUnique();
 
                     b.ToTable("Store_Orders");
                 });
@@ -621,6 +650,9 @@ namespace BusinessModel.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("ThreadImageUrl")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("ThreadTitle")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -640,6 +672,9 @@ namespace BusinessModel.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("CommentImageUrl")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
@@ -667,6 +702,60 @@ namespace BusinessModel.Migrations
                     b.ToTable("Store_ThreadReplies");
                 });
 
+            modelBuilder.Entity("BusinessModel.Model.StoreThreadReplyUpvoteHistory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETDATE()");
+
+                    b.Property<int>("ThreadCommentId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ThreadCommentId");
+
+                    b.ToTable("Store_ThreadReplyUpvoteHistories");
+                });
+
+            modelBuilder.Entity("BusinessModel.Model.StoreThreadUpvoteHistory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETDATE()");
+
+                    b.Property<int>("ThreadID")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UserID")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ThreadID");
+
+                    b.ToTable("Store_ThreadUpvoteHistories");
+                });
+
             modelBuilder.Entity("BusinessModel.Model.StoreTransaction", b =>
                 {
                     b.Property<int>("ID")
@@ -682,6 +771,9 @@ namespace BusinessModel.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int?>("PaymentTransactionId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -695,7 +787,36 @@ namespace BusinessModel.Migrations
 
                     b.HasIndex("OrderID");
 
+                    b.HasIndex("PaymentTransactionId");
+
                     b.ToTable("Store_Transactions");
+                });
+
+            modelBuilder.Entity("BusinessModel.Model.StoreWishlist", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETDATE()");
+
+                    b.Property<int>("GameId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GameId");
+
+                    b.ToTable("Store_Wishlists");
                 });
 
             modelBuilder.Entity("BusinessModel.Model.SystemCategory", b =>
@@ -728,35 +849,35 @@ namespace BusinessModel.Migrations
                         {
                             ID = 1,
                             CategoryName = "RPG",
-                            CreatedAt = new DateTime(2025, 7, 28, 15, 50, 22, 626, DateTimeKind.Utc).AddTicks(9885),
+                            CreatedAt = new DateTime(2025, 8, 13, 7, 55, 22, 997, DateTimeKind.Utc).AddTicks(7605),
                             CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af"
                         },
                         new
                         {
                             ID = 2,
                             CategoryName = "FPS",
-                            CreatedAt = new DateTime(2025, 7, 28, 15, 50, 22, 626, DateTimeKind.Utc).AddTicks(9887),
+                            CreatedAt = new DateTime(2025, 8, 13, 7, 55, 22, 997, DateTimeKind.Utc).AddTicks(7607),
                             CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af"
                         },
                         new
                         {
                             ID = 3,
                             CategoryName = "Puzzle",
-                            CreatedAt = new DateTime(2025, 7, 28, 15, 50, 22, 626, DateTimeKind.Utc).AddTicks(9888),
+                            CreatedAt = new DateTime(2025, 8, 13, 7, 55, 22, 997, DateTimeKind.Utc).AddTicks(7608),
                             CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af"
                         },
                         new
                         {
                             ID = 4,
                             CategoryName = "Simulation",
-                            CreatedAt = new DateTime(2025, 7, 28, 15, 50, 22, 626, DateTimeKind.Utc).AddTicks(9890),
+                            CreatedAt = new DateTime(2025, 8, 13, 7, 55, 22, 997, DateTimeKind.Utc).AddTicks(7609),
                             CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af"
                         },
                         new
                         {
                             ID = 5,
                             CategoryName = "Horror",
-                            CreatedAt = new DateTime(2025, 7, 28, 15, 50, 22, 626, DateTimeKind.Utc).AddTicks(9892),
+                            CreatedAt = new DateTime(2025, 8, 13, 7, 55, 22, 997, DateTimeKind.Utc).AddTicks(7610),
                             CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af"
                         });
                 });
@@ -814,38 +935,65 @@ namespace BusinessModel.Migrations
                         new
                         {
                             ID = 1,
-                            CreatedAt = new DateTime(2025, 7, 28, 15, 50, 22, 626, DateTimeKind.Utc).AddTicks(9808),
+                            CreatedAt = new DateTime(2025, 8, 13, 7, 55, 22, 997, DateTimeKind.Utc).AddTicks(7573),
                             CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af",
                             TagName = "Action"
                         },
                         new
                         {
                             ID = 2,
-                            CreatedAt = new DateTime(2025, 7, 28, 15, 50, 22, 626, DateTimeKind.Utc).AddTicks(9810),
+                            CreatedAt = new DateTime(2025, 8, 13, 7, 55, 22, 997, DateTimeKind.Utc).AddTicks(7576),
                             CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af",
                             TagName = "Adventure"
                         },
                         new
                         {
                             ID = 3,
-                            CreatedAt = new DateTime(2025, 7, 28, 15, 50, 22, 626, DateTimeKind.Utc).AddTicks(9811),
+                            CreatedAt = new DateTime(2025, 8, 13, 7, 55, 22, 997, DateTimeKind.Utc).AddTicks(7578),
                             CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af",
                             TagName = "Multiplayer"
                         },
                         new
                         {
                             ID = 4,
-                            CreatedAt = new DateTime(2025, 7, 28, 15, 50, 22, 626, DateTimeKind.Utc).AddTicks(9813),
+                            CreatedAt = new DateTime(2025, 8, 13, 7, 55, 22, 997, DateTimeKind.Utc).AddTicks(7580),
                             CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af",
                             TagName = "Indie"
                         },
                         new
                         {
                             ID = 5,
-                            CreatedAt = new DateTime(2025, 7, 28, 15, 50, 22, 626, DateTimeKind.Utc).AddTicks(9814),
+                            CreatedAt = new DateTime(2025, 8, 13, 7, 55, 22, 997, DateTimeKind.Utc).AddTicks(7580),
                             CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af",
                             TagName = "Strategy"
                         });
+                });
+
+            modelBuilder.Entity("BusinessModel.Model.UserWallet", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Balance")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.ToTable("User_Wallets");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -878,21 +1026,21 @@ namespace BusinessModel.Migrations
                         new
                         {
                             Id = "b7b9181c-ff61-4d8f-8f6d-5edb3a6d3a11",
-                            ConcurrencyStamp = "c417e837-7437-4066-907d-c9b22a07d9f0",
+                            ConcurrencyStamp = "5a47e355-5bbe-4a20-8bbd-2f0266ddfc5f",
                             Name = "Admin",
                             NormalizedName = "ADMIN"
                         },
                         new
                         {
                             Id = "0f6781b2-4564-4bb3-8d85-92e4c194a2cb",
-                            ConcurrencyStamp = "b0c2a5dc-69bc-4e20-9abb-e12aae37a72b",
+                            ConcurrencyStamp = "4dfb923a-38ea-4abb-9503-8ed80b366677",
                             Name = "Staff",
                             NormalizedName = "STAFF"
                         },
                         new
                         {
                             Id = "26e5f054-e9fd-489f-891f-cf2b57fa9a1c",
-                            ConcurrencyStamp = "36198b2f-e076-4e4b-a65e-50155a60d556",
+                            ConcurrencyStamp = "f1890529-adf0-4d45-9a21-919e7df4c9a9",
                             Name = "User",
                             NormalizedName = "USER"
                         });
@@ -992,15 +1140,15 @@ namespace BusinessModel.Migrations
                         {
                             Id = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af",
                             AccessFailedCount = 0,
-                            ConcurrencyStamp = "1c5fa994-00ac-4ee3-b853-170b26b966fe",
+                            ConcurrencyStamp = "d84694bd-2d43-4cc4-a6c1-f43d97f0bbd2",
                             Email = "admin@gameshop.com",
                             EmailConfirmed = true,
                             LockoutEnabled = false,
                             NormalizedEmail = "ADMIN@GAMESHOP.COM",
                             NormalizedUserName = "ADMIN",
-                            PasswordHash = "AQAAAAEAACcQAAAAEG/tvvR+CoI4ACOdcNYZRd73r4YHEZSjO7i4TtIcTNVsOL6+4sHEWOBQcB096VsSLQ==",
+                            PasswordHash = "AQAAAAEAACcQAAAAEAAnYc7agGhYXnQD/Uterlf/H5fze8HKziVSJiPUGAzyCo5OPfpQTl+Qf4q5/0lolQ==",
                             PhoneNumberConfirmed = false,
-                            SecurityStamp = "37d782f1-5251-41a1-aa38-63f965f213d7",
+                            SecurityStamp = "7e30c0c2-6316-4bff-b792-1e9e42be8549",
                             TwoFactorEnabled = false,
                             UserName = "admin"
                         },
@@ -1008,17 +1156,33 @@ namespace BusinessModel.Migrations
                         {
                             Id = "bcbcdd33-9a99-75dv-82d7-0c9e67f9d9af",
                             AccessFailedCount = 0,
-                            ConcurrencyStamp = "dee49eee-98a1-4645-822d-fbd2083e47fa",
+                            ConcurrencyStamp = "b2afd5de-90c8-418f-aed1-746433a1bc1a",
                             Email = "trananhtuan180202@gmail.com",
                             EmailConfirmed = true,
                             LockoutEnabled = false,
                             NormalizedEmail = "TRANANHTUAN180202@GMAIL.COM",
                             NormalizedUserName = "TRANANHTUAN180202",
-                            PasswordHash = "AQAAAAEAACcQAAAAEIaRRBlvnuFNG+wuSwXezN4t4DcFzFO0taiwdCFJ5edlQ/S3t+wq9IRbvubRTqus0g==",
+                            PasswordHash = "AQAAAAEAACcQAAAAEAre3XySQfO4TSswkNZNayRPERMNJ+/x7i+6w38BhDgc4Yp/3+3Hs/eQgulNzTgarA==",
                             PhoneNumberConfirmed = false,
-                            SecurityStamp = "2f92eb64-ddc7-42c1-9072-0ec9cf75f7b2",
+                            SecurityStamp = "5508e9f4-488e-4243-bf6e-3bf9f6a3c6b4",
                             TwoFactorEnabled = false,
                             UserName = "trananhtuan180202"
+                        },
+                        new
+                        {
+                            Id = "bcbcde35-9a98-75dv-82d7-0c9e67f9d9af",
+                            AccessFailedCount = 0,
+                            ConcurrencyStamp = "b0480472-2510-4942-93d8-1463f14fed58",
+                            Email = "phong260702@gmail.com",
+                            EmailConfirmed = true,
+                            LockoutEnabled = false,
+                            NormalizedEmail = "PHONG260702@GMAIL.COM",
+                            NormalizedUserName = "PHONG",
+                            PasswordHash = "AQAAAAEAACcQAAAAEAAXmbCQNpSdFxAWaYQxaT1QIm2tT7Vk0DetdrJoZ5yuHnV8uPODrv9QKWjYVA7+nQ==",
+                            PhoneNumberConfirmed = false,
+                            SecurityStamp = "68a2326e-a0cf-4810-b8bf-107caaadc75a",
+                            TwoFactorEnabled = false,
+                            UserName = "phong"
                         });
                 });
 
@@ -1092,6 +1256,11 @@ namespace BusinessModel.Migrations
                         new
                         {
                             UserId = "bcbcdd33-9a99-75dv-82d7-0c9e67f9d9af",
+                            RoleId = "b7b9181c-ff61-4d8f-8f6d-5edb3a6d3a11"
+                        },
+                        new
+                        {
+                            UserId = "bcbcde35-9a98-75dv-82d7-0c9e67f9d9af",
                             RoleId = "b7b9181c-ff61-4d8f-8f6d-5edb3a6d3a11"
                         });
                 });
@@ -1234,6 +1403,21 @@ namespace BusinessModel.Migrations
                     b.Navigation("Game");
                 });
 
+            modelBuilder.Entity("BusinessModel.Model.PaymentTransaction", b =>
+                {
+                    b.HasOne("BusinessModel.Model.StoreOrder", "StoreOrder")
+                        .WithMany("PaymentTransactions")
+                        .HasForeignKey("StoreOrderId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("BusinessModel.Model.StoreTransaction", null)
+                        .WithMany("PaymentTransactions")
+                        .HasForeignKey("StoreTransactionID");
+
+                    b.Navigation("StoreOrder");
+                });
+
             modelBuilder.Entity("BusinessModel.Model.StoreCart", b =>
                 {
                     b.HasOne("BusinessModel.Model.GamesInfo", "Game")
@@ -1297,15 +1481,55 @@ namespace BusinessModel.Migrations
                     b.Navigation("StoreThread");
                 });
 
+            modelBuilder.Entity("BusinessModel.Model.StoreThreadReplyUpvoteHistory", b =>
+                {
+                    b.HasOne("BusinessModel.Model.StoreThreadReply", "ThreadReply")
+                        .WithMany()
+                        .HasForeignKey("ThreadCommentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ThreadReply");
+                });
+
+            modelBuilder.Entity("BusinessModel.Model.StoreThreadUpvoteHistory", b =>
+                {
+                    b.HasOne("BusinessModel.Model.StoreThread", "StoreThread")
+                        .WithMany()
+                        .HasForeignKey("ThreadID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("StoreThread");
+                });
+
             modelBuilder.Entity("BusinessModel.Model.StoreTransaction", b =>
                 {
                     b.HasOne("BusinessModel.Model.StoreOrder", "Order")
                         .WithMany("Transactions")
                         .HasForeignKey("OrderID")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("BusinessModel.Model.PaymentTransaction", "PaymentTransaction")
+                        .WithMany()
+                        .HasForeignKey("PaymentTransactionId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Order");
+
+                    b.Navigation("PaymentTransaction");
+                });
+
+            modelBuilder.Entity("BusinessModel.Model.StoreWishlist", b =>
+                {
+                    b.HasOne("BusinessModel.Model.GamesInfo", "GamesInfo")
+                        .WithMany()
+                        .HasForeignKey("GameId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Order");
+                    b.Navigation("GamesInfo");
                 });
 
             modelBuilder.Entity("BusinessModel.Model.SystemProfilePicture", b =>
@@ -1313,6 +1537,17 @@ namespace BusinessModel.Migrations
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "User")
                         .WithOne()
                         .HasForeignKey("BusinessModel.Model.SystemProfilePicture", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("BusinessModel.Model.UserWallet", b =>
+                {
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", "User")
+                        .WithOne()
+                        .HasForeignKey("BusinessModel.Model.UserWallet", "UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -1394,6 +1629,8 @@ namespace BusinessModel.Migrations
                 {
                     b.Navigation("OrderDetails");
 
+                    b.Navigation("PaymentTransactions");
+
                     b.Navigation("RefundRequests");
 
                     b.Navigation("Transactions");
@@ -1402,6 +1639,11 @@ namespace BusinessModel.Migrations
             modelBuilder.Entity("BusinessModel.Model.StoreThread", b =>
                 {
                     b.Navigation("Replies");
+                });
+
+            modelBuilder.Entity("BusinessModel.Model.StoreTransaction", b =>
+                {
+                    b.Navigation("PaymentTransactions");
                 });
 #pragma warning restore 612, 618
         }

@@ -52,8 +52,11 @@ namespace BusinessModel.Model
         public DbSet<PaymentTransaction> PaymentTransactions { get; set; }
         public DbSet<SystemProfilePicture> System_ProfilePictures { get; set; }
 
+        public DbSet<StoreThreadReplyUpvoteHistory> Store_ThreadReplyUpvoteHistories { get; set; }
+        public DbSet<StoreThreadUpvoteHistory> Store_ThreadUpvoteHistories { get; set; }
+        public DbSet<StoreWishlist> Store_Wishlists { get; set; }
+        public DbSet<UserWallet> User_Wallets { get; set; }
         public DbSet<DepositWithdrawTransaction> DepositWithdrawTransactions { get; set; }
-
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -211,6 +214,90 @@ namespace BusinessModel.Model
                 .HasForeignKey(l => l.GamesID)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            modelBuilder.Entity<StoreThreadReplyUpvoteHistory>()
+                .Property(u => u.CreatedAt)
+                .HasDefaultValueSql("GETDATE()");
+
+            modelBuilder.Entity<StoreThreadReplyUpvoteHistory>()
+                .HasOne(u => u.ThreadReply)
+                .WithMany() // Assuming no collection navigation in StoreThreadReply
+                .HasForeignKey(u => u.ThreadCommentId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<StoreThreadUpvoteHistory>()
+                .Property(u => u.CreatedAt)
+                .HasDefaultValueSql("GETDATE()");
+
+            modelBuilder.Entity<StoreThreadUpvoteHistory>()
+                .HasOne(u => u.StoreThread)
+                .WithMany() // Assuming no collection nav in StoreThread
+                .HasForeignKey(u => u.ThreadID)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<StoreWishlist>()
+                .Property(w => w.CreatedAt)
+                .HasDefaultValueSql("GETDATE()");
+
+            modelBuilder.Entity<StoreWishlist>()
+                .HasOne(w => w.GamesInfo)
+                .WithMany() // Assuming no collection in GamesInfo
+                .HasForeignKey(w => w.GameId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // ---- Wallet ----
+            modelBuilder.Entity<UserWallet>(b =>
+            {
+                b.HasIndex(x => x.UserId).IsUnique();
+                b.Property(x => x.Balance).HasPrecision(18, 2);
+                b.HasOne(x => x.User)
+                 .WithOne()
+                 .HasForeignKey<UserWallet>(x => x.UserId)
+                 .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // ---- Deposit/Withdraw Tx ----
+            modelBuilder.Entity<DepositWithdrawTransaction>(b =>
+            {
+                b.Property(x => x.Amount).HasPrecision(18, 2);
+                b.Property(x => x.Type).HasMaxLength(10).IsRequired();
+                b.Property(x => x.Status).HasMaxLength(20).IsRequired();
+                b.Property(x => x.CreatedAt).HasDefaultValueSql("GETDATE()");
+            });
+
+            // PaymentTransaction ↔ StoreOrder
+            modelBuilder.Entity<PaymentTransaction>(b =>
+            {
+                // ...
+                b.HasOne(x => x.StoreOrder)
+                 .WithMany(o => o.PaymentTransactions)
+                 .HasForeignKey(x => x.StoreOrderId)
+                 .OnDelete(DeleteBehavior.NoAction); 
+            });
+
+            // StoreTransaction ↔ StoreOrder
+            modelBuilder.Entity<StoreTransaction>(b =>
+            {
+                // ...
+                b.HasOne(x => x.Order)
+                 .WithMany(o => o.Transactions)
+                 .HasForeignKey(x => x.OrderID)
+                 .OnDelete(DeleteBehavior.NoAction); 
+
+                b.HasOne(x => x.PaymentTransaction)
+                 .WithMany()
+                 .HasForeignKey(x => x.PaymentTransactionId)
+                 .OnDelete(DeleteBehavior.SetNull); 
+            });
+
+            modelBuilder.Entity<StoreOrder>(b =>
+            {
+                b.Property(x => x.OrderCode).HasMaxLength(64).IsRequired();
+                b.HasIndex(x => x.OrderCode).IsUnique();     
+
+                b.Property(x => x.BuyerEmail).HasMaxLength(256);
+                b.Property(x => x.BuyerName).HasMaxLength(128);
+            });
+
 
             // Seeding Datas
 
@@ -239,6 +326,7 @@ namespace BusinessModel.Model
             // Admin Users
             var adminUserId = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af";
             var adminUserId2 = "bcbcdd33-9a99-75dv-82d7-0c9e67f9d9af";
+            var adminUserId3 = "bcbcde35-9a98-75dv-82d7-0c9e67f9d9af";
             var hasher = new PasswordHasher<IdentityUser>();
 
             var adminUser = new IdentityUser
@@ -264,9 +352,20 @@ namespace BusinessModel.Model
                 SecurityStamp = Guid.NewGuid().ToString(),
                 PasswordHash = hasher.HashPassword(null!, "AdminPassword@123")
             };
+            var adminUser3 = new IdentityUser
+            {
+                Id = adminUserId3,
+                UserName = "phong",
+                NormalizedUserName = "PHONG",
+                Email = "phong260702@gmail.com",
+                NormalizedEmail = "PHONG260702@GMAIL.COM",
+                EmailConfirmed = true,
+                SecurityStamp = Guid.NewGuid().ToString(),
+                PasswordHash = hasher.HashPassword(null!, "Phong@123")
+            };
 
             // Seed Users
-            modelBuilder.Entity<IdentityUser>().HasData(adminUser, adminUser2);
+            modelBuilder.Entity<IdentityUser>().HasData(adminUser, adminUser2, adminUser3);
 
             // Seed Roles for Users
             modelBuilder.Entity<IdentityUserRole<string>>().HasData(
@@ -279,6 +378,11 @@ namespace BusinessModel.Model
                 {
                     UserId = adminUserId2,
                     RoleId = "b7b9181c-ff61-4d8f-8f6d-5edb3a6d3a11" // Same role or change if needed
+                },
+                new IdentityUserRole<string>
+                {
+                    UserId = adminUserId3,
+                    RoleId = "b7b9181c-ff61-4d8f-8f6d-5edb3a6d3a11" 
                 }
             );
 
@@ -329,35 +433,35 @@ namespace BusinessModel.Model
         ID = 1,
         CategoryName = "RPG",
         CreatedAt = DateTime.UtcNow,
-       CreatedBy = adminUserId
+        CreatedBy = adminUserId
     },
     new SystemCategory
     {
         ID = 2,
         CategoryName = "FPS",
         CreatedAt = DateTime.UtcNow,
-       CreatedBy = adminUserId
+        CreatedBy = adminUserId
     },
     new SystemCategory
     {
         ID = 3,
         CategoryName = "Puzzle",
         CreatedAt = DateTime.UtcNow,
-       CreatedBy = adminUserId
+        CreatedBy = adminUserId
     },
     new SystemCategory
     {
         ID = 4,
         CategoryName = "Simulation",
         CreatedAt = DateTime.UtcNow,
-       CreatedBy = adminUserId
+        CreatedBy = adminUserId
     },
     new SystemCategory
     {
         ID = 5,
         CategoryName = "Horror",
         CreatedAt = DateTime.UtcNow,
-       CreatedBy = adminUserId
+        CreatedBy = adminUserId
     }
 );
         }

@@ -14,16 +14,16 @@ namespace GSWApi.Controllers.Games
     public class GamesInfoController : ControllerBase
     {
         private readonly IGamesInfoRepository _repository;
-        private readonly GoogleDriveUploader _googleDriveUploader;
+        private readonly MegaUploader _megaUploader;
         private readonly Cloudinary _cloudinary;
 
         public GamesInfoController(
             IGamesInfoRepository repository,
-            GoogleDriveUploader googleDriveUploader,
+            MegaUploader megaUploader,
             IOptions<CloudinarySettings> cloudinaryConfig)
         {
             _repository = repository;
-            _googleDriveUploader = googleDriveUploader;
+            _megaUploader = megaUploader;
 
             var account = new Account(
                 cloudinaryConfig.Value.CloudName,
@@ -130,30 +130,47 @@ namespace GSWApi.Controllers.Games
 
             try
             {
-                var filePath = await _googleDriveUploader.UploadInstallerAsync(installerFile);
+                // Upload installer to Mega
+                var fileUrl = await _megaUploader.UploadInstallerAsync(installerFile);
 
-                // Manual mapping
+                // Preserve all fields from the existing DTO
                 var editableDto = new GamesInfoDTO
                 {
                     ID = existing.ID,
                     Title = existing.Title,
                     Description = existing.Description,
                     Price = existing.Price,
+                    Genre = existing.Genre,
+                    DeveloperId = existing.DeveloperId,
+                    InstallerFilePath = fileUrl, // ✅ update this
                     CoverImagePath = existing.CoverImagePath,
-                    InstallerFilePath = filePath, // update only this
                     Status = existing.Status,
-                    IsActive = existing.IsActive,
+                    WishlistCount = existing.WishlistCount,
+                    PurchaseCount = existing.PurchaseCount,
+                    CreatedBy = existing.CreatedBy,
+                    IsActive = existing.IsActive
                 };
 
                 await _repository.UpdateAsync(editableDto);
 
-                return Ok(new { success = true, message = "Installer uploaded successfully.", installerFilePath = filePath });
+                return Ok(new { success = true, message = "Installer uploaded successfully.", url = fileUrl });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { success = false, message = "Installer upload failed.", error = ex.Message });
+                var innerMessage = ex.InnerException?.Message ?? ex.Message;
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Installer upload failed.",
+                    error = innerMessage
+                });
             }
         }
+
+
+
+
+
 
         // POST: api/GamesInfo/{id}/upload-cover
         [HttpPost("{id}/upload-cover")]
@@ -201,6 +218,30 @@ namespace GSWApi.Controllers.Games
             {
                 return StatusCode(500, new { success = false, message = "Cover image upload failed.", error = ex.Message });
             }
+        }
+
+        // POST: api/GamesInfo/{gameId}/wishlist/toggle?userId=abc
+        [HttpPost("{gameId}/wishlist/toggle")]
+        public async Task<IActionResult> ToggleWishlist(int gameId, [FromQuery] string userId)
+        {
+            var result = await _repository.ToggleWishlistAsync(userId, gameId);
+            return Ok(new { success = result, message = "Wishlist toggled." });
+        }
+
+        // GET: api/GamesInfo/{gameId}/wishlist/check?userId=abc
+        [HttpGet("{gameId}/wishlist/check")]
+        public async Task<IActionResult> IsGameInWishlist(int gameId, [FromQuery] string userId)
+        {
+            var isWishlisted = await _repository.IsGameInWishlistAsync(userId, gameId);
+            return Ok(new { success = true, isWishlisted });
+        }
+
+        // GET: api/GamesInfo/wishlist?userId=abc
+        [HttpGet("wishlist")]
+        public async Task<IActionResult> GetWishlistByUser([FromQuery] string userId)
+        {
+            var wishlists = await _repository.GetWishlistsByUserAsync(userId);
+            return Ok(new { success = true, data = wishlists });
         }
 
     }

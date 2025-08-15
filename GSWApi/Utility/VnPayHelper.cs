@@ -16,16 +16,13 @@ public static class VnPayHelper
     }
 
     // Method to create the payment URL for VnPay
-    public static string CreatePaymentUrl(PaymentRequestDTO model, IConfiguration configuration, string ipAddress)
+    public static string CreatePaymentUrl(PaymentRequestDTO model, IConfiguration configuration, string ipAddress, string txn_ref)
     {
         var vnp_TmnCode = configuration["VnPay:TmnCode"]?.Trim();
         var vnp_HashSecret = configuration["VnPay:HashSecret"]?.Trim();
         var vnp_Url = configuration["VnPay:Url"]?.Trim();
         var vnp_ReturnUrl = configuration["VnPay:ReturnUrl"]?.Trim();
-
-        string orderId = string.IsNullOrWhiteSpace(model.OrderId)
-            ? (DateTime.UtcNow.Ticks % 1000000000).ToString()
-            : model.OrderId;
+        var orderInfo = model.OrderId;
 
         var nowVN = GetVietnamTime();
 
@@ -42,10 +39,10 @@ public static class VnPayHelper
         pay.AddRequestData("vnp_CurrCode", "VND");
         pay.AddRequestData("vnp_IpAddr", ipAddress);
         pay.AddRequestData("vnp_Locale", "vn");
-        pay.AddRequestData("vnp_OrderInfo", $"Thanh toan don hang {orderId}");
+        pay.AddRequestData("vnp_OrderInfo", orderInfo.ToString());
         pay.AddRequestData("vnp_OrderType", "other");
         pay.AddRequestData("vnp_ReturnUrl", vnp_ReturnUrl);
-        pay.AddRequestData("vnp_TxnRef", orderId);
+        pay.AddRequestData("vnp_TxnRef", txn_ref);
         pay.AddRequestData("vnp_ExpireDate", nowVN.AddMinutes(15).ToString("yyyyMMddHHmmss"));
 
         // Generate the payment URL with the request data and secure hash

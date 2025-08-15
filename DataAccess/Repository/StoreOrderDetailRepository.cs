@@ -29,6 +29,7 @@ namespace DataAccess.Repository
                     OrderID = d.OrderID,
                     GameID = d.GameID,
                     GameName = d.Game.Title,
+                    GamePicture = d.Game.CoverImagePath,
                     UnitPrice = d.UnitPrice,
                     CreatedAt = d.CreatedAt
                 })
@@ -46,6 +47,7 @@ namespace DataAccess.Repository
                     OrderID = d.OrderID,
                     GameID = d.GameID,
                     GameName = d.Game.Title,
+                    GamePicture = d.Game.CoverImagePath,
                     UnitPrice = d.UnitPrice,
                     CreatedAt = d.CreatedAt
                 })
@@ -92,5 +94,21 @@ namespace DataAccess.Repository
             await _context.SaveChangesAsync();
             return true;
         }
+
+        public async Task<IEnumerable<StoreOrderDetailDTOReadOnly>> GetByStoreOrderIdAsync(int storeOrderId)
+        {
+            return await _context.Store_OrderDetails
+                .Where(x => x.OrderID == storeOrderId)
+                .Select(x => new StoreOrderDetailDTOReadOnly
+                {
+                    ID = x.ID,
+                    OrderID = x.OrderID,
+                    GameID = x.GameID,
+                    UnitPrice = x.UnitPrice,
+                    CreatedAt = x.CreatedAt
+                })
+                .ToListAsync();
+        }
+
     }
 }
