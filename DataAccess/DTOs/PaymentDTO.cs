@@ -4,15 +4,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DataAccess.DTOs 
+namespace DataAccess.DTOs
 {
     public class PaymentRequestDTO
     {
-        public string OrderId { get; set; }
+        public int OrderId { get; set; }
         public decimal Amount { get; set; }
 
-        public string? BuyerEmail { get; set; }
-        public string? BuyerName { get; set; }
     }
 
     public class PaymentResponseDTO

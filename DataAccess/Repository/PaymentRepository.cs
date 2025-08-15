@@ -19,13 +19,8 @@ namespace DataAccess.Repository
 
         public async Task<PaymentTransaction?> GetByOrderCodeAsync(string orderCode)
         {
-            var order = await _context.Store_Orders
-                .AsNoTracking()
-                .FirstOrDefaultAsync(o => o.OrderCode == orderCode);
-            if (order == null) return null;
-
             return await _context.PaymentTransactions
-                .Where(p => p.StoreOrderId == order.ID)
+                .Where(p => p.GatewayOrderId == orderCode)
                 .OrderByDescending(p => p.CreatedAt)
                 .FirstOrDefaultAsync();
         }
@@ -50,33 +45,12 @@ namespace DataAccess.Repository
             return tx;
         }
 
-        public async Task<StoreOrder> CreateProvisionalOrderAsync(
-            string orderCode, string? userId, decimal amount,
-            string? buyerEmail = null, string? buyerName = null)
+        public async Task<StoreOrder> CreateProvisionalOrderAsync(string orderCode, string? userId, decimal amount)
         {
             var exist = await _context.Store_Orders
                 .FirstOrDefaultAsync(o => o.OrderCode == orderCode);
 
-            if (exist != null)
-            {
-                bool changed = false;
 
-                if (string.IsNullOrEmpty(exist.BuyerEmail) && !string.IsNullOrEmpty(buyerEmail))
-                {
-                    exist.BuyerEmail = buyerEmail;
-                    changed = true;
-                }
-                if (string.IsNullOrEmpty(exist.BuyerName) && !string.IsNullOrEmpty(buyerName))
-                {
-                    exist.BuyerName = buyerName;
-                    changed = true;
-                }
-
-                if (changed)
-                    await _context.SaveChangesAsync();
-
-                return exist;
-            }
 
             var order = new StoreOrder
             {
@@ -85,9 +59,7 @@ namespace DataAccess.Repository
                 OrderDate = DateTime.Now,
                 CreatedAt = DateTime.Now,
                 TotalAmount = amount,
-                Status = "Pending",              
-                BuyerEmail = buyerEmail,
-                BuyerName = buyerName,
+                Status = "Pending",
                 OrderDetails = new List<StoreOrderDetail>()
             };
 
@@ -102,13 +74,12 @@ namespace DataAccess.Repository
             await _context.SaveChangesAsync();
         }
 
-        public async Task GrantGameToLibraryAsync(string orderCode)
+        public async Task GrantGameToLibraryAsync(int orderId)
         {
-            Console.WriteLine($"[GrantLibrary] Processing order {orderCode}...");
 
             // 1. Get order info
             var orderDto = await _context.Store_Orders
-                .Where(o => o.OrderCode == orderCode)
+                .Where(o => o.ID == orderId)
                 .Select(o => new StoreOrderDTO
                 {
                     ID = o.ID,
@@ -123,28 +94,23 @@ namespace DataAccess.Repository
 
             if (orderDto == null)
             {
-                Console.WriteLine($"[GrantLibrary] Order not found: {orderCode}");
                 return;
             }
 
             if (string.IsNullOrWhiteSpace(orderDto.UserID))
             {
-                Console.WriteLine($"[GrantLibrary] Order {orderCode} has no UserID — skipping (guest order?)");
                 return;
             }
 
-            // 2. Get all game IDs in this order
             var gameIds = await _context.Store_OrderDetails
                 .Where(od => od.OrderID == orderDto.ID)
                 .Select(od => od.GameID)
                 .Distinct()
                 .ToListAsync();
 
-            Console.WriteLine($"[GrantLibrary] Found {gameIds.Count} games for order {orderCode}");
 
             if (!gameIds.Any())
             {
-                Console.WriteLine($"[GrantLibrary] No games found for order {orderCode}");
                 return;
             }
 
@@ -165,7 +131,7 @@ namespace DataAccess.Repository
                     {
                         UserID = orderDto.UserID,
                         GamesID = gameId,
-                        CreatedAt = DateTime.UtcNow
+                        CreatedAt = DateTime.Now
                     });
                     addedCount++;
                     Console.WriteLine($"[GrantLibrary] Added game {gameId} to library");
@@ -182,14 +148,7 @@ namespace DataAccess.Repository
                 await _context.SaveChangesAsync();
                 Console.WriteLine($"[GrantLibrary] Added {addedCount} games to user {orderDto.UserID}'s library");
             }
-            else
-            {
-                Console.WriteLine($"[GrantLibrary] No new games to add for order {orderCode}");
-            }
         }
-
-
-
         public async Task UpdateOrderStatusByCodeAsync(string orderCode, string status)
         {
             var order = await _context.Store_Orders
@@ -206,7 +165,7 @@ namespace DataAccess.Repository
 
             if (!string.Equals(order.Status, normalized, StringComparison.Ordinal))
             {
-                order.Status = normalized;              
+                order.Status = normalized;
                 await _context.SaveChangesAsync();
             }
         }
