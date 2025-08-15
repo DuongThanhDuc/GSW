@@ -3,6 +3,7 @@ using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using System.Web;
+using AutoMapper;
 using BusinessModel.Model;
 using DataAccess.DTOs;
 using DataAccess.Repository.IRepository;
@@ -11,7 +12,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 
 [ApiController]
@@ -19,15 +19,20 @@ using Newtonsoft.Json;
 public class PaymentController : ControllerBase
 {
     private readonly IPaymentRepository _paymentRepo;
+    private readonly IStoreLibraryRepository _storeRepo;
+    private readonly IStoreOrderRepository _storeOrderRepo;
+    private readonly IStoreOrderDetailRepository _storeOrderDetailRepo;
     private readonly IConfiguration _config;
     private readonly IHttpContextAccessor _httpContextAccessor;
 
-    public PaymentController(
-        IPaymentRepository paymentRepo,
-        IConfiguration config,
+    public PaymentController(IPaymentRepository paymentRepo, IStoreLibraryRepository storeRepo,
+        IStoreOrderRepository storeOrderRepo, IStoreOrderDetailRepository storeOrderDetailRepo, IConfiguration config,
         IHttpContextAccessor httpContextAccessor)
     {
         _paymentRepo = paymentRepo;
+        _storeRepo = storeRepo;
+        _storeOrderRepo = storeOrderRepo;
+        _storeOrderDetailRepo = storeOrderDetailRepo;
         _config = config;
         _httpContextAccessor = httpContextAccessor;
     }
@@ -36,44 +41,49 @@ public class PaymentController : ControllerBase
     [HttpPost("vnpay-create")]
     public async Task<IActionResult> CreatePayment([FromBody] PaymentRequestDTO model)
     {
-        // 1) Auto-generate orderCode nếu FE không truyền hoặc là "string"
-        if (string.IsNullOrWhiteSpace(model.OrderId) ||
-            model.OrderId.Trim().Equals("string", StringComparison.OrdinalIgnoreCase))
-        {
-            // Ví dụ: ORD-20250814-063735-AB12
-            var suffix = Guid.NewGuid().ToString("N").Substring(0, 4).ToUpperInvariant();
-            model.OrderId = $"ORD-{DateTime.Now:yyyyMMdd-HHmmss}-{suffix}";
-        }
-        var orderCode = model.OrderId.Trim();
-
+        var orderCode = model.OrderId;
+        var suffix = Guid.NewGuid().ToString("N").Substring(0, 4).ToUpperInvariant();
+        string order_code = $"ORD-{DateTime.Now:yyyyMMdd-HHmmss}-{suffix}";
         // 2) Lấy userId (nếu có), guest => null
         var userId = User?.FindFirstValue(ClaimTypes.NameIdentifier);
 
-        // 3) Tạo/lấy đơn tạm theo orderCode (idempotent ở repository)
-        var order = await _paymentRepo.FindOrderByCodeAsync(orderCode)
-                  ?? await _paymentRepo.CreateProvisionalOrderAsync(
-                        orderCode, userId, model.Amount, model.BuyerEmail, model.BuyerName);
+        var lastTransaction = await _paymentRepo.GetByStoreOrderIdAsync(model.OrderId);
 
-        // 4) Nếu đơn đã thanh toán/đã fail thì không cho tạo tiếp
-        if (string.Equals(order.Status, "Success", StringComparison.OrdinalIgnoreCase))
-            return Conflict(new { message = "Order already paid." });
+        StoreOrder order;
+        if (lastTransaction == null)
+        {
+            order = await _paymentRepo.CreateProvisionalOrderAsync(
+                order_code,
+                userId,
+                model.Amount
+            );
+        }
+        else
+        {
+            var check = await _storeOrderRepo.GetByIdAsync(model.OrderId);
+            if (check == null)
+            {
+                return BadRequest(new { message = "Order not found." });
+            }
+            if (string.Equals(check.Status, "Success", StringComparison.OrdinalIgnoreCase))
+                return Conflict(new { message = "Order already paid." });
 
-        if (string.Equals(order.Status, "Failed", StringComparison.OrdinalIgnoreCase))
-            return Conflict(new { message = "Order was marked as failed. Please create a new order." });
+            if (string.Equals(check.Status, "Failed", StringComparison.OrdinalIgnoreCase))
+                return Conflict(new { message = "Order was marked as failed. Please create a new order." });
+        }
 
-        // 5) Idempotent cho transaction:
         //    Nếu đã có transaction Pending cho order này thì reuse, không tạo bản ghi mới.
-        var latestTx = await _paymentRepo.GetByOrderCodeAsync(orderCode);
+        var latestTx = await _paymentRepo.GetByOrderCodeAsync(orderCode.ToString());
         if (latestTx != null && string.Equals(latestTx.Status, "Pending", StringComparison.OrdinalIgnoreCase))
         {
             string hostName = System.Net.Dns.GetHostName();
             string clientIP = System.Net.Dns.GetHostAddresses(hostName).GetValue(0).ToString();
-            string reuseUrl = VnPayHelper.CreatePaymentUrl(model, _config, clientIP);
+            string reuseUrl = VnPayHelper.CreatePaymentUrl(model, _config, clientIP, order_code);
 
             return Ok(new PaymentResponseDTO
             {
                 PaymentUrl = reuseUrl,
-                OrderId = orderCode,
+                OrderId = orderCode.ToString(),
                 Message = "Payment is pending. Reusing existing transaction."
             });
         }
@@ -81,8 +91,8 @@ public class PaymentController : ControllerBase
         // 6) Chưa có Pending -> tạo transaction mới
         var transaction = new PaymentTransaction
         {
-            StoreOrderId = order.ID,
-            GatewayOrderId = orderCode,       // vnp_TxnRef
+            StoreOrderId = model.OrderId,
+            GatewayOrderId = order_code, // vnp_TxnRef
             Amount = model.Amount,
             PaymentMethod = "VNPAY",
             Status = "Pending",
@@ -93,12 +103,12 @@ public class PaymentController : ControllerBase
         // 7) Build URL VNPay
         string host = System.Net.Dns.GetHostName();
         string clientIPAddress = System.Net.Dns.GetHostAddresses(host).GetValue(0).ToString();
-        string paymentUrl = VnPayHelper.CreatePaymentUrl(model, _config, clientIPAddress);
+        string paymentUrl = VnPayHelper.CreatePaymentUrl(model, _config, clientIPAddress, order_code);
 
         return Ok(new PaymentResponseDTO
         {
             PaymentUrl = paymentUrl,
-            OrderId = orderCode,
+            OrderId = orderCode.ToString(),
             Message = "Payment created successfully."
         });
     }
@@ -114,7 +124,7 @@ public class PaymentController : ControllerBase
         string orderId = json["vnp_TxnRef"];
         string vnp_ResponseCode = json["vnp_ResponseCode"];
         string vnp_SecureHash = json["vnp_SecureHash"];
-
+        var orderInfo = json["vnp_OrderInfo"];
         var pos = queryString.IndexOf("&vnp_SecureHash");
         var hashSecret = _config["VnPay:HashSecret"];
 
@@ -128,14 +138,15 @@ public class PaymentController : ControllerBase
         transaction.Status = isSuccess ? "Success" : "Failed";
         transaction.PaymentGatewayResponse = JsonConvert.SerializeObject(Request.Query);
         await _paymentRepo.UpdateTransactionAsync(transaction);
-
+        await _storeOrderRepo.UpdateOrderStatusAsync(transaction.StoreOrderId, transaction.Status);
         await _paymentRepo.UpdateOrderStatusByCodeAsync(orderId, transaction.Status);
+        int value = int.TryParse(orderInfo, out var result) ? result : 0;
 
         if (isSuccess)
         {
             try
             {
-                await _paymentRepo.GrantGameToLibraryAsync(orderId);
+                await _paymentRepo.GrantGameToLibraryAsync(value);
             }
             catch (Exception ex)
             {
@@ -166,7 +177,7 @@ public class PaymentController : ControllerBase
         var isValid = VnPayHelper.ValidateSignature(rspraw, inputHash, hashSecret);
         if (!isValid) return BadRequest("Invalid signature!");
 
-        var orderId = callback.vnp_TxnRef; 
+        var orderId = callback.vnp_TxnRef;
         var transaction = await _paymentRepo.GetByOrderCodeAsync(orderId);
         if (transaction == null) return NotFound("Transaction not found");
 
@@ -179,7 +190,7 @@ public class PaymentController : ControllerBase
 
         if (isSuccess)
         {
-            await _paymentRepo.GrantGameToLibraryAsync(orderId);
+            await _paymentRepo.GrantGameToLibraryAsync(transaction.StoreOrderId);
         }
 
         return Content("responseCode=00");
@@ -200,5 +211,4 @@ public class PaymentController : ControllerBase
             transaction.CreatedAt
         });
     }
-
 }

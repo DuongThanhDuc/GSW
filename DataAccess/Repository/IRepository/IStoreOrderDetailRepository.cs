@@ -15,5 +15,6 @@ namespace DataAccess.Repository.IRepository
         Task<StoreOrderDetail> CreateAsync(StoreOrderDetailDTO dto);
         Task<bool> UpdateAsync(int id, StoreOrderDetailDTO dto);
         Task<bool> DeleteAsync(int id);
+        Task<IEnumerable<StoreOrderDetailDTOReadOnly>> GetByStoreOrderIdAsync(int storeOrderId);
     }
 }

@@ -133,5 +133,16 @@ namespace DataAccess.Repository
             await _context.SaveChangesAsync();
             return true;
         }
+
+        public async Task<bool> UpdateOrderStatusAsync(int id, string status)
+        {
+            var order = await _context.Store_Orders.FindAsync(id);
+            if (order == null) return false;
+
+            order.Status = status;
+            _context.Store_Orders.Update(order);
+
+            return await _context.SaveChangesAsync() > 0;
+        }
     }
 }

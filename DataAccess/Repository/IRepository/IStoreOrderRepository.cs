@@ -15,5 +15,6 @@ namespace DataAccess.Repository.IRepository
         Task<StoreOrder> CreateAsync(StoreOrderDTO dto);
         Task<bool> UpdateAsync(int id, StoreOrderDTO dto);
         Task<bool> DeleteAsync(int id);
+        Task<bool> UpdateOrderStatusAsync(int id, string status);
     }
 }

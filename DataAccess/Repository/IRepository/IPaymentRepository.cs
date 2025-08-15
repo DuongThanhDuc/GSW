@@ -14,10 +14,9 @@ namespace DataAccess.Repository.IRepository
         Task<IEnumerable<PaymentTransaction>> GetByStoreOrderIdAsync(int storeOrderId);
         Task<StoreOrder?> FindOrderByCodeAsync(string orderCode);
         Task UpdateTransactionAsync(PaymentTransaction transaction);
-        Task GrantGameToLibraryAsync(string orderCode);
+        Task GrantGameToLibraryAsync(int orderId);
         Task UpdateOrderStatusByCodeAsync(string orderCode, string status);
-        Task<StoreOrder> CreateProvisionalOrderAsync(string orderCode, string? userId, decimal amount,string? buyerEmail = null, string? buyerName = null);
-
+        Task<StoreOrder> CreateProvisionalOrderAsync(string orderCode, string? userId, decimal amount);
 
     }
 
