@@ -3,7 +3,7 @@ import { ApiService } from './api.service';
 import { HttpClient } from '@angular/common/http';
 import { JsonConvert } from 'json2typescript';
 import { catchError, map, Observable, of } from 'rxjs';
-import { Discount, GameInfor } from '../models/db.model';
+import { Discount, GameInfor, User } from '../models/db.model';
 import { DataResponse } from '../models/data-reponse.service';
 
 @Injectable({
@@ -30,6 +30,24 @@ getListGame(): Observable<DataResponse> {
         );
         dataRes.data = value;
         return dataRes;
+      })
+    );
+}
+GameLibrary(userid : any): Observable<DataResponse> {
+  let url = `/admin/User/with-library/${userid}`;
+   return super.get(url).pipe(
+      map((res) => {
+        const odataRes: DataResponse = this.jsonConvert.deserializeObject(res, DataResponse);
+
+        if (Array.isArray(odataRes.data)) {
+          odataRes.data = this.jsonConvert.deserializeArray(odataRes.data, User);
+        } else if (odataRes.data) {
+          console.warn("odataRes.data không phải là mảng. Đang chuyển về dạng object của Staff.");
+          odataRes.data = this.jsonConvert.deserializeObject(odataRes.data, User);
+        } else {
+          console.warn("odataRes.data không có dữ liệu.");
+        }
+        return odataRes;
       })
     );
 }
@@ -100,6 +118,28 @@ getGameDetail(id : any): Observable<DataResponse> {
         return res;
       })
     );
+  }  
+   bandUser(userid : any): Observable<any> {
+    let url = `/admin/User/ban/${userid}?days=5`;
+    return super.postEntity(url).pipe(
+      map((res) => {
+        if (res === undefined) {
+          throw new Error('Invalid response from server');
+        }
+        return res;
+      })
+    );
+  }
+    unbandUser(userid : any): Observable<any> {
+    let url = `/admin/User/unban/${userid}`;
+    return super.postEntity(url).pipe(
+      map((res) => {
+        if (res === undefined) {
+          throw new Error('Invalid response from server');
+        }
+        return res;
+      })
+    );
   }
      active(formData : any,id:any): Observable<any> {
     let url = `/api/gamesinfo/${id}/active`;
@@ -156,6 +196,28 @@ getGameDetail(id : any): Observable<DataResponse> {
       })
     );
   }
+     createInstallGame(formData:any,idgame:any): Observable<any> {
+    let url = `/api/GamesInfo/${idgame}/upload-installer`;
+    return super.postEntity(url,formData).pipe(
+      map((res) => {
+        if (res === undefined) {
+          throw new Error('Invalid response from server');
+        }
+        return res;
+      })
+    );
+  }
+   createGameReview(formData: any): Observable<any> {
+    let url = `/api/games/reviews`;
+    return super.postEntity(url, formData).pipe(
+      map((res) => {
+        if (res === undefined) {
+          throw new Error('Invalid response from server');
+        }
+        return res;
+      })
+    );
+  }
      UpdateGame(formData: any,id: string): Observable<DataResponse> {
       let url = `/api/gamesinfo`;
       return super.putEntity(url,parseInt(id),formData).pipe(
@@ -184,6 +246,14 @@ getGameDetail(id : any): Observable<DataResponse> {
       deleteGameDiscount(gameid: any,discountId: any): Observable<DataResponse> {
     let url = `/api/GamesDiscount/remove/${gameid}`;
     return super.deleteEntity(url,discountId).pipe(
+      map((res) => {
+        return res;
+      })
+    );
+  }
+       deleteGame(gameid: any): Observable<DataResponse> {
+    let url = `/api/GamesInfo`;
+    return super.deleteEntity(url,gameid).pipe(
       map((res) => {
         return res;
       })

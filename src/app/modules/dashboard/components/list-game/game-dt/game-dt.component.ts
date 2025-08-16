@@ -8,7 +8,10 @@ import { AuthService } from 'src/app/core/services/auth.service';
 import { CartService } from 'src/app/core/services/cart.service';
 import { UserLogged } from 'src/app/core/utils/userLogged';
 import { GameService } from 'src/app/core/services/game.service';
-import { GameInfor } from 'src/app/core/models/db.model';
+import { GameInfor, Review } from 'src/app/core/models/db.model';
+import { ThreadService } from 'src/app/core/services/thread.service';
+import { FormsModule } from '@angular/forms';
+import { WishlistService } from 'src/app/core/services/wishlist.service';
 
 
 @Pipe({
@@ -25,7 +28,7 @@ export class SafePipe implements PipeTransform {
 @Component({
   selector: 'app-game-dt',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule,FormsModule],
   templateUrl: './game-dt.component.html',
   styleUrls: ['./game-dt.component.css']
 })
@@ -33,10 +36,10 @@ export class GameDtComponent implements OnInit {
 sanitizedMediaUrl!: SafeResourceUrl;
   selectedMedia: any;
   userLogged = new UserLogged();
-
+  public listReview : Review[] = [];
 
   showAddToCartDialog = false;
-
+  comment : any;
   public gameDetail = new GameInfor();
   public idgame : any;
   // NEW: Inject các service cần thiết cho giỏ hàng
@@ -47,22 +50,43 @@ sanitizedMediaUrl!: SafeResourceUrl;
     private router: Router,
     private sanitizer: DomSanitizer,
     private route: ActivatedRoute,
-    private gameService : GameService
+    private threadService : ThreadService,
+    private gameService : GameService,
+    private wishlistService : WishlistService
   ) { 
     this.idgame = this.route.snapshot.paramMap.get('id');
   }
 
   ngOnInit(): void {
-    this.gameService.getGameDetail(this.idgame).subscribe(res => {
+    this.onGetData();
+  }
+  onGetData(){
+     this.gameService.getGameDetail(this.idgame).subscribe(res => {
       this.gameDetail = res.data;
       console.log("this.gameDetail",this.gameDetail);
       this.selectedMedia = this.gameDetail.Media[0];
          this.gameService.getGameDiscountId(this.idgame).subscribe(resdiscount => {
-          console.log("resdiscount",resdiscount);
+  
          })
     });
+    this.threadService.getListReviewByGameId(this.idgame).subscribe(res => {
+      this.listReview = res.data;
+    console.log("resdiscount",this.listReview);
+    })
   }
-
+    sendComment(){
+      let formData={
+        gameID : this.idgame,
+        userID : this.userLogged.getCurrentUser().userId,
+        startCount : 5,
+        comment : this.comment,
+        createdAt : new Date()
+      }
+      this.gameService.createGameReview(formData).subscribe(res => {
+          this.onGetData();
+          this.comment = "";
+      })
+    }
 selectMedia(mediaItem: any): void {
   if (mediaItem.MediaType === 'video') {
     this.sanitizedMediaUrl = this.sanitizer.bypassSecurityTrustResourceUrl(mediaItem.MediaURL);
@@ -107,5 +131,10 @@ selectMedia(mediaItem: any): void {
   viewCart(): void {
     this.closeAddToCartDialog();
     this.router.navigate(['/dashboard/cart']);
+  }
+  onAddwishlist(){
+    this.wishlistService.addGameTowishlist(this.userLogged.getCurrentUser().userId,(this.idgame)).subscribe((res:any) => {
+     this.toastService.success("Thêm vào danh sách thích","Thành công");
+    })
   }
 }
