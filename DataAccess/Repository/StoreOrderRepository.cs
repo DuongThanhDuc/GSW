@@ -91,7 +91,7 @@ namespace DataAccess.Repository
                 UserID = dto.UserID,
                 OrderDate = dto.OrderDate == default ? DateTime.Now : dto.OrderDate,
                 TotalAmount = dto.TotalAmount,
-                Status = dto.Status ?? "COMPLETED",
+                Status = dto.Status ?? "PENDING",
                 CreatedAt = DateTime.Now,
                 OrderCode = !string.IsNullOrEmpty(dto.OrderId)
                     ? dto.OrderId

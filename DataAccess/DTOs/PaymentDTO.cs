@@ -27,4 +27,8 @@ namespace DataAccess.DTOs
         public string vnp_ResponseCode { get; set; }
     }
 
+    public class WalletPayRequestDTO
+    {
+        public int OrderId { get; set; }
+    }
 }

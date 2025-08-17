@@ -33,7 +33,115 @@ namespace GSWApi.Controllers.PaymentMethod
             var w = await _walletRepo.GetOrCreateAsync(CurrentUserId, ct);
             return Ok(new WalletSummaryDTO { Balance = w.Balance, UpdatedAt = w.UpdatedAt });
         }
+        [HttpPost("wallet-pay")]
+        public async Task<IActionResult> PayWithWallet([FromBody] WalletPayRequestDTO req, CancellationToken ct)
+        {
+            if (req == null || req.OrderId <= 0)
+                return BadRequest(new { message = "Invalid OrderId" });
 
+            // Lấy đơn + chi tiết (để tính tiền & cấp game)
+            var order = await _ctx.Store_Orders
+                .Include(o => o.OrderDetails)
+                .FirstOrDefaultAsync(o => o.ID == req.OrderId, ct);
+
+            if (order == null)
+                return NotFound(new { message = "No order found." });
+
+            if (string.IsNullOrWhiteSpace(order.UserID) || order.UserID != CurrentUserId)
+                return Forbid();
+
+            // Idempotency: đã thanh toán rồi thì trả về OK
+            if (string.Equals(order.Status, "COMPLETED", StringComparison.OrdinalIgnoreCase))
+            {
+                return Ok(new
+                {
+                    message = "Order was already paid.",
+                    orderId = order.ID,
+                    orderCode = order.OrderCode,
+                    status = order.Status
+                });
+            }
+
+            // Nếu đơn ở trạng thái FAILED hay bị huỷ thì chặn
+            if (string.Equals(order.Status, "FAILED", StringComparison.OrdinalIgnoreCase))
+                return Conflict(new { message = "Order is FAILED. Please create a new order." });
+
+            // Tính số tiền cần thanh toán: ưu tiên sum từ details để chống sai lệch
+            var amountFromDetails = order.OrderDetails?.Sum(d => d.UnitPrice) ?? 0m;
+            var amount = amountFromDetails > 0 ? amountFromDetails : order.TotalAmount;
+
+            if (amount <= 0)
+                return BadRequest(new { message = "Order total amount is invalid." });
+
+            // (Tuỳ chọn) đồng bộ lại TotalAmount nếu sai
+            if (amountFromDetails > 0 && order.TotalAmount != amountFromDetails)
+            {
+                order.TotalAmount = amountFromDetails;
+            }
+
+            // Bắt đầu transaction để đảm bảo nhất quán
+            await using var dbtx = await _ctx.Database.BeginTransactionAsync(ct);
+            try
+            {
+                // Trừ ví nếu đủ (atomic ở tầng repo)
+                var ok = await _walletRepo.DecreaseIfEnoughAsync(CurrentUserId, amount, ct);
+                if (!ok)
+                {
+                    var bal = await _walletRepo.GetBalanceAsync(CurrentUserId, ct);
+                    await dbtx.RollbackAsync(ct);
+                    return Conflict(new { message = "Insufficient wallet balance.", balance = bal, required = amount });
+                }
+
+                // Cập nhật trạng thái đơn -> COMPLETED
+                order.Status = "COMPLETED";
+                await _ctx.SaveChangesAsync(ct);
+
+                // Cấp game vào Store_Library (tránh trùng)
+                var gameIds = order.OrderDetails?.Select(d => d.GameID).Distinct().ToList() ?? new List<int>();
+                if (gameIds.Count > 0)
+                {
+                    var existedGameIds = await _ctx.Store_Library
+                        .Where(x => x.UserID == CurrentUserId && gameIds.Contains(x.GamesID))
+                        .Select(x => x.GamesID)
+                        .ToListAsync(ct);
+
+                    var toInsert = gameIds.Except(existedGameIds).ToList();
+
+                    if (toInsert.Count > 0)
+                    {
+                        var now = DateTime.Now;
+                        var newLibs = toInsert.Select(gid => new StoreLibrary
+                        {
+                            UserID = CurrentUserId,
+                            GamesID = gid,
+                            CreatedAt = now
+                        });
+
+                        await _ctx.Store_Library.AddRangeAsync(newLibs, ct);
+                        await _ctx.SaveChangesAsync(ct);
+                    }
+                }
+
+                // (Tuỳ chọn) Ghi log giao dịch Payment nếu bạn có entity PaymentTransaction
+                // _ctx.PaymentTransactions.Add(new PaymentTransaction { ... });
+
+                await dbtx.CommitAsync(ct);
+
+                return Ok(new
+                {
+                    message = "Wallet payment succeeded.",
+                    orderId = order.ID,
+                    orderCode = order.OrderCode,
+                    status = order.Status,
+                    paidAmount = amount
+                });
+            }
+            catch
+            {
+                await dbtx.RollbackAsync(ct);
+                throw;
+            }
+        }
         // GET /api/wallet/transactions/my?take=50
         [HttpGet("transactions/my")]
         public async Task<ActionResult<IEnumerable<DepositWithdrawListItemDTO>>> MyTransactions([FromQuery] int take = 50, CancellationToken ct = default)
