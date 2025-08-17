@@ -28,10 +28,17 @@ namespace GSWApi.Controllers.PaymentMethod
 
         // GET /api/wallet -> xem số dư
         [HttpGet]
-        public async Task<ActionResult<WalletSummaryDTO>> GetMyWallet(CancellationToken ct)
+        public async Task<IActionResult> GetMyWallet(CancellationToken ct)
         {
             var w = await _walletRepo.GetOrCreateAsync(CurrentUserId, ct);
-            return Ok(new WalletSummaryDTO { Balance = w.Balance, UpdatedAt = w.UpdatedAt });
+
+            var dto = new WalletSummaryDTO
+            {
+                Balance = w.Balance,
+                UpdatedAt = w.UpdatedAt
+            };
+
+            return Ok(new { success = true, data = dto });
         }
         [HttpPost("wallet-pay")]
         public async Task<IActionResult> PayWithWallet([FromBody] WalletPayRequestDTO req, CancellationToken ct)
