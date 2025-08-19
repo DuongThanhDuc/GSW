@@ -20,79 +20,39 @@ public class StoreRefundRequestController : ControllerBase
 
     
     [HttpGet]
-    public async Task<IActionResult> Get(CancellationToken ct)
+    public async Task<IActionResult> Get()
     {
-        var data = await (
-            from r in _ctx.Store_RefundRequests.AsNoTracking()
-            join o in _ctx.Store_Orders.AsNoTracking() on r.OrderID equals o.ID
-            join u in _ctx.Users.AsNoTracking() on o.UserID equals u.Id // user của đơn hàng
-            select new StoreRefundRequestDTO
-            {
-                ID = r.ID,
-                OrderID = r.OrderID,
-                UserID = o.UserID,                  // hoặc r.UserID nếu bạn muốn lấy theo request
-                Reason = r.Reason,
-                Status = r.Status,
-                RequestDate = r.RequestDate,
+        var entities = await _repository.GetAllAsync();
 
-                Order = new OrderMinDTO
-                {
-                    Id = o.ID,
-                    OrderCode = o.OrderCode,
-                    TotalAmount = o.TotalAmount,
-                    Status = o.Status,
-                    CreatedAt = o.CreatedAt
-                },
-                User = new UserMinDTO
-                {
-                    Id = u.Id,
-                    UserName = u.UserName,
-                    Email = u.Email,
-                    PhoneNumber = u.PhoneNumber
-                }
-            }).ToListAsync(ct);
+        var data = entities.Select(x => new
+        {
+            orderID = x.OrderID,
+            userID = x.UserID,        
+            reason = x.Reason,
+            status = x.Status,
+            requestDate = x.RequestDate
+        }).ToList();
 
         return Ok(new { success = true, data });
     }
 
     // GET: /api/StoreRefundRequest/{id}
     [HttpGet("{id:int}")]
-    public async Task<IActionResult> Get(int id, CancellationToken ct)
+    public async Task<IActionResult> Get(int id)
     {
-        var dto = await (
-            from r in _ctx.Store_RefundRequests.AsNoTracking()
-            where r.ID == id
-            join o in _ctx.Store_Orders.AsNoTracking() on r.OrderID equals o.ID
-            join u in _ctx.Users.AsNoTracking() on o.UserID equals u.Id
-            select new StoreRefundRequestDTO
-            {
-                ID = r.ID,
-                OrderID = r.OrderID,
-                UserID = o.UserID,
-                Reason = r.Reason,
-                Status = r.Status,
-                RequestDate = r.RequestDate,
-                Order = new OrderMinDTO
-                {
-                    Id = o.ID,
-                    OrderCode = o.OrderCode,
-                    TotalAmount = o.TotalAmount,
-                    Status = o.Status,
-                    CreatedAt = o.CreatedAt
-                },
-                User = new UserMinDTO
-                {
-                    Id = u.Id,
-                    UserName = u.UserName,
-                    Email = u.Email,
-                    PhoneNumber = u.PhoneNumber
-                }
-            }).FirstOrDefaultAsync(ct);
+        var x = await _repository.GetByIdAsync(id);
+        if (x == null) return NotFound(new { success = false, message = "Not found" });
 
-        if (dto == null)
-            return NotFound(new { success = false, message = "Refund request not found." });
+        var data = new
+        {
+            orderID = x.OrderID,
+            userID = x.UserID,
+            reason = x.Reason,
+            status = x.Status,
+            requestDate = x.RequestDate
+        };
 
-        return Ok(new { success = true, data = dto });
+        return Ok(new { success = true, data });
     }
 
     [HttpPost]
@@ -107,18 +67,24 @@ public class StoreRefundRequestController : ControllerBase
             RequestDate = dto.RequestDate
         };
         await _repository.AddAsync(entity);
-        dto.ID = entity.ID;
 
-        return CreatedAtAction(nameof(Get), new { id = entity.ID },
-            new { success = true, data = dto });
+        var data = new
+        {
+            orderID = entity.OrderID,
+            userID = entity.UserID,
+            reason = entity.Reason,
+            status = entity.Status,
+            requestDate = entity.RequestDate
+        };
+
+        return CreatedAtAction(nameof(Get), new { id = entity.ID }, new { success = true, data });
     }
 
     [HttpPut("{id}")]
     public async Task<IActionResult> Put(int id, [FromBody] StoreRefundRequestDTO dto)
     {
         var entity = await _repository.GetByIdAsync(id);
-        if (entity == null)
-            return NotFound(new { success = false, message = "Not found." });
+        if (entity == null) return NotFound(new { success = false, message = "Not found" });
 
         entity.OrderID = dto.OrderID;
         entity.UserID = dto.UserID;
@@ -127,7 +93,20 @@ public class StoreRefundRequestController : ControllerBase
         entity.RequestDate = dto.RequestDate;
 
         await _repository.UpdateAsync(entity);
-        return Ok(new { success = true }); 
+
+       
+        return Ok(new
+        {
+            success = true,
+            data = new
+            {
+                orderID = entity.OrderID,
+                userID = entity.UserID,
+                reason = entity.Reason,
+                status = entity.Status,
+                requestDate = entity.RequestDate
+            }
+        });
     }
 
     [HttpDelete("{id}")]
