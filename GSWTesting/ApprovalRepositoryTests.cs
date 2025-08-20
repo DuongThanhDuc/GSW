@@ -1,95 +1,139 @@
-using NUnit.Framework;
+﻿using BusinessModel.Model;
 using DataAccess.Repository;
-using Moq;
-using System.Threading.Tasks;
-using BusinessModel.Model;
 using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
-using System.Linq;
+using NUnit.Framework;
+using System;
+using System.Threading.Tasks;
 
-namespace DataAccess.Tests.Repository
+namespace UnitTests.Repository
 {
     [TestFixture]
     public class ApprovalRepositoryTests
     {
-        private Mock<DBContext> _dbContextMock;
-        private ApprovalRepository _repo;
-        private Mock<DbSet<GamesInfo>> _gamesInfoSetMock;
-        private Mock<DbSet<StoreRefundRequest>> _refundSetMock;
-        private List<GamesInfo> _gamesData;
-        private List<StoreRefundRequest> _refundData;
-
-        [SetUp]
-        public void SetUp()
+        private DbContextOptions<DBContext> CreateNewContextOptions()
         {
-            _dbContextMock = new Mock<DBContext>();
-            _gamesInfoSetMock = new Mock<DbSet<GamesInfo>>();
-            _refundSetMock = new Mock<DbSet<StoreRefundRequest>>();
-            _gamesData = new List<GamesInfo> { new GamesInfo { Id = 1, Title = "Game1" } };
-            _refundData = new List<StoreRefundRequest> { new StoreRefundRequest { ID = 1, OrderID = 1 } };
-            var gamesQueryable = _gamesData.AsQueryable();
-            _gamesInfoSetMock.As<IQueryable<GamesInfo>>().Setup(m => m.Provider).Returns(gamesQueryable.Provider);
-            _gamesInfoSetMock.As<IQueryable<GamesInfo>>().Setup(m => m.Expression).Returns(gamesQueryable.Expression);
-            _gamesInfoSetMock.As<IQueryable<GamesInfo>>().Setup(m => m.ElementType).Returns(gamesQueryable.ElementType);
-            _gamesInfoSetMock.As<IQueryable<GamesInfo>>().Setup(m => m.GetEnumerator()).Returns(() => gamesQueryable.GetEnumerator());
-            var refundQueryable = _refundData.AsQueryable();
-            _refundSetMock.As<IQueryable<StoreRefundRequest>>().Setup(m => m.Provider).Returns(refundQueryable.Provider);
-            _refundSetMock.As<IQueryable<StoreRefundRequest>>().Setup(m => m.Expression).Returns(refundQueryable.Expression);
-            _refundSetMock.As<IQueryable<StoreRefundRequest>>().Setup(m => m.ElementType).Returns(refundQueryable.ElementType);
-            _refundSetMock.As<IQueryable<StoreRefundRequest>>().Setup(m => m.GetEnumerator()).Returns(() => refundQueryable.GetEnumerator());
-            _dbContextMock.Setup(x => x.Games_Info).Returns(_gamesInfoSetMock.Object);
-            _dbContextMock.Setup(x => x.Store_RefundRequests).Returns(_refundSetMock.Object);
-            _repo = new ApprovalRepository(_dbContextMock.Object);
+            return new DbContextOptionsBuilder<DBContext>()
+                .UseInMemoryDatabase(Guid.NewGuid().ToString()) // ensures isolation
+                .Options;
         }
 
         [Test]
-        public async Task ApproveGameAsync_ReturnsFalse_WhenGameNotFound()
+        public async Task ApproveGameAsync_GameExists_ShouldUpdateStatusAndAddHistory()
         {
             // Arrange
-            int notFoundId = 999;
-            _gamesInfoSetMock.Setup(x => x.FindAsync(notFoundId)).ReturnsAsync((GamesInfo)null);
+            var options = CreateNewContextOptions();
+            using (var context = new DBContext(options))
+            {
+                context.Games_Info.Add(new GamesInfo
+                {
+                    Id = 1,
+                    Status = "Pending",
+                    Title = "Test Game",
+                    Description = "Test Description",
+                    Genre = "Action",
+                    DeveloperId = "string",
+                    CoverImagePath = "cover.png",
+                    InstallerFilePath = "installer.exe",
+                    CreatedBy = "TestUser"
+                });
+
+                await context.SaveChangesAsync();
+            }
+
+            using (var context = new DBContext(options))
+            {
+                var repo = new ApprovalRepository(context);
+
+                // Act
+                var result = await repo.ApproveGameAsync(1, "Approved", "User123", "Looks good");
+
+                // Assert
+                Assert.IsTrue(result);
+
+                var game = await context.Games_Info.FindAsync(1);
+                Assert.AreEqual("Approved", game.Status);
+
+                var history = await context.ApprovalHistories.FirstOrDefaultAsync();
+                Assert.NotNull(history);
+                Assert.AreEqual("Game", history.EntityType);
+                Assert.AreEqual(1, history.EntityId);
+                Assert.AreEqual("Approved", history.Status);
+                Assert.AreEqual("User123", history.ChangedByUserId);
+                Assert.AreEqual("Looks good", history.Note);
+            }
+        }
+
+        [Test]
+        public async Task ApproveGameAsync_GameDoesNotExist_ShouldReturnFalse()
+        {
+            // Arrange
+            var options = CreateNewContextOptions();
+            using var context = new DBContext(options);
+            var repo = new ApprovalRepository(context);
+
             // Act
-            var result = await _repo.ApproveGameAsync(notFoundId, "Approved", "user1", "note");
+            var result = await repo.ApproveGameAsync(99, "Approved", "User123", "Does not exist");
+
             // Assert
             Assert.IsFalse(result);
         }
 
         [Test]
-        public async Task ApproveGameAsync_ReturnsTrue_WhenGameFound()
+        public async Task ApproveRefundAsync_RefundExists_ShouldUpdateStatusAndAddHistory()
         {
             // Arrange
-            int foundId = 1;
-            var expected = _gamesData.First(g => g.Id == foundId);
-            _gamesInfoSetMock.Setup(x => x.FindAsync(foundId)).ReturnsAsync(expected);
-            // Act
-            var result = await _repo.ApproveGameAsync(foundId, "Approved", "user1", "note");
-            // Assert
-            Assert.IsTrue(result);
+            var options = CreateNewContextOptions();
+            using (var context = new DBContext(options))
+            {
+                context.Store_RefundRequests.Add(new StoreRefundRequest
+                {
+                    ID = 1,
+                    Status = "Pending",
+                    UserID = "TestUser",           // if required
+                    Reason = "Test reason",        // if required
+                    RequestDate = DateTime.UtcNow    // if required
+                });
+                await context.SaveChangesAsync();
+
+                await context.SaveChangesAsync();
+            }
+
+            using (var context = new DBContext(options))
+            {
+                var repo = new ApprovalRepository(context);
+
+                // Act
+                var result = await repo.ApproveRefundAsync(1, "Approved", "User123", "Refund approved");
+
+                // Assert
+                Assert.IsTrue(result);
+
+                var refund = await context.Store_RefundRequests.FindAsync(1);
+                Assert.AreEqual("Approved", refund.Status);
+
+                var history = await context.ApprovalHistories.FirstOrDefaultAsync();
+                Assert.NotNull(history);
+                Assert.AreEqual("Refund", history.EntityType);
+                Assert.AreEqual(1, history.EntityId);
+                Assert.AreEqual("Approved", history.Status);
+                Assert.AreEqual("User123", history.ChangedByUserId);
+                Assert.AreEqual("Refund approved", history.Note);
+            }
         }
 
         [Test]
-        public async Task ApproveRefundAsync_ReturnsFalse_WhenRefundNotFound()
+        public async Task ApproveRefundAsync_RefundDoesNotExist_ShouldReturnFalse()
         {
             // Arrange
-            int notFoundId = 999;
-            _refundSetMock.Setup(x => x.FindAsync(notFoundId)).ReturnsAsync((StoreRefundRequest)null);
+            var options = CreateNewContextOptions();
+            using var context = new DBContext(options);
+            var repo = new ApprovalRepository(context);
+
             // Act
-            var result = await _repo.ApproveRefundAsync(notFoundId, "Approved", "user1", "note");
+            var result = await repo.ApproveRefundAsync(99, "Approved", "User123", "Refund missing");
+
             // Assert
             Assert.IsFalse(result);
-        }
-
-        [Test]
-        public async Task ApproveRefundAsync_ReturnsTrue_WhenRefundFound()
-        {
-            // Arrange
-            int foundId = 1;
-            var expected = _refundData.First(r => r.ID == foundId);
-            _refundSetMock.Setup(x => x.FindAsync(foundId)).ReturnsAsync(expected);
-            // Act
-            var result = await _repo.ApproveRefundAsync(foundId, "Approved", "user1", "note");
-            // Assert
-            Assert.IsTrue(result);
         }
     }
 }

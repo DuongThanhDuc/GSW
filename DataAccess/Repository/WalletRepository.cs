@@ -1,4 +1,4 @@
-﻿using BusinessModel.Model;
+﻿    using BusinessModel.Model;
 using DataAccess.Repository.IRepository;
 using Microsoft.EntityFrameworkCore;
 

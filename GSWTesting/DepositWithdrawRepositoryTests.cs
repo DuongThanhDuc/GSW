@@ -1,74 +1,222 @@
-using NUnit.Framework;
+﻿using BusinessModel.Model;
 using DataAccess.Repository;
-using Moq;
-using System.Threading.Tasks;
-using BusinessModel.Model;
-using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
-using System.Linq;
+using NUnit.Framework;
+using System;
+using System.Threading.Tasks;
 
-namespace DataAccess.Tests.Repository
+namespace UnitTests.Repository
 {
     [TestFixture]
     public class DepositWithdrawRepositoryTests
     {
-        private Mock<DBContext> _dbContextMock;
-        private DepositWithdrawRepository _repo;
-        private Mock<DbSet<DepositWithdrawTransaction>> _txSetMock;
-        private List<DepositWithdrawTransaction> _txData;
-
-        [SetUp]
-        public void SetUp()
+        private DbContextOptions<DBContext> CreateNewContextOptions()
         {
-            _dbContextMock = new Mock<DBContext>();
-            _txSetMock = new Mock<DbSet<DepositWithdrawTransaction>>();
-            _txData = new List<DepositWithdrawTransaction>
+            return new DbContextOptionsBuilder<DBContext>()
+                .UseInMemoryDatabase(Guid.NewGuid().ToString()) // isolation per test
+                .Options;
+        }
+
+        [Test]
+        public async Task CreateAsync_ShouldInsertTransactionWithPendingStatus()
+        {
+            // Arrange
+            var options = CreateNewContextOptions();
+            using var context = new DBContext(options);
+            var repo = new DepositWithdrawRepository(context);
+
+            var tx = new DepositWithdrawTransaction
             {
-                new DepositWithdrawTransaction { Id = 1, Amount = 100 },
-                new DepositWithdrawTransaction { Id = 2, Amount = 200 }
+                Id = 1,
+                UserId = "TestUser",
+                Amount = 100,
+                Type = "Deposit"
             };
-            var queryable = _txData.AsQueryable();
-            _txSetMock.As<IQueryable<DepositWithdrawTransaction>>().Setup(m => m.Provider).Returns(queryable.Provider);
-            _txSetMock.As<IQueryable<DepositWithdrawTransaction>>().Setup(m => m.Expression).Returns(queryable.Expression);
-            _txSetMock.As<IQueryable<DepositWithdrawTransaction>>().Setup(m => m.ElementType).Returns(queryable.ElementType);
-            _txSetMock.As<IQueryable<DepositWithdrawTransaction>>().Setup(m => m.GetEnumerator()).Returns(() => queryable.GetEnumerator());
-            _dbContextMock.Setup(x => x.DepositWithdrawTransactions).Returns(_txSetMock.Object);
-            _repo = new DepositWithdrawRepository(_dbContextMock.Object);
+
+            // Act
+            var result = await repo.CreateAsync(tx);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.AreEqual("Pending", result.Status);
+
+            var saved = await context.DepositWithdrawTransactions.FindAsync(1);
+            Assert.NotNull(saved);
+            Assert.AreEqual("TestUser", saved.UserId);
+            Assert.AreEqual(100, saved.Amount);
+            Assert.AreEqual("Deposit", saved.Type);
+            Assert.AreEqual("Pending", saved.Status);
         }
 
         [Test]
-        public async Task GetByIdAsync_ReturnsNull_WhenNotFound()
+        public async Task GetByIdAsync_WhenTransactionExists_ShouldReturnTransaction()
         {
             // Arrange
-            int notFoundId = 999;
-            _txSetMock.Setup(x => x.FindAsync(notFoundId)).ReturnsAsync((DepositWithdrawTransaction)null);
-            // Act
-            var result = await _repo.GetByIdAsync(notFoundId);
-            // Assert
-            Assert.IsNull(result);
+            var options = CreateNewContextOptions();
+            using (var context = new DBContext(options))
+            {
+                context.DepositWithdrawTransactions.Add(new DepositWithdrawTransaction
+                {
+                    Id = 1,
+                    UserId = "TestUser",
+                    Amount = 200,
+                    Type = "Withdraw",
+                    Status = "Pending",
+                    CreatedAt = DateTime.UtcNow
+                });
+                await context.SaveChangesAsync();
+            }
+
+            using (var context = new DBContext(options))
+            {
+                var repo = new DepositWithdrawRepository(context);
+
+                // Act
+                var result = await repo.GetByIdAsync(1);
+
+                // Assert
+                Assert.NotNull(result);
+                Assert.AreEqual(200, result.Amount);
+                Assert.AreEqual("Withdraw", result.Type);
+            }
         }
 
         [Test]
-        public async Task GetByIdAsync_ReturnsTransaction_WhenFound()
+        public async Task GetByUserAsync_ShouldReturnUserTransactionsOrderedByDate()
         {
             // Arrange
-            int foundId = 1;
-            var expected = _txData.First(t => t.Id == foundId);
-            _txSetMock.Setup(x => x.FindAsync(foundId)).ReturnsAsync(expected);
-            // Act
-            var result = await _repo.GetByIdAsync(foundId);
-            // Assert
-            Assert.IsNotNull(result);
-            Assert.AreEqual(expected.Amount, result.Amount);
+            var options = CreateNewContextOptions();
+            using (var context = new DBContext(options))
+            {
+                context.DepositWithdrawTransactions.AddRange(
+                    new DepositWithdrawTransaction
+                    {
+                        Id = 1,
+                        UserId = "User123",
+                        Amount = 50,
+                        Type = "Deposit",
+                        Status = "Pending",
+                        CreatedAt = DateTime.UtcNow.AddMinutes(-10)
+                    },
+                    new DepositWithdrawTransaction
+                    {
+                        Id = 2,
+                        UserId = "User123",
+                        Amount = 75,
+                        Type = "Withdraw",
+                        Status = "Pending",
+                        CreatedAt = DateTime.UtcNow
+                    }
+                );
+                await context.SaveChangesAsync();
+            }
+
+            using (var context = new DBContext(options))
+            {
+                var repo = new DepositWithdrawRepository(context);
+
+                // Act
+                var results = await repo.GetByUserAsync("User123");
+
+                // Assert
+                Assert.AreEqual(2, results.Count);
+                Assert.AreEqual(75, results[0].Amount); // newest first
+                Assert.AreEqual(50, results[1].Amount);
+            }
         }
 
-        //[Test]
-        //public async Task GetAllAsync_ReturnsAllTransactions()
-        //{
-        //    // Act
-        //    var result = await _repo.GetAllAsync();
-        //    // Assert
-        //    Assert.AreEqual(_txData.Count, result.Count());
-        //}
+        [Test]
+        public async Task CountPendingAsync_ShouldReturnCorrectCount()
+        {
+            // Arrange
+            var options = CreateNewContextOptions();
+            using (var context = new DBContext(options))
+            {
+                context.DepositWithdrawTransactions.AddRange(
+                    new DepositWithdrawTransaction { Id = 1, UserId = "U1", Status = "Pending", Amount = 100, Type = "Deposit" },
+                    new DepositWithdrawTransaction { Id = 2, UserId = "U2", Status = "Approved", Amount = 200, Type = "Withdraw" },
+                    new DepositWithdrawTransaction { Id = 3, UserId = "U3", Status = "Pending", Amount = 300, Type = "Deposit" }
+                );
+                await context.SaveChangesAsync();
+            }
+
+            using (var context = new DBContext(options))
+            {
+                var repo = new DepositWithdrawRepository(context);
+
+                // Act
+                var count = await repo.CountPendingAsync();
+
+                // Assert
+                Assert.AreEqual(2, count);
+            }
+        }
+
+        [Test]
+        public async Task GetPendingAsync_ShouldReturnPendingTransactionsInOrder()
+        {
+            // Arrange
+            var options = CreateNewContextOptions();
+            using (var context = new DBContext(options))
+            {
+                context.DepositWithdrawTransactions.AddRange(
+                    new DepositWithdrawTransaction { Id = 1, UserId = "U1", Status = "Pending", Amount = 100, Type = "Deposit", CreatedAt = DateTime.UtcNow.AddMinutes(-5) },
+                    new DepositWithdrawTransaction { Id = 2, UserId = "U2", Status = "Pending", Amount = 200, Type = "Withdraw", CreatedAt = DateTime.UtcNow.AddMinutes(-10) }
+                );
+                await context.SaveChangesAsync();
+            }
+
+            using (var context = new DBContext(options))
+            {
+                var repo = new DepositWithdrawRepository(context);
+
+                // Act
+                var results = await repo.GetPendingAsync(0, 10);
+
+                // Assert
+                Assert.AreEqual(2, results.Count);
+                Assert.AreEqual(2, results[0].Id); // oldest first
+                Assert.AreEqual(1, results[1].Id);
+            }
+        }
+
+        [Test]
+        public async Task UpdateAsync_ShouldModifyTransaction()
+        {
+            // Arrange
+            var options = CreateNewContextOptions();
+            using (var context = new DBContext(options))
+            {
+                context.DepositWithdrawTransactions.Add(new DepositWithdrawTransaction
+                {
+                    Id = 1,
+                    UserId = "UserX",
+                    Amount = 150,
+                    Type = "Deposit",
+                    Status = "Pending",
+                    CreatedAt = DateTime.UtcNow
+                });
+                await context.SaveChangesAsync();
+            }
+
+            using (var context = new DBContext(options))
+            {
+                var repo = new DepositWithdrawRepository(context);
+                var tx = await repo.GetByIdAsync(1);
+
+                // Act
+                tx.Status = "Approved";
+                await repo.UpdateAsync(tx);
+            }
+
+            using (var context = new DBContext(options))
+            {
+                var updated = await context.DepositWithdrawTransactions.FindAsync(1);
+
+                // Assert
+                Assert.NotNull(updated);
+                Assert.AreEqual("Approved", updated.Status);
+            }
+        }
     }
 }
