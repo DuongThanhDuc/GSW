@@ -22,40 +22,58 @@ namespace GSWApi.Controllers.Admin
             _context = context;
         }
 
+        private static string? NormalizeStatus(string? raw)
+        {
+            if (string.IsNullOrWhiteSpace(raw)) return null;
+            var s = raw.Trim().ToLowerInvariant();
+
+            if (s is "approve" or "approved" or "apporve") return "Approved";
+            if (s is "reject" or "rejected") return "Rejected";
+
+            return null;
+        }
+
         [HttpPost("game/{id}")]
         public async Task<IActionResult> ApproveGame(int id, [FromBody] ApprovalActionDTO dto)
         {
-            if (string.IsNullOrWhiteSpace(dto.Status))
+            if (dto == null || string.IsNullOrWhiteSpace(dto.Status))
                 return BadRequest(new { message = "Status must not be empty." });
-            //var userId = "2aaab08b-c2da-462c-a7e7-9c2166d3961e";
+
+            var normalized = NormalizeStatus(dto.Status);
+            if (normalized is null)
+                return BadRequest(new { message = "Status must be 'Approve' or 'Reject'." });
+
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userId))
                 return Unauthorized(new { message = "You are not authorized or userId is missing." });
 
-            bool ok = await _approvalRepo.ApproveGameAsync(id, dto.Status, userId, dto.Note);
+            bool ok = await _approvalRepo.ApproveGameAsync(id, normalized, userId, dto.Note);
             if (!ok)
-                return NotFound(new { message = "Game not found." });
+                return NotFound(new { message = "Game not found or not in Pending state." });
 
-            return Ok(new { message = "Game approval updated successfully." });
+            return Ok(new { message = "Game approval updated successfully.", id, status = normalized });
         }
 
         [HttpPost("refund/{id}")]
         public async Task<IActionResult> ApproveRefund(int id, [FromBody] ApprovalActionDTO dto)
         {
-            if (string.IsNullOrWhiteSpace(dto.Status))
+            if (dto == null || string.IsNullOrWhiteSpace(dto.Status))
                 return BadRequest(new { message = "Status must not be empty." });
+
+            var normalized = NormalizeStatus(dto.Status);
+            if (normalized is null)
+                return BadRequest(new { message = "Status must be 'Approve' or 'Reject'." });
 
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userId))
                 return Unauthorized(new { message = "You are not authorized or userId is missing." });
 
-            bool ok = await _approvalRepo.ApproveRefundAsync(id, dto.Status, userId, dto.Note);
+            bool ok = await _approvalRepo.ApproveRefundAsync(id, normalized, userId, dto.Note);
             if (!ok)
-                return NotFound(new { message = "Refund request not found." });
+                return NotFound(new { message = "Refund request not found or not in Pending state." });
 
-            return Ok(new { message = "Refund approval updated successfully." });
+            return Ok(new { message = "Refund approval updated successfully.", id, status = normalized });
         }
-
 
         [HttpGet("game/{id}/history")]
         public async Task<IActionResult> GetGameHistory(int id)
