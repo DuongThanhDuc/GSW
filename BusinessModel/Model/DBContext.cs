@@ -20,12 +20,17 @@ namespace BusinessModel.Model
         public DBContext(DbContextOptions<DBContext> options) : base(options)
         {
         }
-
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            var builder = new ConfigurationBuilder().SetBasePath(Directory.GetCurrentDirectory()).AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
-            var configuration = builder.Build();
-            optionsBuilder.UseSqlServer(configuration.GetConnectionString("GameSalesWebsite"));
+            if (!optionsBuilder.IsConfigured) 
+            {
+                var builder = new ConfigurationBuilder()
+                    .SetBasePath(Directory.GetCurrentDirectory())
+                    .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
+
+                var configuration = builder.Build();
+                optionsBuilder.UseSqlServer(configuration.GetConnectionString("GameSalesWebsite"));
+            }
         }
 
         public DbSet<SystemTag> System_Tags { get; set; }

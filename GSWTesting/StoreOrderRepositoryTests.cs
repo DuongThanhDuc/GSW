@@ -1,75 +1,291 @@
-using NUnit.Framework;
-using DataAccess.Repository;
-using Moq;
-using BusinessModel.Model;
+﻿using BusinessModel.Model;
 using DataAccess.DTOs;
-using System.Threading.Tasks;
-using System.Collections.Generic;
+using DataAccess.Repository;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using NUnit.Framework;
+using System;
 using System.Linq;
+using System.Threading.Tasks;
 
-namespace DataAccess.Tests.Repository
+namespace UnitTests.Repository
 {
     [TestFixture]
     public class StoreOrderRepositoryTests
     {
-        private Mock<DBContext> _dbContextMock;
-        private StoreOrderRepository _repo;
-        private Mock<DbSet<StoreOrder>> _orderSetMock;
-        private List<StoreOrder> _orderData;
-
-        [SetUp]
-        public void SetUp()
+        private DbContextOptions<DBContext> CreateNewContextOptions()
         {
-            _dbContextMock = new Mock<DBContext>();
-            _orderSetMock = new Mock<DbSet<StoreOrder>>();
-            _orderData = new List<StoreOrder>
+            return new DbContextOptionsBuilder<DBContext>()
+                .UseInMemoryDatabase(Guid.NewGuid().ToString())
+                .Options;
+        }
+
+        [Test]
+        public async Task CreateAsync_ShouldAddNewOrder()
+        {
+            // Arrange
+            var options = CreateNewContextOptions();
+            var dto = new StoreOrderDTO
             {
-                new StoreOrder { ID = 1, UserID = "user1", TotalAmount = 100 },
-                new StoreOrder { ID = 2, UserID = "user2", TotalAmount = 200 }
+                UserID = "user1",
+                TotalAmount = 100,
+                Status = "PENDING",
+                OrderDate = DateTime.UtcNow
             };
-            var queryable = _orderData.AsQueryable();
-            _orderSetMock.As<IQueryable<StoreOrder>>().Setup(m => m.Provider).Returns(queryable.Provider);
-            _orderSetMock.As<IQueryable<StoreOrder>>().Setup(m => m.Expression).Returns(queryable.Expression);
-            _orderSetMock.As<IQueryable<StoreOrder>>().Setup(m => m.ElementType).Returns(queryable.ElementType);
-            _orderSetMock.As<IQueryable<StoreOrder>>().Setup(m => m.GetEnumerator()).Returns(() => queryable.GetEnumerator());
-            _dbContextMock.Setup(x => x.Store_Orders).Returns(_orderSetMock.Object);
-            _repo = new StoreOrderRepository(_dbContextMock.Object);
+
+            using (var context = new DBContext(options))
+            {
+                var repo = new StoreOrderRepository(context);
+
+                // Act
+                var result = await repo.CreateAsync(dto);
+
+                // Assert
+                Assert.NotNull(result);
+                Assert.AreEqual("user1", result.UserID);
+                Assert.AreEqual(1, await context.Store_Orders.CountAsync());
+            }
         }
 
         [Test]
-        public async Task GetByIdAsync_ReturnsNull_WhenNotFound()
+        public async Task GetByIdAsync_WhenEntityExists_ShouldReturnOrder()
         {
             // Arrange
-            int notFoundId = 999;
-            _orderSetMock.Setup(x => x.FindAsync(notFoundId)).ReturnsAsync((StoreOrder)null);
-            // Act
-            var result = await _repo.GetByIdAsync(notFoundId);
-            // Assert
-            Assert.IsNull(result);
+            var options = CreateNewContextOptions();
+            int orderId;
+
+            using (var context = new DBContext(options))
+            {
+                var user = new IdentityUser
+                {
+                    Id = "user1",
+                    UserName = "testuser",
+                    Email = "test@example.com",
+                    PhoneNumber = "123456789"
+                };
+                context.Users.Add(user);
+
+                var order = new StoreOrder
+                {
+                    OrderCode = "String",
+                    UserID = user.Id,
+                    OrderDate = DateTime.Now,
+                    TotalAmount = 100,
+                    Status = "Pending"
+                };
+                context.Store_Orders.Add(order);
+                await context.SaveChangesAsync();
+                orderId = order.ID;
+            }
+
+            using (var context = new DBContext(options))
+            {
+                var repo = new StoreOrderRepository(context);
+
+                // Act
+                var result = await repo.GetByIdAsync(orderId);
+
+                // Assert
+                Assert.NotNull(result);
+                Assert.AreEqual("testuser", result.UserName);
+                Assert.AreEqual(100, result.TotalAmount);
+            }
         }
 
         [Test]
-        public async Task GetByIdAsync_ReturnsOrder_WhenFound()
+        public async Task GetByIdAsync_WhenEntityDoesNotExist_ShouldReturnNull()
         {
             // Arrange
-            int foundId = 1;
-            var expected = _orderData.First(o => o.ID == foundId);
-            _orderSetMock.Setup(x => x.FindAsync(foundId)).ReturnsAsync(expected);
-            // Act
-            var result = await _repo.GetByIdAsync(foundId);
-            // Assert
-            Assert.IsNotNull(result);
-            Assert.AreEqual(expected.UserID, result.UserID);
+            var options = CreateNewContextOptions();
+
+            using (var context = new DBContext(options))
+            {
+                var repo = new StoreOrderRepository(context);
+
+                // Act
+                var result = await repo.GetByIdAsync(999);
+
+                // Assert
+                Assert.IsNull(result);
+            }
         }
 
         [Test]
-        public async Task GetAllAsync_ReturnsAllOrders()
+        public async Task DeleteAsync_ShouldRemoveOrder()
         {
-            // Act
-            var result = await _repo.GetAllAsync();
-            // Assert
-            Assert.AreEqual(_orderData.Count, result.Count());
+            // Arrange
+            var options = CreateNewContextOptions();
+            int orderId;
+            using (var context = new DBContext(options))
+            {
+                var order = new StoreOrder
+                {
+                    UserID = "user3",
+                    TotalAmount = 50,
+                    Status = "DRAFT",
+                    OrderDate = DateTime.UtcNow,
+                    CreatedAt = DateTime.UtcNow,
+                    OrderCode = "DEL123"
+                };
+                context.Store_Orders.Add(order);
+                await context.SaveChangesAsync();
+                orderId = order.ID;
+            }
+
+            using (var context = new DBContext(options))
+            {
+                var repo = new StoreOrderRepository(context);
+
+                // Act
+                var result = await repo.DeleteAsync(orderId);
+
+                // Assert
+                Assert.IsTrue(result);
+            }
+
+            using (var context = new DBContext(options))
+            {
+                Assert.AreEqual(0, await context.Store_Orders.CountAsync());
+            }
+        }
+
+        [Test]
+        public async Task DeleteAsync_WhenEntityDoesNotExist_ShouldReturnFalse()
+        {
+            var options = CreateNewContextOptions();
+
+            using (var context = new DBContext(options))
+            {
+                var repo = new StoreOrderRepository(context);
+
+                // Act
+                var result = await repo.DeleteAsync(999);
+
+                // Assert
+                Assert.IsFalse(result);
+            }
+        }
+
+        [Test]
+        public async Task GetAllAsync_ShouldReturnAllOrders()
+        {
+            var options = CreateNewContextOptions();
+
+            using (var context = new DBContext(options))
+            {
+                var user1 = new IdentityUser { Id = "user1", UserName = "u1", Email = "u1@test.com" };
+                var user2 = new IdentityUser { Id = "user2", UserName = "u2", Email = "u2@test.com" };
+                context.Users.AddRange(user1, user2);
+
+                context.Store_Orders.AddRange(
+                    new StoreOrder { OrderCode = "String", UserID = user1.Id, TotalAmount = 50, Status = "Pending", OrderDate = DateTime.Now },
+                    new StoreOrder { OrderCode = "String2", UserID = user2.Id, TotalAmount = 150, Status = "Completed", OrderDate = DateTime.Now }
+                );
+                await context.SaveChangesAsync();
+            }
+
+            using (var context = new DBContext(options))
+            {
+                var repo = new StoreOrderRepository(context);
+
+                // Act
+                var result = await repo.GetAllAsync();
+
+                // Assert
+                Assert.AreEqual(2, result.Count());
+            }
+        }
+
+        [Test]
+        public async Task GetAllAsync_WhenNoOrdersExist_ShouldReturnEmptyList()
+        {
+            var options = CreateNewContextOptions();
+
+            using (var context = new DBContext(options))
+            {
+                var repo = new StoreOrderRepository(context);
+
+                // Act
+                var result = await repo.GetAllAsync();
+
+                // Assert
+                Assert.NotNull(result);
+                Assert.AreEqual(0, result.Count());
+            }
+        }
+
+        [Test]
+        public async Task UpdateAsync_ShouldModifyExistingOrder()
+        {
+            // Arrange
+            var options = CreateNewContextOptions();
+            int orderId;
+            using (var context = new DBContext(options))
+            {
+                var order = new StoreOrder
+                {
+                    UserID = "userX",
+                    TotalAmount = 300,
+                    Status = "PENDING",
+                    OrderDate = DateTime.UtcNow,
+                    CreatedAt = DateTime.UtcNow,
+                    OrderCode = "UPD123"
+                };
+                context.Store_Orders.Add(order);
+                await context.SaveChangesAsync();
+                orderId = order.ID;
+            }
+
+            using (var context = new DBContext(options))
+            {
+                var repo = new StoreOrderRepository(context);
+                var updateDto = new StoreOrderDTO
+                {
+                    UserID = "userX",
+                    TotalAmount = 500,
+                    Status = "COMPLETED",
+                    OrderDate = DateTime.UtcNow,
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                // Act
+                var result = await repo.UpdateAsync(orderId, updateDto);
+
+                // Assert
+                Assert.IsTrue(result);
+            }
+
+            using (var context = new DBContext(options))
+            {
+                var updated = await context.Store_Orders.FindAsync(orderId);
+                Assert.AreEqual(500, updated.TotalAmount);
+                Assert.AreEqual("COMPLETED", updated.Status);
+            }
+        }
+
+        [Test]
+        public async Task UpdateAsync_WhenEntityDoesNotExist_ShouldReturnFalse()
+        {
+            var options = CreateNewContextOptions();
+
+            using (var context = new DBContext(options))
+            {
+                var repo = new StoreOrderRepository(context);
+                var updateDto = new StoreOrderDTO
+                {
+                    UserID = "userX",
+                    TotalAmount = 500,
+                    Status = "COMPLETED",
+                    OrderDate = DateTime.UtcNow,
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                // Act
+                var result = await repo.UpdateAsync(999, updateDto);
+
+                // Assert
+                Assert.IsFalse(result);
+            }
         }
     }
 }
