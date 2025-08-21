@@ -4,51 +4,55 @@ using DataAccess.Repository;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 using DataAccess.Repository.IRepository;
+using Microsoft.EntityFrameworkCore;
 
 [ApiController]
 [Route("api/[controller]")]
 public class StoreRefundRequestController : ControllerBase
 {
     private readonly IStoreRefundRequestRepository _repository;
-
-    public StoreRefundRequestController(IStoreRefundRequestRepository repository)
+    private readonly DBContext _ctx;
+    public StoreRefundRequestController(IStoreRefundRequestRepository repository, DBContext ctx)
     {
         _repository = repository;
+        _ctx = ctx;
     }
 
+    
     [HttpGet]
     public async Task<IActionResult> Get()
     {
         var entities = await _repository.GetAllAsync();
-        var dtos = entities.Select(x => new StoreRefundRequestDTO
+
+        var data = entities.Select(x => new
         {
-            ID = x.ID,
-            OrderID = x.OrderID,
-            UserID = x.UserID,
-            Reason = x.Reason,
-            Status = x.Status,
-            RequestDate = x.RequestDate
+            orderID = x.OrderID,
+            userID = x.UserID,        
+            reason = x.Reason,
+            status = x.Status,
+            requestDate = x.RequestDate
         }).ToList();
 
-        return Ok(dtos);
+        return Ok(new { success = true, data });
     }
 
-    [HttpGet("{id}")]
+    // GET: /api/StoreRefundRequest/{id}
+    [HttpGet("{id:int}")]
     public async Task<IActionResult> Get(int id)
     {
-        var entity = await _repository.GetByIdAsync(id);
-        if (entity == null) return NotFound();
+        var x = await _repository.GetByIdAsync(id);
+        if (x == null) return NotFound(new { success = false, message = "Not found" });
 
-        var dto = new StoreRefundRequestDTO
+        var data = new
         {
-            ID = entity.ID,
-            OrderID = entity.OrderID,
-            UserID = entity.UserID,
-            Reason = entity.Reason,
-            Status = entity.Status,
-            RequestDate = entity.RequestDate
+            orderID = x.OrderID,
+            userID = x.UserID,
+            reason = x.Reason,
+            status = x.Status,
+            requestDate = x.RequestDate
         };
-        return Ok(dto);
+
+        return Ok(new { success = true, data });
     }
 
     [HttpPost]
@@ -63,15 +67,24 @@ public class StoreRefundRequestController : ControllerBase
             RequestDate = dto.RequestDate
         };
         await _repository.AddAsync(entity);
-        dto.ID = entity.ID; 
-        return CreatedAtAction(nameof(Get), new { id = entity.ID }, dto);
+
+        var data = new
+        {
+            orderID = entity.OrderID,
+            userID = entity.UserID,
+            reason = entity.Reason,
+            status = entity.Status,
+            requestDate = entity.RequestDate
+        };
+
+        return CreatedAtAction(nameof(Get), new { id = entity.ID }, new { success = true, data });
     }
 
     [HttpPut("{id}")]
     public async Task<IActionResult> Put(int id, [FromBody] StoreRefundRequestDTO dto)
     {
         var entity = await _repository.GetByIdAsync(id);
-        if (entity == null) return NotFound();
+        if (entity == null) return NotFound(new { success = false, message = "Not found" });
 
         entity.OrderID = dto.OrderID;
         entity.UserID = dto.UserID;
@@ -80,13 +93,26 @@ public class StoreRefundRequestController : ControllerBase
         entity.RequestDate = dto.RequestDate;
 
         await _repository.UpdateAsync(entity);
-        return NoContent();
+
+       
+        return Ok(new
+        {
+            success = true,
+            data = new
+            {
+                orderID = entity.OrderID,
+                userID = entity.UserID,
+                reason = entity.Reason,
+                status = entity.Status,
+                requestDate = entity.RequestDate
+            }
+        });
     }
 
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(int id)
     {
         await _repository.DeleteAsync(id);
-        return NoContent();
+        return Ok(new { success = true });
     }
 }

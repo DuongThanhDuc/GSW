@@ -1,75 +1,250 @@
-using NUnit.Framework;
-using DataAccess.Repository;
-using Moq;
-using BusinessModel.Model;
+﻿using BusinessModel.Model;
 using DataAccess.DTOs;
-using System.Threading.Tasks;
-using System.Collections.Generic;
+using DataAccess.Repository;
 using Microsoft.EntityFrameworkCore;
+using NUnit.Framework;
+using System;
 using System.Linq;
+using System.Threading.Tasks;
 
-namespace DataAccess.Tests.Repository
+namespace UnitTests.Repository
 {
     [TestFixture]
     public class GamesInfoRepositoryTests
     {
-        private Mock<DBContext> _dbContextMock;
-        private GamesInfoRepository _repo;
-        private Mock<DbSet<GamesInfo>> _gamesInfoSetMock;
-        private List<GamesInfo> _gamesData;
-
-        [SetUp]
-        public void SetUp()
+        private DbContextOptions<DBContext> CreateNewContextOptions()
         {
-            _dbContextMock = new Mock<DBContext>();
-            _gamesInfoSetMock = new Mock<DbSet<GamesInfo>>();
-            _gamesData = new List<GamesInfo>
+            return new DbContextOptionsBuilder<DBContext>()
+                .UseInMemoryDatabase(Guid.NewGuid().ToString())
+                .Options;
+        }
+
+        [Test]
+        public async Task CreateAsync_ShouldAddNewGame()
+        {
+            // Arrange
+            var options = CreateNewContextOptions();
+            var dto = new GamesInfoDTO
             {
-                new GamesInfo { Id = 1, Title = "Game1" },
-                new GamesInfo { Id = 2, Title = "Game2" }
+                Title = "Test Game",
+                Description = "Test Description",
+                Price = 9.99m,
+                Genre = "Action",
+                DeveloperId = "Dev1",
+                InstallerFilePath = "installer.exe",
+                CoverImagePath = "cover.png",
+                Status = "Draft",
+                IsActive = true,
+                CreatedBy = "Tester"
             };
-            var queryable = _gamesData.AsQueryable();
-            _gamesInfoSetMock.As<IQueryable<GamesInfo>>().Setup(m => m.Provider).Returns(queryable.Provider);
-            _gamesInfoSetMock.As<IQueryable<GamesInfo>>().Setup(m => m.Expression).Returns(queryable.Expression);
-            _gamesInfoSetMock.As<IQueryable<GamesInfo>>().Setup(m => m.ElementType).Returns(queryable.ElementType);
-            _gamesInfoSetMock.As<IQueryable<GamesInfo>>().Setup(m => m.GetEnumerator()).Returns(() => queryable.GetEnumerator());
-            _dbContextMock.Setup(x => x.Games_Info).Returns(_gamesInfoSetMock.Object);
-            _repo = new GamesInfoRepository(_dbContextMock.Object);
+
+            using (var context = new DBContext(options))
+            {
+                var repo = new GamesInfoRepository(context);
+
+                // Act
+                var result = await repo.CreateAsync(dto);
+
+                // Assert
+                Assert.NotNull(result);
+                Assert.AreEqual("Test Game", result.Title);
+                Assert.AreEqual(1, await context.Games_Info.CountAsync());
+            }
         }
 
         [Test]
-        public async Task GetByIdAsyncOriginal_ReturnsNull_WhenNotFound()
+        public async Task GetByIdAsync_WhenEntityExists_ShouldReturnEntity()
         {
             // Arrange
-            int notFoundId = 999;
-            _gamesInfoSetMock.Setup(x => x.FindAsync(notFoundId)).ReturnsAsync((GamesInfo)null);
-            // Act
-            var result = await _repo.GetByIdAsyncOriginal(notFoundId);
-            // Assert
-            Assert.IsNull(result);
+            var options = CreateNewContextOptions();
+            int gameId;
+            using (var context = new DBContext(options))
+            {
+                var game = new GamesInfo
+                {
+                    Title = "Existing Game",
+                    Description = "Some description",
+                    Price = 19.99m,
+                    Genre = "RPG",
+                    DeveloperId = "Dev2",
+                    InstallerFilePath = "install.exe",
+                    CoverImagePath = "cover.jpg",
+                    Status = "Published",
+                    IsActive = true,
+                    CreatedBy = "Admin"
+                };
+                context.Games_Info.Add(game);
+                await context.SaveChangesAsync();
+                gameId = game.Id;
+            }
+
+            using (var context = new DBContext(options))
+            {
+                var repo = new GamesInfoRepository(context);
+
+                // Act
+                var result = await repo.GetByIdAsync(gameId);
+
+                // Assert
+                Assert.NotNull(result);
+                Assert.AreEqual("Existing Game", result.Title);
+                Assert.AreEqual("RPG", result.Genre);
+                Assert.AreEqual("Admin", result.CreatedBy);
+            }
         }
 
         [Test]
-        public async Task GetByIdAsyncOriginal_ReturnsGame_WhenFound()
+        public async Task DeleteAsync_ShouldRemoveEntity()
         {
             // Arrange
-            int foundId = 1;
-            var expected = _gamesData.First(g => g.Id == foundId);
-            _gamesInfoSetMock.Setup(x => x.FindAsync(foundId)).ReturnsAsync(expected);
-            // Act
-            var result = await _repo.GetByIdAsyncOriginal(foundId);
-            // Assert
-            Assert.IsNotNull(result);
-            Assert.AreEqual(expected.Title, result.Title);
+            var options = CreateNewContextOptions();
+            int gameId;
+            using (var context = new DBContext(options))
+            {
+                var game = new GamesInfo
+                {
+                    Title = "Delete Me",
+                    Description = "Temp",
+                    Price = 1,
+                    Genre = "Test",
+                    DeveloperId = "Dev1",
+                    InstallerFilePath = "delete_installer.exe",
+                    CoverImagePath = "delete_cover.png",
+                    Status = "Draft",
+                    IsActive = true,
+                    CreatedBy = "System"
+                };
+                context.Games_Info.Add(game);
+                await context.SaveChangesAsync();
+                gameId = game.Id;
+            }
+
+            using (var context = new DBContext(options))
+            {
+                var repo = new GamesInfoRepository(context);
+
+                // Act
+                var result = await repo.DeleteAsync(gameId);
+
+                // Assert
+                Assert.IsTrue(result);
+            }
+
+            using (var context = new DBContext(options))
+            {
+                Assert.AreEqual(0, await context.Games_Info.CountAsync());
+            }
         }
 
         [Test]
-        public async Task GetAllAsyncOriginal_ReturnsAllGames()
+        public async Task GetAllAsync_ShouldReturnAllGames()
         {
-            // Act
-            var result = await _repo.GetAllAsyncOriginal();
-            // Assert
-            Assert.AreEqual(_gamesData.Count, result.Count());
+            // Arrange
+            var options = CreateNewContextOptions();
+            using (var context = new DBContext(options))
+            {
+                context.Games_Info.AddRange(
+                    new GamesInfo
+                    {
+                        Title = "Game 1",
+                        Description = "D1",
+                        Price = 2,
+                        Genre = "Action",
+                        DeveloperId = "Dev1",
+                        InstallerFilePath = "g1_installer.exe",
+                        CoverImagePath = "g1_cover.png",
+                        Status = "Draft",
+                        IsActive = true,
+                        CreatedBy = "System"
+                    },
+                    new GamesInfo
+                    {
+                        Title = "Game 2",
+                        Description = "D2",
+                        Price = 3,
+                        Genre = "RPG",
+                        DeveloperId = "Dev2",
+                        InstallerFilePath = "g2_installer.exe",
+                        CoverImagePath = "g2_cover.png",
+                        Status = "Published",
+                        IsActive = true,
+                        CreatedBy = "System"
+                    }
+                );
+                await context.SaveChangesAsync();
+            }
+
+            using (var context = new DBContext(options))
+            {
+                var repo = new GamesInfoRepository(context);
+
+                // Act
+                var result = await repo.GetAllAsync();
+
+                // Assert
+                Assert.AreEqual(2, result.Count());
+            }
+        }
+
+
+        [Test]
+        public async Task UpdateAsync_ShouldModifyExistingEntity()
+        {
+            // Arrange
+            var options = CreateNewContextOptions();
+            int gameId;
+            using (var context = new DBContext(options))
+            {
+                var game = new GamesInfo
+                {
+                    Title = "Old Title",
+                    Description = "Old Desc",
+                    Price = 5.0m,
+                    Genre = "Puzzle",
+                    DeveloperId = "Dev3",
+                    InstallerFilePath = "old_installer.exe",
+                    CoverImagePath = "old_cover.png",
+                    Status = "Draft",
+                    IsActive = false,
+                    CreatedBy = "Tester"
+                };
+                context.Games_Info.Add(game);
+                await context.SaveChangesAsync();
+                gameId = game.Id;
+            }
+
+            using (var context = new DBContext(options))
+            {
+                var repo = new GamesInfoRepository(context);
+                var updateDto = new GamesInfoDTO
+                {
+                    ID = gameId,
+                    Title = "Updated Title",
+                    Description = "New Desc",
+                    Price = 10.0m,
+                    Genre = "Adventure",
+                    DeveloperId = "Dev3",
+                    InstallerFilePath = "new_installer.exe",
+                    CoverImagePath = "new_cover.png",
+                    Status = "Published",
+                    IsActive = true,
+                    CreatedBy = "Updater"
+                };
+
+                // Act
+                var result = await repo.UpdateAsync(updateDto);
+
+                // Assert
+                Assert.IsTrue(result);
+            }
+
+            using (var context = new DBContext(options))
+            {
+                var updated = await context.Games_Info.FindAsync(gameId);
+                Assert.AreEqual("Updated Title", updated.Title);
+                Assert.AreEqual("Adventure", updated.Genre);
+                Assert.AreEqual("Updater", updated.CreatedBy);
+            }
         }
     }
 }

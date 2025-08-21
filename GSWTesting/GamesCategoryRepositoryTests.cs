@@ -1,75 +1,249 @@
-using NUnit.Framework;
+﻿using BusinessModel.Model;
 using DataAccess.Repository;
-using Moq;
-using BusinessModel.Model;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using NUnit.Framework;
+using System;
 using System.Linq;
-using Repository.Repository;
+using System.Threading.Tasks;
 
-namespace DataAccess.Tests.Repository
+namespace UnitTests.Repository
 {
     [TestFixture]
     public class GamesCategoryRepositoryTests
     {
-        private Mock<DBContext> _dbContextMock;
-        private GamesCategoryRepository _repo;
-        private Mock<DbSet<GamesCategory>> _categorySetMock;
-        private List<GamesCategory> _categoryData;
-
-        [SetUp]
-        public void SetUp()
+        private DbContextOptions<DBContext> CreateNewContextOptions()
         {
-            _dbContextMock = new Mock<DBContext>();
-            _categorySetMock = new Mock<DbSet<GamesCategory>>();
-            _categoryData = new List<GamesCategory>
-            {
-                new GamesCategory { ID = 1, GameID = 1, CategoryID = 1 },
-                new GamesCategory { ID = 2, GameID = 2, CategoryID = 2 }
-            };
-            var queryable = _categoryData.AsQueryable();
-            _categorySetMock.As<IQueryable<GamesCategory>>().Setup(m => m.Provider).Returns(queryable.Provider);
-            _categorySetMock.As<IQueryable<GamesCategory>>().Setup(m => m.Expression).Returns(queryable.Expression);
-            _categorySetMock.As<IQueryable<GamesCategory>>().Setup(m => m.ElementType).Returns(queryable.ElementType);
-            _categorySetMock.As<IQueryable<GamesCategory>>().Setup(m => m.GetEnumerator()).Returns(() => queryable.GetEnumerator());
-            _dbContextMock.Setup(x => x.Games_Categories).Returns(_categorySetMock.Object);
-            _repo = new GamesCategoryRepository(_dbContextMock.Object);
+            return new DbContextOptionsBuilder<DBContext>()
+                .UseInMemoryDatabase(Guid.NewGuid().ToString()) // isolation per test
+                .Options;
         }
 
         [Test]
-        public async Task GetByIdAsync_ReturnsNull_WhenNotFound()
+        public async Task GetAllAsync_WhenCalled_ShouldReturnAllGameCategories()
         {
             // Arrange
-            int notFoundId = 999;
-            _categorySetMock.Setup(x => x.FindAsync(notFoundId)).ReturnsAsync((GamesCategory)null);
+            var options = CreateNewContextOptions();
+            using (var context = new DBContext(options))
+            {
+                var game1 = new GamesInfo
+                {
+                    Id = 101,
+                    Title = "Game A",
+                    CreatedBy = "Admin",
+                    Description = "Test Desc",
+                    Genre = "Action",
+                    DeveloperId = "Dev1",
+                    InstallerFilePath = "installer1.exe",
+                    CoverImagePath = "cover1.png"
+                };
+
+                var game2 = new GamesInfo
+                {
+                    Id = 102,
+                    Title = "Game B",
+                    CreatedBy = "Admin",
+                    Description = "Test Desc",
+                    Genre = "Adventure",
+                    DeveloperId = "Dev2",
+                    InstallerFilePath = "installer2.exe",
+                    CoverImagePath = "cover2.png"
+                };
+
+
+                var category1 = new SystemCategory { ID = 201, CategoryName = "Action", CreatedBy = "Admin" };
+                var category2 = new SystemCategory { ID = 202, CategoryName = "Adventure", CreatedBy = "Admin" };
+
+                context.Games_Info.AddRange(game1, game2);
+                context.System_Categories.AddRange(category1, category2);
+
+                context.Games_Categories.AddRange(
+                    new GamesCategory { ID = 1, GameID = game1.Id, CategoryID = category1.ID, CreatedBy = "Admin" },
+                    new GamesCategory { ID = 2, GameID = game2.Id, CategoryID = category2.ID, CreatedBy = "Admin" }
+                );
+                await context.SaveChangesAsync();
+            }
+
+            using (var context = new DBContext(options))
+            {
+                var repo = new GamesCategoryRepository(context);
+
+                // Act
+                var results = await repo.GetAllAsync();
+
+                // Assert
+                Assert.AreEqual(2, results.Count());
+            }
+        }
+        [Test]
+        public async Task GetByIdAsync_WhenEntityExists_ShouldReturnEntity()
+        {
+            // Arrange
+            var options = CreateNewContextOptions();
+            using (var context = new DBContext(options))
+            {
+                var game = new GamesInfo
+                {
+                    Id = 101,
+                    Title = "Game A",
+                    CreatedBy = "Admin",
+                    Description = "Test game",
+                    Genre = "Action",
+                    DeveloperId = "Dev1",
+                    InstallerFilePath = "installer.exe",
+                    CoverImagePath = "cover.png"
+                };
+
+                var category = new SystemCategory
+                {
+                    ID = 201,
+                    CategoryName = "Action",
+                    CreatedBy = "Admin"
+                };
+
+                context.Games_Info.Add(game);
+                context.System_Categories.Add(category);
+
+                context.Games_Categories.Add(new GamesCategory
+                {
+                    ID = 1,
+                    GameID = game.Id,
+                    CategoryID = category.ID,
+                    CreatedBy = "UserX"
+                });
+
+                await context.SaveChangesAsync();
+            }
+
+            using (var context = new DBContext(options))
+            {
+                var repo = new GamesCategoryRepository(context);
+
+                // Act
+                var result = await repo.GetByIdAsync(1);
+
+                // Assert
+                Assert.NotNull(result);
+                Assert.AreEqual(101, result.GameID);
+                Assert.AreEqual(201, result.CategoryID);
+                Assert.AreEqual("UserX", result.CreatedBy);
+            }
+        }
+
+
+        [Test]
+        public async Task GetByIdAsync_WhenEntityDoesNotExist_ShouldReturnNull()
+        {
+            // Arrange
+            var options = CreateNewContextOptions();
+            using var context = new DBContext(options);
+            var repo = new GamesCategoryRepository(context);
+
             // Act
-            var result = await _repo.GetByIdAsync(notFoundId);
+            var result = await repo.GetByIdAsync(999);
+
             // Assert
             Assert.IsNull(result);
         }
 
         [Test]
-        public async Task GetByIdAsync_ReturnsCategory_WhenFound()
+        public async Task AddAsync_ShouldInsertNewEntity()
         {
             // Arrange
-            int foundId = 1;
-            var expected = _categoryData.First(c => c.ID == foundId);
-            _categorySetMock.Setup(x => x.FindAsync(foundId)).ReturnsAsync(expected);
+            var options = CreateNewContextOptions();
+            using var context = new DBContext(options);
+            var repo = new GamesCategoryRepository(context);
+
+            var entity = new GamesCategory { ID = 1, GameID = 101, CategoryID = 201, CreatedBy = "Admin" };
+
             // Act
-            var result = await _repo.GetByIdAsync(foundId);
+            var result = await repo.AddAsync(entity);
+
             // Assert
-            Assert.IsNotNull(result);
-            Assert.AreEqual(expected.GameID, result.GameID);
+            Assert.NotNull(result);
+            Assert.AreEqual(1, await context.Games_Categories.CountAsync());
         }
 
         [Test]
-        public async Task GetAllAsync_ReturnsAllCategories()
+        public async Task UpdateAsync_WhenEntityExists_ShouldUpdateAndReturnEntity()
         {
+            // Arrange
+            var options = CreateNewContextOptions();
+            using (var context = new DBContext(options))
+            {
+                context.Games_Categories.Add(new GamesCategory { ID = 1, GameID = 101, CategoryID = 201, CreatedBy = "Admin" });
+                await context.SaveChangesAsync();
+            }
+
+            using (var context = new DBContext(options))
+            {
+                var repo = new GamesCategoryRepository(context);
+                var updatedEntity = new GamesCategory { GameID = 202, CategoryID = 303, CreatedBy = "Moderator" };
+
+                // Act
+                var result = await repo.UpdateAsync(1, updatedEntity);
+
+                // Assert
+                Assert.NotNull(result);
+                Assert.AreEqual(202, result.GameID);
+                Assert.AreEqual(303, result.CategoryID);
+                Assert.AreEqual("Moderator", result.CreatedBy);
+            }
+        }
+
+        [Test]
+        public async Task UpdateAsync_WhenEntityDoesNotExist_ShouldReturnNull()
+        {
+            // Arrange
+            var options = CreateNewContextOptions();
+            using var context = new DBContext(options);
+            var repo = new GamesCategoryRepository(context);
+
+            var entity = new GamesCategory { GameID = 101, CategoryID = 201, CreatedBy = "Admin" };
+
             // Act
-            var result = await _repo.GetAllAsync();
+            var result = await repo.UpdateAsync(999, entity);
+
             // Assert
-            Assert.AreEqual(_categoryData.Count, result.Count());
+            Assert.IsNull(result);
+        }
+
+        [Test]
+        public async Task DeleteAsync_WhenEntityExists_ShouldRemoveAndReturnTrue()
+        {
+            // Arrange
+            var options = CreateNewContextOptions();
+            using (var context = new DBContext(options))
+            {
+                context.Games_Categories.Add(new GamesCategory { ID = 1, GameID = 101, CategoryID = 201, CreatedBy = "Admin" });
+                await context.SaveChangesAsync();
+            }
+
+            using (var context = new DBContext(options))
+            {
+                var repo = new GamesCategoryRepository(context);
+
+                // Act
+                var result = await repo.DeleteAsync(1);
+
+                // Assert
+                Assert.IsTrue(result);
+                Assert.AreEqual(0, await context.Games_Categories.CountAsync());
+            }
+        }
+
+        [Test]
+        public async Task DeleteAsync_WhenEntityDoesNotExist_ShouldReturnFalse()
+        {
+            // Arrange
+            var options = CreateNewContextOptions();
+            using var context = new DBContext(options);
+            var repo = new GamesCategoryRepository(context);
+
+            // Act
+            var result = await repo.DeleteAsync(999);
+
+            // Assert
+            Assert.IsFalse(result);
         }
     }
 }
