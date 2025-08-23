@@ -39,7 +39,6 @@ namespace BusinessModel.Model
         public DbSet<GamesCategory> Games_Categories { get; set; }
         public DbSet<GamesTag> Games_Tags { get; set; }
         public DbSet<GamesReview> Games_Reviews { get; set; }
-        public DbSet<GamesUpload> Games_Uploads { get; set; }
         public DbSet<StoreOrder> Store_Orders { get; set; }
         public DbSet<StoreOrderDetail> Store_OrderDetails { get; set; }
         public DbSet<StoreRefundRequest> Store_RefundRequests { get; set; }
@@ -50,7 +49,6 @@ namespace BusinessModel.Model
         public DbSet<GamesMedia> Games_Media { get; set; }
         public DbSet<StoreLibrary> Store_Library { get; set; }
         public DbSet<GamesDiscount> Games_Discount { get; set; }
-        public DbSet<GamesBanner> Games_Banner { get; set; }
         public DbSet<GamesInfoDiscount> Games_InfoDiscounts { get; set; }
 
         public DbSet<ApprovalHistory> ApprovalHistories { get; set; }
@@ -70,15 +68,36 @@ namespace BusinessModel.Model
             modelBuilder.Entity<SystemTag>()
                 .Property(t => t.CreatedAt)
                 .HasDefaultValueSql("GETDATE()");
+            modelBuilder.Entity<SystemTag>()
+                 .HasOne<IdentityUser>()
+                 .WithMany()
+                 .HasForeignKey(t => t.CreatedBy)
+                .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<SystemCategory>()
                 .Property(c => c.CreatedAt)
                 .HasDefaultValueSql("GETDATE()");
+            modelBuilder.Entity<SystemCategory>()
+                .HasOne<IdentityUser>()
+                .WithMany()
+                .HasForeignKey(t => t.CreatedBy)
+               .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<GamesInfo>()
-                .Property(g => g.CreatedAt)
-                .HasDefaultValueSql("GETDATE()");
+           .Property(g => g.CreatedAt)
+           .HasDefaultValueSql("GETDATE()");
 
+            modelBuilder.Entity<GamesInfo>()
+                .HasOne<IdentityUser>()
+                .WithMany()
+                .HasForeignKey(g => g.DeveloperId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<GamesInfo>()
+                .HasOne<IdentityUser>()
+                .WithMany()
+                .HasForeignKey(g => g.CreatedBy)
+                .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<GamesMedia>()
            .Property(m => m.CreatedAt)
@@ -98,22 +117,38 @@ namespace BusinessModel.Model
                 .WithMany()
                 .HasForeignKey(l => l.GamesID)
                 .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<StoreLibrary>()
+                .HasOne<IdentityUser>()
+                .WithMany()
+                .HasForeignKey(l => l.UserID)
+                .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<GamesCategory>()
                 .Property(gc => gc.CreatedAt)
                 .HasDefaultValueSql("GETDATE()");
+            modelBuilder.Entity<GamesCategory>()
+               .HasOne<IdentityUser>()
+               .WithMany()
+               .HasForeignKey(gt => gt.CreatedBy)
+               .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<GamesTag>()
                 .Property(gt => gt.CreatedAt)
                 .HasDefaultValueSql("GETDATE()");
+            modelBuilder.Entity<GamesTag>()
+                .HasOne<IdentityUser>()
+                .WithMany()
+                .HasForeignKey(gt => gt.CreatedBy)
+                .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<GamesReview>()
                 .Property(r => r.CreatedAt)
                 .HasDefaultValueSql("GETDATE()");
-
-            modelBuilder.Entity<GamesUpload>()
-                .Property(u => u.UploadDate)
-                .HasDefaultValueSql("GETDATE()");
+            modelBuilder.Entity<StoreRefundRequest>()
+                .HasOne<IdentityUser>()
+                .WithMany()
+                .HasForeignKey(o => o.UserID)
+                .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<StoreOrder>()
                 .Property(o => o.CreatedAt)
@@ -123,6 +158,12 @@ namespace BusinessModel.Model
                 .Property(o => o.OrderDate)
                 .HasDefaultValueSql("GETDATE()");
 
+            modelBuilder.Entity<StoreOrder>()
+                .HasOne<IdentityUser>()
+                .WithMany()
+                .HasForeignKey(o => o.UserID)
+                .OnDelete(DeleteBehavior.Restrict);
+
             modelBuilder.Entity<StoreOrderDetail>()
                 .Property(d => d.CreatedAt)
                 .HasDefaultValueSql("GETDATE()");
@@ -130,6 +171,12 @@ namespace BusinessModel.Model
             modelBuilder.Entity<StoreRefundRequest>()
                 .Property(r => r.RequestDate)
                 .HasDefaultValueSql("GETDATE()");
+
+            modelBuilder.Entity<StoreRefundRequest>()
+                .HasOne<IdentityUser>()
+                .WithMany()
+                .HasForeignKey(o => o.UserID)
+                .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<StoreTransaction>()
                 .Property(t => t.TransactionDate)
@@ -248,6 +295,32 @@ namespace BusinessModel.Model
                 .WithMany() // Assuming no collection in GamesInfo
                 .HasForeignKey(w => w.GameId)
                 .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<StoreWishlist>()
+              .HasOne<IdentityUser>()
+              .WithMany()
+              .HasForeignKey(o => o.UserId)
+              .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<StoreThread>()
+               .HasOne<IdentityUser>()
+               .WithMany()
+               .HasForeignKey(t => t.CreatedBy)
+              .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<StoreThreadReply>()
+               .HasOne<IdentityUser>()
+               .WithMany()
+               .HasForeignKey(t => t.CreatedBy)
+              .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<StoreThreadUpvoteHistory>()
+             .HasOne<IdentityUser>()
+             .WithMany()
+             .HasForeignKey(o => o.UserID)
+             .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<StoreThreadReplyUpvoteHistory>()
+             .HasOne<IdentityUser>()
+             .WithMany()
+             .HasForeignKey(o => o.UserId)
+             .OnDelete(DeleteBehavior.Restrict);
+
 
             // ---- Wallet ----
             modelBuilder.Entity<UserWallet>(b =>
@@ -302,6 +375,11 @@ namespace BusinessModel.Model
                 b.Property(x => x.BuyerEmail).HasMaxLength(256);
                 b.Property(x => x.BuyerName).HasMaxLength(128);
             });
+            modelBuilder.Entity<StoreCart>()
+              .HasOne<IdentityUser>()
+              .WithMany()   
+              .HasForeignKey(o => o.UserID)
+              .OnDelete(DeleteBehavior.Restrict);
 
 
             // Seeding Datas

@@ -4,6 +4,7 @@ using BusinessModel.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BusinessModel.Migrations
 {
     [DbContext(typeof(DBContext))]
-    partial class DBContextModelSnapshot : ModelSnapshot
+    [Migration("20250822172604_UpdatedDB")]
+    partial class UpdatedDB
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -105,6 +108,34 @@ namespace BusinessModel.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("DepositWithdrawTransactions");
+                });
+
+            modelBuilder.Entity("BusinessModel.Model.GamesBanner", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ImageUrl")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Link")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Games_Banner");
                 });
 
             modelBuilder.Entity("BusinessModel.Model.GamesCategory", b =>
@@ -364,6 +395,41 @@ namespace BusinessModel.Migrations
                     b.ToTable("Games_Tags");
                 });
 
+            modelBuilder.Entity("BusinessModel.Model.GamesUpload", b =>
+                {
+                    b.Property<int>("ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ID"));
+
+                    b.Property<string>("DeveloperID")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("GameID")
+                        .HasColumnType("int");
+
+                    b.Property<string>("GameVersion")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Notes")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("UploadDate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETDATE()");
+
+                    b.HasKey("ID");
+
+                    b.HasIndex("GameID");
+
+                    b.ToTable("Games_Uploads");
+                });
+
             modelBuilder.Entity("BusinessModel.Model.PaymentTransaction", b =>
                 {
                     b.Property<int>("Id")
@@ -423,13 +489,11 @@ namespace BusinessModel.Migrations
 
                     b.Property<string>("UserID")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("ID");
 
                     b.HasIndex("GameID");
-
-                    b.HasIndex("UserID");
 
                     b.ToTable("Store_Cart");
                 });
@@ -502,14 +566,12 @@ namespace BusinessModel.Migrations
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("UserID")
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("ID");
 
                     b.HasIndex("OrderCode")
                         .IsUnique();
-
-                    b.HasIndex("UserID");
 
                     b.ToTable("Store_Orders");
                 });
@@ -571,13 +633,11 @@ namespace BusinessModel.Migrations
 
                     b.Property<string>("UserID")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("ID");
 
                     b.HasIndex("OrderID");
-
-                    b.HasIndex("UserID");
 
                     b.ToTable("Store_RefundRequests");
                 });
@@ -597,7 +657,7 @@ namespace BusinessModel.Migrations
 
                     b.Property<string>("CreatedBy")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("ThreadDescription")
                         .IsRequired()
@@ -614,8 +674,6 @@ namespace BusinessModel.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("CreatedBy");
 
                     b.ToTable("Store_Threads");
                 });
@@ -638,7 +696,7 @@ namespace BusinessModel.Migrations
 
                     b.Property<string>("CreatedBy")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("ThreadComment")
                         .IsRequired()
@@ -651,8 +709,6 @@ namespace BusinessModel.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("CreatedBy");
 
                     b.HasIndex("ThreadID");
 
@@ -677,13 +733,11 @@ namespace BusinessModel.Migrations
 
                     b.Property<string>("UserId")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("ThreadCommentId");
-
-                    b.HasIndex("UserId");
 
                     b.ToTable("Store_ThreadReplyUpvoteHistories");
                 });
@@ -706,13 +760,11 @@ namespace BusinessModel.Migrations
 
                     b.Property<string>("UserID")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("ThreadID");
-
-                    b.HasIndex("UserID");
 
                     b.ToTable("Store_ThreadUpvoteHistories");
                 });
@@ -771,13 +823,11 @@ namespace BusinessModel.Migrations
 
                     b.Property<string>("UserId")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("GameId");
-
-                    b.HasIndex("UserId");
 
                     b.ToTable("Store_Wishlists");
                 });
@@ -814,35 +864,35 @@ namespace BusinessModel.Migrations
                         {
                             ID = 1,
                             CategoryName = "RPG",
-                            CreatedAt = new DateTime(2025, 8, 23, 7, 42, 1, 144, DateTimeKind.Utc).AddTicks(8756),
+                            CreatedAt = new DateTime(2025, 8, 22, 17, 26, 3, 806, DateTimeKind.Utc).AddTicks(4662),
                             CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af"
                         },
                         new
                         {
                             ID = 2,
                             CategoryName = "FPS",
-                            CreatedAt = new DateTime(2025, 8, 23, 7, 42, 1, 144, DateTimeKind.Utc).AddTicks(8758),
+                            CreatedAt = new DateTime(2025, 8, 22, 17, 26, 3, 806, DateTimeKind.Utc).AddTicks(4664),
                             CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af"
                         },
                         new
                         {
                             ID = 3,
                             CategoryName = "Puzzle",
-                            CreatedAt = new DateTime(2025, 8, 23, 7, 42, 1, 144, DateTimeKind.Utc).AddTicks(8759),
+                            CreatedAt = new DateTime(2025, 8, 22, 17, 26, 3, 806, DateTimeKind.Utc).AddTicks(4665),
                             CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af"
                         },
                         new
                         {
                             ID = 4,
                             CategoryName = "Simulation",
-                            CreatedAt = new DateTime(2025, 8, 23, 7, 42, 1, 144, DateTimeKind.Utc).AddTicks(8760),
+                            CreatedAt = new DateTime(2025, 8, 22, 17, 26, 3, 806, DateTimeKind.Utc).AddTicks(4666),
                             CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af"
                         },
                         new
                         {
                             ID = 5,
                             CategoryName = "Horror",
-                            CreatedAt = new DateTime(2025, 8, 23, 7, 42, 1, 144, DateTimeKind.Utc).AddTicks(8761),
+                            CreatedAt = new DateTime(2025, 8, 22, 17, 26, 3, 806, DateTimeKind.Utc).AddTicks(4667),
                             CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af"
                         });
                 });
@@ -902,35 +952,35 @@ namespace BusinessModel.Migrations
                         new
                         {
                             ID = 1,
-                            CreatedAt = new DateTime(2025, 8, 23, 7, 42, 1, 144, DateTimeKind.Utc).AddTicks(8712),
+                            CreatedAt = new DateTime(2025, 8, 22, 17, 26, 3, 806, DateTimeKind.Utc).AddTicks(4622),
                             CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af",
                             TagName = "Action"
                         },
                         new
                         {
                             ID = 2,
-                            CreatedAt = new DateTime(2025, 8, 23, 7, 42, 1, 144, DateTimeKind.Utc).AddTicks(8714),
+                            CreatedAt = new DateTime(2025, 8, 22, 17, 26, 3, 806, DateTimeKind.Utc).AddTicks(4624),
                             CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af",
                             TagName = "Adventure"
                         },
                         new
                         {
                             ID = 3,
-                            CreatedAt = new DateTime(2025, 8, 23, 7, 42, 1, 144, DateTimeKind.Utc).AddTicks(8715),
+                            CreatedAt = new DateTime(2025, 8, 22, 17, 26, 3, 806, DateTimeKind.Utc).AddTicks(4625),
                             CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af",
                             TagName = "Multiplayer"
                         },
                         new
                         {
                             ID = 4,
-                            CreatedAt = new DateTime(2025, 8, 23, 7, 42, 1, 144, DateTimeKind.Utc).AddTicks(8716),
+                            CreatedAt = new DateTime(2025, 8, 22, 17, 26, 3, 806, DateTimeKind.Utc).AddTicks(4627),
                             CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af",
                             TagName = "Indie"
                         },
                         new
                         {
                             ID = 5,
-                            CreatedAt = new DateTime(2025, 8, 23, 7, 42, 1, 144, DateTimeKind.Utc).AddTicks(8718),
+                            CreatedAt = new DateTime(2025, 8, 22, 17, 26, 3, 806, DateTimeKind.Utc).AddTicks(4628),
                             CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af",
                             TagName = "Strategy"
                         });
@@ -993,21 +1043,21 @@ namespace BusinessModel.Migrations
                         new
                         {
                             Id = "b7b9181c-ff61-4d8f-8f6d-5edb3a6d3a11",
-                            ConcurrencyStamp = "c979c1e0-b169-4917-8bfa-92a037f27b71",
+                            ConcurrencyStamp = "14b276b8-98a2-4c81-8e82-378f6f81cceb",
                             Name = "Admin",
                             NormalizedName = "ADMIN"
                         },
                         new
                         {
                             Id = "0f6781b2-4564-4bb3-8d85-92e4c194a2cb",
-                            ConcurrencyStamp = "7956aec6-e632-4793-a65c-85a1cf9e655b",
+                            ConcurrencyStamp = "610b797b-e5a1-4664-8c3c-c501dde9f3b0",
                             Name = "Staff",
                             NormalizedName = "STAFF"
                         },
                         new
                         {
                             Id = "26e5f054-e9fd-489f-891f-cf2b57fa9a1c",
-                            ConcurrencyStamp = "5f6333cf-a572-4c6f-9d87-578120d915a8",
+                            ConcurrencyStamp = "1a0f87a8-ff22-40ad-bd6f-ce6b6a4a0596",
                             Name = "User",
                             NormalizedName = "USER"
                         });
@@ -1107,15 +1157,15 @@ namespace BusinessModel.Migrations
                         {
                             Id = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af",
                             AccessFailedCount = 0,
-                            ConcurrencyStamp = "5e04b26f-af2c-4951-a927-31577e55370c",
+                            ConcurrencyStamp = "a3e2f409-529d-4dd3-945e-b72ab0a2f122",
                             Email = "admin@gameshop.com",
                             EmailConfirmed = true,
                             LockoutEnabled = false,
                             NormalizedEmail = "ADMIN@GAMESHOP.COM",
                             NormalizedUserName = "ADMIN",
-                            PasswordHash = "AQAAAAEAACcQAAAAEBaIm5ofpNQsSNGr9q8u3imLeBBVWalSAYrL8MZBqKB8B1jJD6SU8a8zMwQwL60Dtg==",
+                            PasswordHash = "AQAAAAEAACcQAAAAEFNiICpIcD56htW8Lom27jjAmZAM/YymP5dAL3XHu5PSeW6AKBmQBm5noj3pxIkZfQ==",
                             PhoneNumberConfirmed = false,
-                            SecurityStamp = "916ed8e6-69a4-40d7-adb3-48a6f57b424b",
+                            SecurityStamp = "9160fd20-dcbb-409f-b954-c2de547cce96",
                             TwoFactorEnabled = false,
                             UserName = "admin"
                         },
@@ -1123,15 +1173,15 @@ namespace BusinessModel.Migrations
                         {
                             Id = "bcbcdd33-9a99-75dv-82d7-0c9e67f9d9af",
                             AccessFailedCount = 0,
-                            ConcurrencyStamp = "383b6e91-d5c6-4fd1-81be-b7da937d8b7a",
+                            ConcurrencyStamp = "298100a1-dfe6-43fb-bcf2-2c3444412938",
                             Email = "trananhtuan180202@gmail.com",
                             EmailConfirmed = true,
                             LockoutEnabled = false,
                             NormalizedEmail = "TRANANHTUAN180202@GMAIL.COM",
                             NormalizedUserName = "TRANANHTUAN180202",
-                            PasswordHash = "AQAAAAEAACcQAAAAEK5nMZf8/hUvm7SSIZZBxwBVfVslG+mlgGLQ0VnyTUWS2NSWE5PdpVX6z1avkRpleA==",
+                            PasswordHash = "AQAAAAEAACcQAAAAEAA50OVooneU9JGl8BPkXKVpPFi5mAHRAL1r7iMQnpFcqvCu2lnHk7H7+F+bgIFe2w==",
                             PhoneNumberConfirmed = false,
-                            SecurityStamp = "0d63f5f8-28e8-4132-86f2-d252dd61beb9",
+                            SecurityStamp = "873b33d6-71c0-4cf4-bad2-68d20d57e060",
                             TwoFactorEnabled = false,
                             UserName = "trananhtuan180202"
                         },
@@ -1139,15 +1189,15 @@ namespace BusinessModel.Migrations
                         {
                             Id = "bcbcde35-9a98-75dv-82d7-0c9e67f9d9af",
                             AccessFailedCount = 0,
-                            ConcurrencyStamp = "b8a7d921-a0de-46cc-925a-f653c6afb8b6",
+                            ConcurrencyStamp = "68326dfc-a000-4028-81c8-3a267ad79114",
                             Email = "phong260702@gmail.com",
                             EmailConfirmed = true,
                             LockoutEnabled = false,
                             NormalizedEmail = "PHONG260702@GMAIL.COM",
                             NormalizedUserName = "PHONG",
-                            PasswordHash = "AQAAAAEAACcQAAAAEKzyTI648eQ3NzlHSnyZl4k+05L2GjuAwJDybDOq0P8fMabyUjV8SVniNDxHrUiUmg==",
+                            PasswordHash = "AQAAAAEAACcQAAAAEGButAtfK0Mxe1zKrni33gCnrXFD93M9TwAMBmnmh2oLs+rWj+Q3L0Cd5XxWCtY72g==",
                             PhoneNumberConfirmed = false,
-                            SecurityStamp = "aeab6672-d8e2-4d83-a033-cad18d416f2b",
+                            SecurityStamp = "6723851c-5cea-4b30-81c1-e13ea9247bd1",
                             TwoFactorEnabled = false,
                             UserName = "phong"
                         });
@@ -1386,6 +1436,17 @@ namespace BusinessModel.Migrations
                     b.Navigation("Tag");
                 });
 
+            modelBuilder.Entity("BusinessModel.Model.GamesUpload", b =>
+                {
+                    b.HasOne("BusinessModel.Model.GamesInfo", "Game")
+                        .WithMany()
+                        .HasForeignKey("GameID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Game");
+                });
+
             modelBuilder.Entity("BusinessModel.Model.PaymentTransaction", b =>
                 {
                     b.HasOne("BusinessModel.Model.StoreOrder", "StoreOrder")
@@ -1409,12 +1470,6 @@ namespace BusinessModel.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", null)
-                        .WithMany()
-                        .HasForeignKey("UserID")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.Navigation("Game");
                 });
 
@@ -1433,14 +1488,6 @@ namespace BusinessModel.Migrations
                         .IsRequired();
 
                     b.Navigation("Game");
-                });
-
-            modelBuilder.Entity("BusinessModel.Model.StoreOrder", b =>
-                {
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", null)
-                        .WithMany()
-                        .HasForeignKey("UserID")
-                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("BusinessModel.Model.StoreOrderDetail", b =>
@@ -1470,32 +1517,11 @@ namespace BusinessModel.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", null)
-                        .WithMany()
-                        .HasForeignKey("UserID")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.Navigation("Order");
-                });
-
-            modelBuilder.Entity("BusinessModel.Model.StoreThread", b =>
-                {
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", null)
-                        .WithMany()
-                        .HasForeignKey("CreatedBy")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
                 });
 
             modelBuilder.Entity("BusinessModel.Model.StoreThreadReply", b =>
                 {
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", null)
-                        .WithMany()
-                        .HasForeignKey("CreatedBy")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.HasOne("BusinessModel.Model.StoreThread", "StoreThread")
                         .WithMany("Replies")
                         .HasForeignKey("ThreadID")
@@ -1513,12 +1539,6 @@ namespace BusinessModel.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", null)
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.Navigation("ThreadReply");
                 });
 
@@ -1528,12 +1548,6 @@ namespace BusinessModel.Migrations
                         .WithMany()
                         .HasForeignKey("ThreadID")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", null)
-                        .WithMany()
-                        .HasForeignKey("UserID")
-                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("StoreThread");
@@ -1563,12 +1577,6 @@ namespace BusinessModel.Migrations
                         .WithMany()
                         .HasForeignKey("GameId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", null)
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("GamesInfo");

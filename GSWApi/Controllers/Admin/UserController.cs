@@ -43,6 +43,9 @@ namespace GSWApi.Controllers.Admin
         public async Task<IActionResult> GetAllUsers()
         {
             var users = await _userManager.Users.ToListAsync();
+            if (users == null || !users.Any())
+                return NotFound(new { success = false, message = "No users found." });
+
             var userList = new List<object>();
 
             foreach (var user in users)
@@ -61,20 +64,18 @@ namespace GSWApi.Controllers.Admin
                     DisplayName = displayName,
                     Roles = roles,
                     ProfilePicture = profile?.ImageUrl,
-                    Status = GetUserStatus(user) 
+                    Status = GetUserStatus(user)
                 });
             }
 
             return Ok(new { success = true, data = userList });
         }
 
-
-
         // GET: admin/user/id/{id}
         [HttpGet("id/{id}")]
         public async Task<IActionResult> GetUserByID(string id)
         {
-            if (string.IsNullOrEmpty(id))
+            if (string.IsNullOrWhiteSpace(id))
                 return BadRequest(new { success = false, message = "ID is required!" });
 
             var user = await _userManager.FindByIdAsync(id);
@@ -86,12 +87,8 @@ namespace GSWApi.Controllers.Admin
             var claims = await _userManager.GetClaimsAsync(user);
             var displayName = claims.FirstOrDefault(c => c.Type == "DisplayName")?.Value;
 
-            return Ok(new
+            var dto = new
             {
-                success = true,
-                data = new[]
-                {
-            new {
                 user.Id,
                 user.UserName,
                 user.Email,
@@ -99,21 +96,19 @@ namespace GSWApi.Controllers.Admin
                 DisplayName = displayName,
                 Roles = roles,
                 ProfilePicture = profile?.ImageUrl,
-                Status = GetUserStatus(user) 
-            }
-        }
-            });
-        }
+                Status = GetUserStatus(user)
+            };
 
-
+            return Ok(new { success = true, data = dto });
+        }
 
         [HttpGet("search")]
         public async Task<IActionResult> GetUser([FromQuery] string by, [FromQuery] string value)
         {
-            if (string.IsNullOrEmpty(by) || string.IsNullOrEmpty(value))
+            if (string.IsNullOrWhiteSpace(by) || string.IsNullOrWhiteSpace(value))
                 return BadRequest(new { success = false, message = "Search type and value are required." });
 
-            IdentityUser user = by.ToLower() switch
+            IdentityUser? user = by.ToLower() switch
             {
                 "name" => await _userManager.FindByNameAsync(value),
                 "email" => await _userManager.FindByEmailAsync(value),
@@ -128,30 +123,30 @@ namespace GSWApi.Controllers.Admin
             var claims = await _userManager.GetClaimsAsync(user);
             var displayName = claims.FirstOrDefault(c => c.Type == "DisplayName")?.Value;
 
-            return Ok(new
+            var dto = new
             {
-                success = true,
-                data = new[]
-                {
-            new {
                 user.Id,
                 user.UserName,
                 user.Email,
                 user.PhoneNumber,
                 DisplayName = displayName,
                 Roles = roles,
-                Status = GetUserStatus(user) 
-            }
-        }
-            });
-        }
+                Status = GetUserStatus(user)
+            };
 
-
+            return Ok(new { success = true, data = dto });
+        }
 
         // PUT: admin/user/{id}
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateUser(string id, [FromBody] UserUpdateDTO dto)
         {
+            if (string.IsNullOrWhiteSpace(id))
+                return BadRequest(new { success = false, message = "ID is required." });
+
+            if (dto == null)
+                return BadRequest(new { success = false, message = "Update data cannot be null." });
+
             var user = await _userManager.FindByIdAsync(id);
             if (user == null)
                 return NotFound(new { success = false, message = "User not found." });
@@ -175,56 +170,55 @@ namespace GSWApi.Controllers.Admin
             }
 
             var updatedRoles = await _userManager.GetRolesAsync(user);
-            return Ok(new
+
+            var dtoResult = new
             {
-                success = true,
-                data = new[] {
-                    new {
-                        user.Id,
-                        user.UserName,
-                        user.Email,
-                        user.PhoneNumber,
-                        Roles = updatedRoles
-                    }
-                }
-            });
+                user.Id,
+                user.UserName,
+                user.Email,
+                user.PhoneNumber,
+                Roles = updatedRoles
+            };
+
+            return Ok(new { success = true, data = dtoResult });
         }
 
         // DELETE: admin/user/{id}
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteUser(string id)
         {
+            if (string.IsNullOrWhiteSpace(id))
+                return BadRequest(new { success = false, message = "ID is required." });
+
             var user = await _userManager.FindByIdAsync(id);
             if (user == null)
                 return NotFound(new { success = false, message = "User not found." });
 
-            // Remove DisplayName claim
             var claims = await _userManager.GetClaimsAsync(user);
             var displayClaim = claims.FirstOrDefault(c => c.Type == "DisplayName");
             if (displayClaim != null)
-            {
                 await _userManager.RemoveClaimAsync(user, displayClaim);
-            }
 
             var result = await _userManager.DeleteAsync(user);
             if (!result.Succeeded)
                 return BadRequest(new { success = false, errors = result.Errors });
 
-            return Ok(new { success = true, data = new[] { new { user.Id, message = "User deleted." } } });
+            var dto = new { user.Id, message = "User deleted." };
+            return Ok(new { success = true, data = dto });
         }
-
-
 
         // POST: admin/user/lock/{id}
         [HttpPost("lock/{id}")]
         public async Task<IActionResult> LockUser(string id)
         {
+            if (string.IsNullOrWhiteSpace(id))
+                return BadRequest(new { success = false, message = "ID is required." });
+
             var user = await _userManager.FindByIdAsync(id);
             if (user == null)
                 return NotFound(new { success = false, message = "User not found." });
 
             await _userManager.SetLockoutEnabledAsync(user, true);
-            // Set lockout end date to far future (indefinite)
             await _userManager.SetLockoutEndDateAsync(user, DateTimeOffset.MaxValue);
 
             return Ok(new { success = true, message = "User has been locked." });
@@ -234,11 +228,13 @@ namespace GSWApi.Controllers.Admin
         [HttpPost("unlock/{id}")]
         public async Task<IActionResult> UnlockUser(string id)
         {
+            if (string.IsNullOrWhiteSpace(id))
+                return BadRequest(new { success = false, message = "ID is required." });
+
             var user = await _userManager.FindByIdAsync(id);
             if (user == null)
                 return NotFound(new { success = false, message = "User not found." });
 
-            // Set LockoutEnd = null to unlock
             await _userManager.SetLockoutEndDateAsync(user, null);
 
             return Ok(new { success = true, message = "User has been unlocked." });
@@ -250,11 +246,13 @@ namespace GSWApi.Controllers.Admin
             if (string.IsNullOrWhiteSpace(id))
                 return BadRequest(new { success = false, message = "ID cannot be empty." });
 
+            if (dto == null)
+                return BadRequest(new { success = false, message = "Profile data cannot be null." });
+
             var user = await _userManager.FindByIdAsync(id);
             if (user == null)
                 return NotFound(new { success = false, message = "Account not found." });
 
-            // Update user fields
             user.UserName = dto.Username ?? user.UserName;
             user.Email = dto.Email ?? user.Email;
             user.PhoneNumber = dto.PhoneNumber ?? user.PhoneNumber;
@@ -313,41 +311,38 @@ namespace GSWApi.Controllers.Admin
             var roles = await _userManager.GetRolesAsync(user);
             var profilePicture = uploadedImageUrl ?? (await _repo.GetByUserIdAsync(id))?.ImageUrl;
 
-            return Ok(new
+            var dtoResult = new
             {
-                success = true,
-                data = new
-                {
-                    user.Id,
-                    user.UserName,
-                    user.Email,
-                    user.PhoneNumber,
-                    Roles = roles,
-                    ProfilePicture = profilePicture
-                }
-            });
+                user.Id,
+                user.UserName,
+                user.Email,
+                user.PhoneNumber,
+                Roles = roles,
+                ProfilePicture = profilePicture
+            };
+
+            return Ok(new { success = true, data = dtoResult });
         }
 
         [HttpPut("update/displayname/{id}")]
         public async Task<IActionResult> UpdateDisplayName(string id, [FromQuery] string displayName)
         {
+            if (string.IsNullOrWhiteSpace(id) || string.IsNullOrWhiteSpace(displayName))
+                return BadRequest(new { success = false, message = "ID and DisplayName are required." });
+
             var user = await _userManager.FindByIdAsync(id);
             if (user == null)
-                return NotFound("User not found.");
+                return NotFound(new { success = false, message = "User not found." });
 
             var claims = await _userManager.GetClaimsAsync(user);
             var existingClaim = claims.FirstOrDefault(c => c.Type == "DisplayName");
 
             if (existingClaim != null)
-            {
                 await _userManager.ReplaceClaimAsync(user, existingClaim, new System.Security.Claims.Claim("DisplayName", displayName));
-            }
             else
-            {
                 await _userManager.AddClaimAsync(user, new System.Security.Claims.Claim("DisplayName", displayName));
-            }
 
-            return Ok("DisplayName updated.");
+            return Ok(new { success = true, message = "DisplayName updated." });
         }
 
 
@@ -355,6 +350,10 @@ namespace GSWApi.Controllers.Admin
         public async Task<IActionResult> GetAllUsersWithLibrary()
         {
             var users = await _userManager.Users.ToListAsync();
+
+            if (users == null || users.Count == 0)
+                return NotFound(new { success = false, message = "No users found." });
+
             var result = new List<object>();
 
             foreach (var user in users)
