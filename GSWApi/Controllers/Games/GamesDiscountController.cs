@@ -13,7 +13,7 @@ namespace GSWApi.Controllers.Games
 
         public GamesDiscountController(IGamesDiscountRepository repository)
         {
-            _repository = repository;
+            _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         }
 
         // Hàm random code
@@ -29,7 +29,9 @@ namespace GSWApi.Controllers.Games
         private void DeactivateExpiredDiscounts()
         {
             var now = DateTime.UtcNow;
-            var expired = _repository.GetAll().Where(d => d.IsActive && d.EndDate <= now).ToList();
+            var expired = _repository.GetAll()?.Where(d => d.IsActive && d.EndDate <= now).ToList();
+            if (expired == null || !expired.Any()) return;
+
             foreach (var d in expired)
             {
                 d.IsActive = false;
@@ -40,12 +42,20 @@ namespace GSWApi.Controllers.Games
         [HttpGet]
         public IActionResult GetAll()
         {
-            DeactivateExpiredDiscounts(); // Tự động update discount hết hạn
+            DeactivateExpiredDiscounts();
             var now = DateTime.UtcNow;
-            var models = _repository.GetAll()
-                .Where(d => d.IsActive && d.EndDate > now) // chỉ trả về các mã còn hiệu lực
+
+            var allDiscounts = _repository.GetAll();
+            if (allDiscounts == null || !allDiscounts.Any())
+                return Ok(new { success = true, data = new List<GamesDiscountDTO>() });
+
+            var models = allDiscounts
+                .Where(d => d.IsActive && d.EndDate > now)
                 .OrderByDescending(x => x.CreatedAt)
                 .ToList();
+
+            if (models == null || !models.Any())
+                return Ok(new { success = true, data = new List<GamesDiscountDTO>() });
 
             var dtos = models.Select(d => new GamesDiscountDTO
             {
@@ -59,17 +69,20 @@ namespace GSWApi.Controllers.Games
                 IsActive = d.IsActive,
                 CreatedAt = d.CreatedAt
             }).ToList();
+
             return Ok(new { success = true, data = dtos });
         }
 
         [HttpGet("{id}")]
         public IActionResult Get(int id)
         {
+            if (id == 0)
+                return BadRequest(new { success = false, message = "Invalid discount ID." });
+
             var d = _repository.Get(id);
             if (d == null)
                 return NotFound(new { success = false, message = "Discount not found." });
 
-            // Kiểm tra còn hạn không
             if (!d.IsActive || d.EndDate <= DateTime.UtcNow)
                 return BadRequest(new { success = false, message = "Discount expired or inactive." });
 
@@ -91,10 +104,12 @@ namespace GSWApi.Controllers.Games
         [HttpPost]
         public IActionResult Create([FromBody] GamesDiscountDTO dto)
         {
+            if (dto == null)
+                return BadRequest(new { success = false, message = "Request body is null." });
+
             if (!ModelState.IsValid)
                 return BadRequest(new { success = false, message = "Invalid model." });
 
-            // Random code nếu không nhập
             if (string.IsNullOrWhiteSpace(dto.Code))
                 dto.Code = GenerateDiscountCode();
 
@@ -119,6 +134,9 @@ namespace GSWApi.Controllers.Games
             };
 
             var created = _repository.Create(entity);
+            if (created == null)
+                return StatusCode(500, new { success = false, message = "Failed to create discount." });
+
             dto.Id = created.Id;
             dto.CreatedAt = created.CreatedAt;
 
@@ -128,15 +146,16 @@ namespace GSWApi.Controllers.Games
         [HttpPut("{id}")]
         public IActionResult Update(int id, [FromBody] GamesDiscountDTO dto)
         {
+            if (dto == null)
+                return BadRequest(new { success = false, message = "Request body is null." });
+
             if (!ModelState.IsValid)
                 return BadRequest(new { success = false, message = "Invalid model." });
 
             if (dto.EndDate < dto.StartDate)
                 return BadRequest(new { success = false, message = "EndDate must be after StartDate." });
 
-            var now = DateTime.UtcNow;
-            // Nếu update start date trong quá khứ thì không cho phép
-            if (dto.EndDate <= now)
+            if (dto.EndDate <= DateTime.UtcNow)
                 return BadRequest(new { success = false, message = "EndDate must be after current time." });
 
             var entity = new GamesDiscount
@@ -183,13 +202,13 @@ namespace GSWApi.Controllers.Games
             return Ok(new { success = true, data = $"Discount {id} deleted successfully." });
         }
 
-        // Lấy discount active của game
         [HttpGet("by-game/{gameId}")]
         public IActionResult GetActiveDiscountByGame(int gameId)
         {
-            var d = _repository.GetActiveDiscountByGameId(gameId);
+            if (gameId == 0)
+                return BadRequest(new { success = false, message = "Invalid game ID." });
 
-            // Chỉ trả discount còn hiệu lực
+            var d = _repository.GetActiveDiscountByGameId(gameId);
             if (d == null || !d.IsActive || d.EndDate <= DateTime.UtcNow)
                 return NotFound(new { success = false, message = "No active discount for this game." });
 
@@ -208,7 +227,6 @@ namespace GSWApi.Controllers.Games
             return Ok(new { success = true, data = dto });
         }
 
-        // Gán discount cho game (deactive discount cũ nếu có)
         [HttpPost("assign/{gameId}/{discountId}")]
         public IActionResult AssignDiscountToGame(int gameId, int discountId)
         {
@@ -218,7 +236,6 @@ namespace GSWApi.Controllers.Games
             if (discountId == 0)
                 return NotFound(new { success = false, message = $"Discount with ID {discountId} not found." });
 
-            // Kiểm tra discount còn hiệu lực
             var discount = _repository.Get(discountId);
             if (discount == null || !discount.IsActive || discount.EndDate <= DateTime.UtcNow)
                 return BadRequest(new { success = false, message = "Discount is not active or expired." });
@@ -235,6 +252,10 @@ namespace GSWApi.Controllers.Games
 
             if (discountId == 0)
                 return NotFound(new { success = false, message = $"Discount with ID {discountId} not found." });
+
+            var existing = _repository.Get(discountId);
+            if (existing == null)
+                return NotFound(new { success = false, message = "Discount not found." });
 
             _repository.RemoveDiscountFromGame(gameId, discountId);
             return Ok(new { success = true, data = $"Discount {discountId} removed from Game {gameId}." });

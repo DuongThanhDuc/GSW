@@ -17,7 +17,9 @@ namespace GSWApi.Controllers.Store
 
         public StoreThreadController(IStoreThreadRepository repository, IOptions<CloudinarySettings> settings)
         {
-            _repository = repository;
+            _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+            if (settings == null || settings.Value == null)
+                throw new ArgumentNullException(nameof(settings));
 
             var account = new Account(
                 settings.Value.CloudName,
@@ -32,6 +34,7 @@ namespace GSWApi.Controllers.Store
         public async Task<IActionResult> GetAll()
         {
             var threads = await _repository.GetAllAsync();
+            if (threads == null) return NotFound(new { success = false, message = "No threads found." });
             return Ok(new { success = true, data = threads });
         }
 
@@ -48,6 +51,7 @@ namespace GSWApi.Controllers.Store
         [HttpPost]
         public async Task<IActionResult> Create([FromForm] StoreThreadDTO dto, IFormFile? imageFile)
         {
+            if (dto == null) return BadRequest(new { success = false, message = "Invalid thread data." });
             if (string.IsNullOrWhiteSpace(dto.ThreadTitle) || string.IsNullOrWhiteSpace(dto.ThreadDescription))
                 return BadRequest(new { success = false, message = "Thread title and description are required." });
 
@@ -60,18 +64,21 @@ namespace GSWApi.Controllers.Store
                 };
 
                 var uploadResult = await _cloudinary.UploadAsync(uploadParams);
-                if (uploadResult.Error != null)
-                    return StatusCode(500, new { success = false, message = $"Cloudinary Error: {uploadResult.Error.Message}" });
+                if (uploadResult == null || uploadResult.Error != null)
+                    return StatusCode(500, new { success = false, message = $"Cloudinary Error: {uploadResult?.Error?.Message}" });
 
                 dto.ThreadImageUrl = uploadResult.SecureUrl.ToString();
             }
 
             var result = await _repository.CreateAsync(dto);
+            if (result == null) return StatusCode(500, new { success = false, message = "Failed to create thread." });
+
             return Ok(new { success = true, message = "Thread created.", data = result });
         }
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, [FromForm] StoreThreadDTO dto, IFormFile? imageFile)
         {
+            if (dto == null) return BadRequest(new { success = false, message = "Invalid thread data." });
             dto.Id = id;
 
             if (imageFile != null && imageFile.Length > 0)
@@ -83,8 +90,8 @@ namespace GSWApi.Controllers.Store
                 };
 
                 var uploadResult = await _cloudinary.UploadAsync(uploadParams);
-                if (uploadResult.Error != null)
-                    return StatusCode(500, new { success = false, message = $"Cloudinary Error: {uploadResult.Error.Message}" });
+                if (uploadResult == null || uploadResult.Error != null)
+                    return StatusCode(500, new { success = false, message = $"Cloudinary Error: {uploadResult?.Error?.Message}" });
 
                 dto.ThreadImageUrl = uploadResult.SecureUrl.ToString();
             }
@@ -109,6 +116,7 @@ namespace GSWApi.Controllers.Store
         [HttpPost("upvote")]
         public async Task<IActionResult> ToggleUpvote([FromBody] StoreThreadUpvoteHistoryDTO dto)
         {
+            if (dto == null) return BadRequest(new { success = false, message = "Invalid upvote data." });
             if (string.IsNullOrWhiteSpace(dto.UserID) || dto.ThreadID <= 0)
                 return BadRequest(new { success = false, message = "User ID and Thread ID are required." });
 
@@ -127,6 +135,7 @@ namespace GSWApi.Controllers.Store
         public async Task<IActionResult> GetAllUpvoteHistories()
         {
             var histories = await _repository.GetAllUpvoteHistoriesAsync();
+            if (histories == null) return NotFound(new { success = false, message = "No upvote histories found." });
             return Ok(new { success = true, data = histories });
         }
 
@@ -144,14 +153,22 @@ namespace GSWApi.Controllers.Store
         [HttpGet("user/{userId}")]
         public async Task<IActionResult> GetAllByUserId(string userId)
         {
+            if (string.IsNullOrWhiteSpace(userId)) return BadRequest(new { success = false, message = "User ID is required." });
+
             var threads = await _repository.GetAllByUserIdAsync(userId);
+            if (threads == null) return NotFound(new { success = false, message = "No threads found for this user." });
+
             return Ok(new { success = true, data = threads });
         }
 
         [HttpGet("upvotes/search")]
         public async Task<IActionResult> GetAllUpvoteHistoriesByUserSearch([FromQuery] string query)
         {
+            if (string.IsNullOrWhiteSpace(query)) return BadRequest(new { success = false, message = "Search query is required." });
+
             var upvotes = await _repository.GetAllUpvoteHistoriesByUserSearchAsync(query);
+            if (upvotes == null) return NotFound(new { success = false, message = "No upvotes found for this query." });
+
             return Ok(new { success = true, data = upvotes });
         }
 

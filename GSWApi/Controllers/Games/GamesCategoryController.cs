@@ -13,13 +13,16 @@ namespace GSWApi.Controllers.Games
 
         public GamesCategoryController(IGamesCategoryRepository repo)
         {
-            _repo = repo;
+            _repo = repo ?? throw new ArgumentNullException(nameof(repo));
         }
 
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
             var items = await _repo.GetAllAsync();
+            if (items == null)
+                return NotFound(new { success = false, message = "No GamesCategories found." });
+
             var result = items.Select(x => new GamesCategoryDTO
             {
                 ID = x.ID,
@@ -66,6 +69,9 @@ namespace GSWApi.Controllers.Games
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateGamesCategoryDTO dto)
         {
+            if (dto == null)
+                return BadRequest(new { success = false, message = "Invalid GamesCategory data." });
+
             var entity = new GamesCategory
             {
                 GameID = dto.GameID,
@@ -75,6 +81,8 @@ namespace GSWApi.Controllers.Games
             };
 
             var created = await _repo.AddAsync(entity);
+            if (created == null)
+                return BadRequest(new { success = false, message = "Failed to create GamesCategory." });
 
             return Ok(new
             {
@@ -87,6 +95,9 @@ namespace GSWApi.Controllers.Games
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateGamesCategoryDTO dto)
         {
+            if (dto == null)
+                return BadRequest(new { success = false, message = "Invalid GamesCategory data." });
+
             var entity = new GamesCategory
             {
                 GameID = dto.GameID,
