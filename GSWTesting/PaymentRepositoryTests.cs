@@ -28,7 +28,7 @@ namespace UnitTests.Repository
                 var repo = new PaymentRepository(context);
 
                 // Act
-                var order = await repo.CreateProvisionalOrderAsync("ORD001", "User1", 100m, "email@test.com", "John");
+                var order = await repo.CreateProvisionalOrderAsync("ORD001", "User1", 100m);
 
                 // Assert
                 Assert.NotNull(order);
@@ -61,7 +61,7 @@ namespace UnitTests.Repository
                 var repo = new PaymentRepository(context);
 
                 // Act
-                var order = await repo.CreateProvisionalOrderAsync("ORD002", "UserX", 50m, "buyer@test.com", "Buyer");
+                var order = await repo.CreateProvisionalOrderAsync("ORD001", "User1", 100m);
 
                 // Assert
                 Assert.NotNull(order);
@@ -183,7 +183,7 @@ namespace UnitTests.Repository
                 var repo = new PaymentRepository(context);
 
                 // Act
-                await repo.GrantGameToLibraryAsync("ORD005");
+                await repo.GrantGameToLibraryAsync(5);
 
                 // Assert
                 var libs = await context.Store_Library.Where(l => l.UserID == "User123").ToListAsync();

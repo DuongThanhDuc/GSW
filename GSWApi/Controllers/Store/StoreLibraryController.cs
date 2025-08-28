@@ -12,7 +12,7 @@ namespace GSWApi.Controllers.Store
 
         public StoreLibraryController(IStoreLibraryRepository repository)
         {
-            _repository = repository;
+            _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         }
 
         // GET: api/StoreLibrary
@@ -20,6 +20,9 @@ namespace GSWApi.Controllers.Store
         public async Task<ActionResult<IEnumerable<StoreLibraryDTO>>> GetAll()
         {
             var libraries = await _repository.GetAllAsync();
+            if (libraries == null)
+                return NotFound(new { success = false, message = "No library entries found" });
+
             return Ok(new { success = true, data = libraries });
         }
 
@@ -38,7 +41,13 @@ namespace GSWApi.Controllers.Store
         [HttpGet("user/{userId}")]
         public async Task<ActionResult<IEnumerable<StoreLibraryDTO>>> GetByUserId(string userId)
         {
+            if (string.IsNullOrWhiteSpace(userId))
+                return BadRequest(new { success = false, message = "Invalid user ID" });
+
             var libraries = await _repository.GetByUserIdAsync(userId);
+            if (libraries == null)
+                return NotFound(new { success = false, message = "No library entries found for this user" });
+
             return Ok(new { success = true, data = libraries });
         }
 
@@ -46,7 +55,11 @@ namespace GSWApi.Controllers.Store
         [HttpPost]
         public async Task<IActionResult> Add(StoreLibraryDTO dto)
         {
+            if (dto == null)
+                return BadRequest(new { success = false, message = "Invalid library entry data" });
+
             await _repository.AddAsync(dto);
+
             return Ok(new { success = true, message = "Library entry added successfully" });
         }
 
@@ -54,10 +67,18 @@ namespace GSWApi.Controllers.Store
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, StoreLibraryDTO dto)
         {
+            if (dto == null)
+                return BadRequest(new { success = false, message = "Invalid library entry data" });
+
             if (id != dto.ID)
                 return BadRequest(new { success = false, message = "ID mismatch" });
 
+            var existing = await _repository.GetByIdAsync(id);
+            if (existing == null)
+                return NotFound(new { success = false, message = "Library entry not found" });
+
             await _repository.UpdateAsync(dto);
+
             return Ok(new { success = true, message = "Library entry updated successfully" });
         }
 
@@ -65,7 +86,12 @@ namespace GSWApi.Controllers.Store
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
+            var existing = await _repository.GetByIdAsync(id);
+            if (existing == null)
+                return NotFound(new { success = false, message = "Library entry not found" });
+
             await _repository.DeleteAsync(id);
+
             return Ok(new { success = true, message = "Library entry deleted successfully" });
         }
     }

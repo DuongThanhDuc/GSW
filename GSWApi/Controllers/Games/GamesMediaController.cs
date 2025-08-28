@@ -18,12 +18,17 @@ namespace GSWApi.Controllers.Games
 
         public GamesMediaController(IGamesMediaRepository repo, IOptions<CloudinarySettings> settings)
         {
+            if (repo == null)
+                throw new ArgumentNullException(nameof(repo));
+            if (settings == null || settings.Value == null)
+                throw new ArgumentNullException(nameof(settings));
+
             _repo = repo;
 
             var account = new Account(
-                settings.Value.CloudName,
-                settings.Value.ApiKey,
-                settings.Value.ApiSecret
+                settings.Value.CloudName ?? throw new ArgumentNullException(nameof(settings.Value.CloudName)),
+                settings.Value.ApiKey ?? throw new ArgumentNullException(nameof(settings.Value.ApiKey)),
+                settings.Value.ApiSecret ?? throw new ArgumentNullException(nameof(settings.Value.ApiSecret))
             );
 
             _cloudinary = new Cloudinary(account);
@@ -35,7 +40,10 @@ namespace GSWApi.Controllers.Games
             if (file == null || file.Length == 0)
                 return BadRequest(new { success = false, message = "No file provided." });
 
-            var extension = Path.GetExtension(file.FileName).ToLower();
+            var extension = Path.GetExtension(file.FileName)?.ToLower();
+            if (string.IsNullOrEmpty(extension))
+                return BadRequest(new { success = false, message = "File has no extension." });
+
             var mediaType = extension switch
             {
                 ".jpg" or ".jpeg" or ".png" or ".gif" => "image",
@@ -46,7 +54,9 @@ namespace GSWApi.Controllers.Games
             if (mediaType == "unknown")
                 return BadRequest(new { success = false, message = "Unsupported file type." });
 
-            // Choose correct upload parameters
+            if (_cloudinary == null)
+                return StatusCode(500, new { success = false, message = "Cloudinary service not initialized." });
+
             UploadResult uploadResult;
 
             if (mediaType == "image")
@@ -70,6 +80,11 @@ namespace GSWApi.Controllers.Games
                 uploadResult = await _cloudinary.UploadAsync(uploadParams);
             }
 
+            if (uploadResult == null || uploadResult.SecureUrl == null)
+            {
+                return StatusCode(500, new { success = false, message = "Upload failed, no result returned." });
+            }
+
             if (uploadResult.Error != null)
             {
                 return StatusCode(500, new
@@ -85,6 +100,9 @@ namespace GSWApi.Controllers.Games
                 MediaURL = uploadResult.SecureUrl.ToString(),
                 MediaType = mediaType
             };
+
+            if (_repo == null)
+                return StatusCode(500, new { success = false, message = "Repository not available." });
 
             _repo.AddMediaToGame(gameId, mediaDto);
 
@@ -103,6 +121,9 @@ namespace GSWApi.Controllers.Games
         [HttpDelete("delete/by-id/{mediaId}")]
         public IActionResult DeleteMediaById(int gameId, int mediaId)
         {
+            if (_repo == null)
+                return StatusCode(500, new { success = false, message = "Repository not available." });
+
             var media = _repo.GetMediaById(mediaId);
             if (media == null || media.GameID != gameId)
                 return NotFound("Media not found for this game.");
