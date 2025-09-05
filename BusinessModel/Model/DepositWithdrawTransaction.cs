@@ -10,30 +10,30 @@ namespace BusinessModel.Model
         public int Id { get; set; }
 
         [Required]
+        [StringLength(50)]  
         public string UserId { get; set; } = null!;
 
         [Precision(18, 2)]
-        [Range(typeof(decimal), "0.01", "79228162514264337593543950335")]
+        [Range(0.01, 999999999)]
         public decimal Amount { get; set; }
 
-        // "DEPOSIT" | "WITHDRAW"
-        [Required, MaxLength(10)]
+        [Required, MaxLength(10)]  
         public string Type { get; set; } = null!;
 
-        // "Pending" | "Approved" | "Rejected"
-        [Required, MaxLength(20)]
+        [Required, MaxLength(20)]  
         public string Status { get; set; } = "Pending";
 
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         public DateTime? ApprovedAt { get; set; }
 
-        // Admin duyệt
+        [StringLength(512)]  
         public string? ApprovedBy { get; set; }
 
-        [MaxLength(1000)]
+        [MaxLength(512)]  
         public string? Note { get; set; }
 
         [ForeignKey(nameof(UserId))]
         public IdentityUser User { get; set; } = null!;
     }
+
 }

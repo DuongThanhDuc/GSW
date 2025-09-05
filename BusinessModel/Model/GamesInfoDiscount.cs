@@ -12,10 +12,15 @@ namespace BusinessModel.Model
     {
         [Key, Column(Order = 0)]
         public int GamesInfoId { get; set; }
+
+        [ForeignKey("GamesInfoId")]
         public virtual GamesInfo GamesInfo { get; set; }
 
         [Key, Column(Order = 1)]
         public int GamesDiscountId { get; set; }
+
+        [ForeignKey("GamesDiscountId")]
         public virtual GamesDiscount GamesDiscount { get; set; }
     }
+
 }
