@@ -11,20 +11,27 @@ namespace BusinessModel.Model
     {
         public int ID { get; set; }
 
+        [StringLength(50)] 
         public string? UserID { get; set; }
 
         public DateTime OrderDate { get; set; } = DateTime.Now;
+
+        [Range(0.01, 999999999)]  
         public decimal TotalAmount { get; set; }
+
+        [StringLength(20)]  
         public string Status { get; set; } = "PENDING";
+
         public DateTime CreatedAt { get; set; } = DateTime.Now;
-        [Required, MaxLength(64)]
+
+        [Required, MaxLength(64)]  
         public string OrderCode { get; set; }
 
         [MaxLength(256)]
-        [EmailAddress]
+        [EmailAddress]  
         public string? BuyerEmail { get; set; }
 
-        [MaxLength(128)]
+        [MaxLength(128)]  
         public string? BuyerName { get; set; }
 
         public ICollection<StoreOrderDetail> OrderDetails { get; set; }
@@ -32,4 +39,5 @@ namespace BusinessModel.Model
         public ICollection<StoreRefundRequest> RefundRequests { get; set; }
         public ICollection<PaymentTransaction> PaymentTransactions { get; set; }
     }
+
 }
