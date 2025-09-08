@@ -10,15 +10,10 @@ namespace BusinessModel.Model
     public class SystemCategory
     {
         public int ID { get; set; }
-
-        [Required]
-        [StringLength(50)] 
+        [MaxLength(50)]
         public string CategoryName { get; set; }
-
         public DateTime CreatedAt { get; set; } = DateTime.Now;
-
-        [StringLength(50)]  
+        [MaxLength(450)]
         public string CreatedBy { get; set; }
     }
-
 }

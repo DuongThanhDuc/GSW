@@ -15,16 +15,15 @@ namespace BusinessModel.Model
         public int Id { get; set; }
 
         [Required]
-        [StringLength(50)]  
+        [MaxLength(450)]
         public string UserId { get; set; } = null!;
 
         [ForeignKey(nameof(UserId))]
         public IdentityUser User { get; set; } = null!;
 
-        [Precision(18, 2)]  
+        [Precision(18, 2)]
         public decimal Balance { get; set; } = 0m;
 
         public DateTime UpdatedAt { get; set; } = DateTime.Now;
     }
-
 }

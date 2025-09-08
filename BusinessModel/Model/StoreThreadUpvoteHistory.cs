@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
@@ -11,18 +10,11 @@ namespace BusinessModel.Model
     public class StoreThreadUpvoteHistory
     {
         public int Id { get; set; }
-
-        [Required]
-        [StringLength(50)]  
+        [MaxLength(450)]
         public string UserID { get; set; }
-
-        [Required]
         public int ThreadID { get; set; }
-
-        [ForeignKey("ThreadID")]
         public StoreThread StoreThread { get; set; }
-
         public DateTime CreatedAt { get; set; } = DateTime.Now;
-    }
 
+    }
 }

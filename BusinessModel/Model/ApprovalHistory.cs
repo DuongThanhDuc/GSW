@@ -11,28 +11,19 @@ namespace BusinessModel.Model
 {
     public class ApprovalHistory
     {
-        [Key]
         public int Id { get; set; }
-
-        [StringLength(50)]  
-        public string EntityType { get; set; }
-
-        public int EntityId { get; set; }
-
-        [StringLength(50)]  
+        [MaxLength(50)]
+        public string EntityType { get; set; }    // "Game", "Refund", ...
+        public int EntityId { get; set; }         // GamesInfo.Id hoặc StoreRefundRequest.ID
+        [MaxLength(50)]
         public string Status { get; set; }
-
         [Required]
-        [StringLength(50)]
-        public string ChangedByUserId { get; set; }
-
+        [MaxLength(450)]
+        public string ChangedByUserId { get; set; }     
         public DateTime ChangedAt { get; set; }
-
-        [StringLength(512)]
         public string Note { get; set; }
 
         [ForeignKey("ChangedByUserId")]
         public IdentityUser ChangedByUser { get; set; }
     }
-
 }
