@@ -10,15 +10,10 @@ namespace BusinessModel.Model
     public class SystemTag
     {
         public int ID { get; set; }
-
-        [Required]
-        [StringLength(100)]  
+        [MaxLength(50)]
         public string TagName { get; set; }
-
         public DateTime CreatedAt { get; set; } = DateTime.Now;
-
-        [StringLength(50)]  
+        [MaxLength(450)]
         public string CreatedBy { get; set; }
     }
-
 }

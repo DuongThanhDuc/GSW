@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
@@ -12,29 +11,21 @@ namespace BusinessModel.Model
     {
         public int Id { get; set; }
 
-        [Required]
+        // FK CHUẨN về StoreOrder
         public int StoreOrderId { get; set; }
-
-        [ForeignKey("StoreOrderId")]
         public StoreOrder StoreOrder { get; set; }
 
-        [StringLength(50)]  
+        // Mã tham chiếu của cổng (VD: vnp_TxnRef)
         public string? GatewayOrderId { get; set; }
 
-        [Required]
-        [Range(0.01, 999999999)]  
         public decimal Amount { get; set; }
-
-        [StringLength(50)] 
-        public string PaymentMethod { get; set; }   // "VNPAY"
-
-        [StringLength(20)]  
+        [MaxLength(20)]
+        public string PaymentMethod { get; set; }   // "VNPAY", "MOMO"
+        [MaxLength(20)]
         public string Status { get; set; }          // "Pending", "Success", "Failed"
-
         public DateTime CreatedAt { get; set; }
-
-        [StringLength(512)]  
         public string? PaymentGatewayResponse { get; set; }
     }
+
 
 }
