@@ -12,7 +12,7 @@ namespace GSWApi.Controllers.Store
 
         public StoreOrderDetailController(IStoreOrderDetailRepository storeOrderDetailRepository)
         {
-            _storeOrderDetailRepository = storeOrderDetailRepository;
+            _storeOrderDetailRepository = storeOrderDetailRepository ?? throw new ArgumentNullException(nameof(storeOrderDetailRepository));
         }
 
         // GET: api/storeorderdetail
@@ -20,6 +20,9 @@ namespace GSWApi.Controllers.Store
         public async Task<IActionResult> GetAll()
         {
             var details = await _storeOrderDetailRepository.GetAllAsync();
+            if (details == null)
+                return NotFound(new { success = false, message = "No order details found" });
+
             return Ok(new { success = true, data = details });
         }
 
@@ -38,7 +41,13 @@ namespace GSWApi.Controllers.Store
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] StoreOrderDetailDTO dto)
         {
+            if (dto == null)
+                return BadRequest(new { success = false, message = "Invalid order detail data" });
+
             var createdDetail = await _storeOrderDetailRepository.CreateAsync(dto);
+            if (createdDetail == null)
+                return BadRequest(new { success = false, message = "Failed to create order detail" });
+
             return CreatedAtAction(nameof(GetById), new { id = createdDetail.ID }, new { success = true, data = createdDetail });
         }
 
@@ -46,6 +55,9 @@ namespace GSWApi.Controllers.Store
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, [FromBody] StoreOrderDetailDTO dto)
         {
+            if (dto == null)
+                return BadRequest(new { success = false, message = "Invalid order detail data" });
+
             var result = await _storeOrderDetailRepository.UpdateAsync(id, dto);
             if (!result)
                 return NotFound(new { success = false, message = "Order detail not found" });

@@ -22,8 +22,11 @@ namespace GSWApi.Controllers.Games
             MegaUploader megaUploader,
             IOptions<CloudinarySettings> cloudinaryConfig)
         {
-            _repository = repository;
-            _megaUploader = megaUploader;
+            _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+            _megaUploader = megaUploader ?? throw new ArgumentNullException(nameof(megaUploader));
+
+            if (cloudinaryConfig?.Value == null)
+                throw new ArgumentNullException(nameof(cloudinaryConfig));
 
             var account = new Account(
                 cloudinaryConfig.Value.CloudName,
@@ -39,6 +42,9 @@ namespace GSWApi.Controllers.Games
         public async Task<IActionResult> GetAllGamesDTO()
         {
             var games = await _repository.GetAllAsync();
+            if (games == null)
+                return NotFound(new { success = false, message = "No games found." });
+
             return Ok(new { success = true, data = games });
         }
 
@@ -46,6 +52,9 @@ namespace GSWApi.Controllers.Games
         public async Task<IActionResult> GetAllGamesByIDDTO(int id)
         {
             var games = await _repository.GetByIdAsync(id);
+            if (games == null)
+                return NotFound(new { success = false, message = "Game not found." });
+
             return Ok(new { success = true, data = games });
         }
 
@@ -53,7 +62,13 @@ namespace GSWApi.Controllers.Games
         [HttpPost]
         public async Task<IActionResult> CreateGame(GamesInfoDTO dto)
         {
+            if (dto == null)
+                return BadRequest(new { success = false, message = "Invalid game data." });
+
             var createdGame = await _repository.CreateAsync(dto);
+            if (createdGame == null)
+                return StatusCode(500, new { success = false, message = "Failed to create game." });
+
             return Ok(new { success = true, message = "Game created successfully.", data = createdGame });
         }
 
@@ -61,6 +76,9 @@ namespace GSWApi.Controllers.Games
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateGame(int id, GamesInfoDTO dto)
         {
+            if (dto == null)
+                return BadRequest(new { success = false, message = "Invalid game data." });
+
             if (id != dto.ID)
                 return BadRequest(new { success = false, message = "ID mismatch." });
 
@@ -111,6 +129,9 @@ namespace GSWApi.Controllers.Games
         [HttpPost("{id}/status")]
         public async Task<IActionResult> UpdateGameStatus(int id, [FromBody] UpdateGameStatusDTO dto)
         {
+            if (dto == null || string.IsNullOrWhiteSpace(dto.Status))
+                return BadRequest(new { success = false, message = "Invalid status." });
+
             var success = await _repository.UpdateStatusAsync(id, dto.Status);
             if (!success)
                 return NotFound(new { success = false, message = "Game not found." });
@@ -130,10 +151,10 @@ namespace GSWApi.Controllers.Games
 
             try
             {
-                // Upload installer to Mega
                 var fileUrl = await _megaUploader.UploadInstallerAsync(installerFile);
+                if (string.IsNullOrEmpty(fileUrl))
+                    return StatusCode(500, new { success = false, message = "Failed to upload installer." });
 
-                // Preserve all fields from the existing DTO
                 var editableDto = new GamesInfoDTO
                 {
                     ID = existing.ID,
@@ -142,7 +163,7 @@ namespace GSWApi.Controllers.Games
                     Price = existing.Price,
                     Genre = existing.Genre,
                     DeveloperId = existing.DeveloperId,
-                    InstallerFilePath = fileUrl, // ✅ update this
+                    InstallerFilePath = fileUrl,
                     CoverImagePath = existing.CoverImagePath,
                     Status = existing.Status,
                     WishlistCount = existing.WishlistCount,
@@ -167,11 +188,6 @@ namespace GSWApi.Controllers.Games
             }
         }
 
-
-
-
-
-
         // POST: api/GamesInfo/{id}/upload-cover
         [HttpPost("{id}/upload-cover")]
         public async Task<IActionResult> UploadCoverImage(int id, IFormFile coverImage)
@@ -192,19 +208,18 @@ namespace GSWApi.Controllers.Games
                 };
 
                 var uploadResult = await _cloudinary.UploadAsync(uploadParams);
-                if (uploadResult.Error != null)
+                if (uploadResult == null || uploadResult.Error != null)
                 {
-                    return StatusCode(500, new { success = false, message = "Cover image upload failed.", error = uploadResult.Error.Message });
+                    return StatusCode(500, new { success = false, message = "Cover image upload failed.", error = uploadResult?.Error?.Message });
                 }
 
-                // Manual mapping
                 var editableDto = new GamesInfoDTO
                 {
                     ID = existing.ID,
                     Title = existing.Title,
                     Description = existing.Description,
                     Price = existing.Price,
-                    CoverImagePath = uploadResult.SecureUrl.ToString(), // update only this
+                    CoverImagePath = uploadResult.SecureUrl?.ToString(),
                     InstallerFilePath = existing.InstallerFilePath,
                     Status = existing.Status,
                     IsActive = existing.IsActive,
@@ -224,6 +239,9 @@ namespace GSWApi.Controllers.Games
         [HttpPost("{gameId}/wishlist/toggle")]
         public async Task<IActionResult> ToggleWishlist(int gameId, [FromQuery] string userId)
         {
+            if (string.IsNullOrWhiteSpace(userId))
+                return BadRequest(new { success = false, message = "UserId is required." });
+
             var result = await _repository.ToggleWishlistAsync(userId, gameId);
             return Ok(new { success = result, message = "Wishlist toggled." });
         }
@@ -232,6 +250,9 @@ namespace GSWApi.Controllers.Games
         [HttpGet("{gameId}/wishlist/check")]
         public async Task<IActionResult> IsGameInWishlist(int gameId, [FromQuery] string userId)
         {
+            if (string.IsNullOrWhiteSpace(userId))
+                return BadRequest(new { success = false, message = "UserId is required." });
+
             var isWishlisted = await _repository.IsGameInWishlistAsync(userId, gameId);
             return Ok(new { success = true, isWishlisted });
         }
@@ -240,9 +261,14 @@ namespace GSWApi.Controllers.Games
         [HttpGet("wishlist")]
         public async Task<IActionResult> GetWishlistByUser([FromQuery] string userId)
         {
+            if (string.IsNullOrWhiteSpace(userId))
+                return BadRequest(new { success = false, message = "UserId is required." });
+
             var wishlists = await _repository.GetWishlistsByUserAsync(userId);
+            if (wishlists == null)
+                return NotFound(new { success = false, message = "No wishlist found for this user." });
+
             return Ok(new { success = true, data = wishlists });
         }
-
     }
 }

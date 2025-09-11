@@ -95,16 +95,43 @@ public class StoreRefundRequestController : ControllerBase
     public async Task<IActionResult> Put(int id, [FromBody] StoreRefundRequestDTO dto)
     {
         var entity = await _repository.GetByIdAsync(id);
-        if (entity == null) return NotFound(new { success = false, message = "Not found" });
+        if (entity == null) return NotFound(new { success = false, message = "Refund request not found" });
 
+        // Cập nhật các thông tin của yêu cầu hoàn tiền
         entity.OrderID = dto.OrderID;
         entity.UserID = dto.UserID;
         entity.Reason = dto.Reason;
-        entity.Status = dto.Status;
+        entity.Status = dto.Status;  // Đây là trạng thái mà chúng ta cập nhật (ví dụ: 'accepted', 'rejected')
         entity.RequestDate = dto.RequestDate;
 
+        // Cập nhật yêu cầu hoàn tiền
         await _repository.UpdateAsync(entity);
 
+        // Nếu trạng thái yêu cầu là 'accepted' (hoàn tiền được chấp nhận)
+        if (entity.Status.Equals("accepted", StringComparison.OrdinalIgnoreCase))
+        {
+            // Cập nhật trạng thái đơn hàng liên quan thành 'refunded'
+            var order = await _ctx.Store_Orders.FirstOrDefaultAsync(o => o.ID == entity.OrderID);
+            if (order != null)
+            {
+                order.Status = "refunded";  // Đặt trạng thái đơn hàng là 'refunded'
+                await _ctx.SaveChangesAsync();
+            }
+        }
+        // Nếu trạng thái yêu cầu là 'rejected' (hoàn tiền bị từ chối)
+        else if (entity.Status.Equals("rejected", StringComparison.OrdinalIgnoreCase))
+        {
+            // Nếu không còn yêu cầu hoàn tiền nào khác, cập nhật trạng thái đơn hàng thành 'refund_rejected'
+            var pendingRefunds = await _repository.GetAllAsync();
+            var hasPendingRefund = pendingRefunds.Any(r => r.OrderID == entity.OrderID && r.Status.Equals("pending", StringComparison.OrdinalIgnoreCase));
+
+            var order = await _ctx.Store_Orders.FirstOrDefaultAsync(o => o.ID == entity.OrderID);
+            if (order != null)
+            {
+                order.Status = hasPendingRefund ? "waiting_refund" : "refund_rejected";  // Nếu còn yêu cầu pending khác, giữ trạng thái 'waiting_refund'
+                await _ctx.SaveChangesAsync();
+            }
+        }
 
         return Ok(new
         {
@@ -119,6 +146,7 @@ public class StoreRefundRequestController : ControllerBase
             }
         });
     }
+
 
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(int id)

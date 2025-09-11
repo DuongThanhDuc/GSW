@@ -15,6 +15,7 @@ namespace BusinessModel.Model
 
         public DateTime OrderDate { get; set; } = DateTime.Now;
         public decimal TotalAmount { get; set; }
+        [MaxLength(20)]
         public string Status { get; set; } = "PENDING";
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         [Required, MaxLength(64)]

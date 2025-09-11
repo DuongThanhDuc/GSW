@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using BusinessModel.Model;
 using DataAccess.Repository.IRepository;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace GSWApi.Controllers.Admin
@@ -10,11 +9,11 @@ namespace GSWApi.Controllers.Admin
     [ApiController]
     public class SystemCategoryController : ControllerBase
     {
-   private readonly ISystemCategoryRepository _categoryRepo;
+        private readonly ISystemCategoryRepository _categoryRepo;
 
         public SystemCategoryController(ISystemCategoryRepository categoryRepo)
         {
-            _categoryRepo = categoryRepo;
+            _categoryRepo = categoryRepo ?? throw new ArgumentNullException(nameof(categoryRepo));
         }
 
         // GET: admin/systemcategory
@@ -22,6 +21,9 @@ namespace GSWApi.Controllers.Admin
         public async Task<IActionResult> GetAll()
         {
             var categories = await _categoryRepo.GetAllAsync();
+            if (categories == null || !categories.Any())
+                return NotFound(new { success = false, message = "No categories found." });
+
             return Ok(new
             {
                 success = true,
@@ -33,6 +35,9 @@ namespace GSWApi.Controllers.Admin
         [HttpGet("id/{id}")]
         public async Task<IActionResult> GetById(int id)
         {
+            if (id <= 0)
+                return BadRequest(new { success = false, message = "Invalid ID." });
+
             var category = await _categoryRepo.GetByIdAsync(id);
             if (category == null)
                 return NotFound(new { success = false, message = "Category not found." });
@@ -48,6 +53,9 @@ namespace GSWApi.Controllers.Admin
         [HttpGet("name/{name}")]
         public async Task<IActionResult> GetByName(string name)
         {
+            if (string.IsNullOrWhiteSpace(name))
+                return BadRequest(new { success = false, message = "Name cannot be null or empty." });
+
             var category = await _categoryRepo.GetByNameAsync(name);
             if (category == null)
                 return NotFound(new { success = false, message = "Category not found." });
@@ -63,6 +71,12 @@ namespace GSWApi.Controllers.Admin
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] SystemCategory category)
         {
+            if (category == null)
+                return BadRequest(new { success = false, message = "Category cannot be null." });
+
+            if (string.IsNullOrWhiteSpace(category.CategoryName))
+                return BadRequest(new { success = false, message = "Category name is required." });
+
             await _categoryRepo.AddAsync(category);
             return Ok(new
             {
@@ -76,12 +90,18 @@ namespace GSWApi.Controllers.Admin
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, [FromBody] SystemCategory updatedCategory)
         {
+            if (updatedCategory == null)
+                return BadRequest(new { success = false, message = "Category cannot be null." });
+
             if (id != updatedCategory.ID)
                 return BadRequest(new { success = false, message = "ID mismatch." });
 
             var existing = await _categoryRepo.GetByIdAsync(id);
             if (existing == null)
                 return NotFound(new { success = false, message = "Category not found." });
+
+            if (string.IsNullOrWhiteSpace(updatedCategory.CategoryName))
+                return BadRequest(new { success = false, message = "Category name is required." });
 
             existing.CategoryName = updatedCategory.CategoryName;
             existing.CreatedBy = updatedCategory.CreatedBy;
@@ -99,6 +119,9 @@ namespace GSWApi.Controllers.Admin
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
+            if (id <= 0)
+                return BadRequest(new { success = false, message = "Invalid ID." });
+
             var existing = await _categoryRepo.GetByIdAsync(id);
             if (existing == null)
                 return NotFound(new { success = false, message = "Category not found." });

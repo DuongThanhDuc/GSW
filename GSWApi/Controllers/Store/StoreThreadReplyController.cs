@@ -17,8 +17,9 @@ namespace GSWApi.Controllers.Store
 
         public StoreThreadReplyController(IStoreThreadReplyRepository repository, IOptions<CloudinarySettings> settings)
         {
+            if (repository == null) throw new ArgumentNullException(nameof(repository));
+            if (settings == null || settings.Value == null) throw new ArgumentNullException(nameof(settings));
 
-            // Setup Cloudinary
             _repository = repository;
 
             var account = new Account(
@@ -29,41 +30,46 @@ namespace GSWApi.Controllers.Store
 
             _cloudinary = new Cloudinary(account);
         }
+
         [HttpGet("thread/{threadId}")]
         public async Task<IActionResult> GetRepliesByThreadId(int threadId)
         {
             var replies = await _repository.GetAllByThreadIdAsync(threadId);
+            if (replies == null) return NotFound(new { success = false, message = "No replies found." });
+
             return Ok(new { success = true, data = replies });
         }
 
         [HttpPost]
         public async Task<IActionResult> Create([FromForm] StoreThreadReplyDTO dto, IFormFile? imageFile)
         {
+            if (dto == null)
+                return BadRequest(new { success = false, message = "Invalid request payload." });
+
             if (string.IsNullOrWhiteSpace(dto.ThreadComment) && imageFile == null)
                 return BadRequest(new { success = false, message = "Either a comment or an image is required." });
 
-            // Upload image to Cloudinary if provided
             if (imageFile != null && imageFile.Length > 0)
             {
                 using var stream = imageFile.OpenReadStream();
                 var uploadParams = new ImageUploadParams
                 {
                     File = new FileDescription(imageFile.FileName, stream),
-                    Folder = "store_thread_replies" // Optional
+                    Folder = "store_thread_replies"
                 };
 
                 var uploadResult = await _cloudinary.UploadAsync(uploadParams);
-
-                if (uploadResult.Error != null)
-                    return BadRequest(new { success = false, message = $"Image upload failed: {uploadResult.Error.Message}" });
+                if (uploadResult == null || uploadResult.Error != null)
+                    return BadRequest(new { success = false, message = $"Image upload failed: {uploadResult?.Error?.Message}" });
 
                 dto.CommentImageUrl = uploadResult.SecureUrl.ToString();
             }
 
             var result = await _repository.CreateAsync(dto);
+            if (result == null) return StatusCode(500, new { success = false, message = "Failed to create reply." });
+
             return Ok(new { success = true, message = "Reply created.", data = result });
         }
-
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
@@ -75,10 +81,12 @@ namespace GSWApi.Controllers.Store
             return Ok(new { success = true, message = "Reply deleted." });
         }
 
-        // POST: api/storethreadreply/upvote
         [HttpPost("upvote")]
         public async Task<IActionResult> ToggleReplyUpvote([FromBody] StoreThreadReplyUpvoteHistoryDTO dto)
         {
+            if (dto == null)
+                return BadRequest(new { success = false, message = "Invalid request payload." });
+
             if (string.IsNullOrWhiteSpace(dto.UserId) || dto.ThreadCommentId <= 0)
                 return BadRequest(new { success = false, message = "User ID and Reply ID are required." });
 
@@ -92,15 +100,15 @@ namespace GSWApi.Controllers.Store
             });
         }
 
-        // GET: api/storethreadreply/upvotes
         [HttpGet("upvotes")]
         public async Task<IActionResult> GetAllReplyUpvotes()
         {
             var records = await _repository.GetAllReplyUpvotesAsync();
+            if (records == null) return NotFound(new { success = false, message = "No upvotes found." });
+
             return Ok(new { success = true, data = records });
         }
 
-        // GET: api/storethreadreply/upvotes/{id}
         [HttpGet("upvotes/{id}")]
         public async Task<IActionResult> GetReplyUpvoteById(int id)
         {
@@ -111,11 +119,15 @@ namespace GSWApi.Controllers.Store
             return Ok(new { success = true, data = record });
         }
 
-        // GET: api/StoreThreadReply/upvotes/search?query=...
         [HttpGet("upvotes/search")]
         public async Task<IActionResult> SearchReplyUpvotes([FromQuery] string query)
         {
+            if (string.IsNullOrWhiteSpace(query))
+                return BadRequest(new { success = false, message = "Search query is required." });
+
             var replies = await _repository.SearchReplyUpvotesByUserAsync(query);
+            if (replies == null) return NotFound(new { success = false, message = "No upvotes found for the given query." });
+
             return Ok(new { success = true, data = replies });
         }
     }

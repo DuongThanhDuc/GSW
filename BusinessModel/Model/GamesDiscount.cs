@@ -13,9 +13,10 @@ namespace BusinessModel.Model
         public int Id { get; set; }
 
         [Required]
+        [MaxLength(50)]
         public string Code { get; set; }
 
-
+        [MaxLength(512)]
         public string Description { get; set; }
 
      

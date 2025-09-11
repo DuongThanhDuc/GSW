@@ -15,6 +15,7 @@ namespace BusinessModel.Model
         public int Id { get; set; }
 
         [Required]
+        [MaxLength(450)]
         public string UserId { get; set; } = null!;
 
         [ForeignKey(nameof(UserId))]

@@ -28,6 +28,7 @@ namespace BusinessModel.Model
         public DateTime? ApprovedAt { get; set; }
 
         // Admin duyệt
+        [MaxLength(450)]
         public string? ApprovedBy { get; set; }
 
         [MaxLength(1000)]

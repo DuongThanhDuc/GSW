@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -17,7 +18,7 @@ namespace BusinessModel.Model
         public SystemTag Tag { get; set; } 
 
         public DateTime CreatedAt { get; set; } = DateTime.Now;
-
+        [MaxLength(450)]
         public string CreatedBy { get; set; }
     }
 }

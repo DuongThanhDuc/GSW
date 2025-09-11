@@ -17,13 +17,16 @@ namespace GSWApi.Controllers.Games
 
         public GamesReviewController(IGamesReviewRepository repository)
         {
-            _repository = repository;
+            _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         }
 
         [HttpGet]
         public async Task<ActionResult> GetAll()
         {
             var dtos = await _repository.GetAllAsync();
+            if (dtos == null)
+                return NotFound(new { success = false, message = "No reviews found" });
+
             return Ok(new
             {
                 success = true,
@@ -49,6 +52,9 @@ namespace GSWApi.Controllers.Games
         public async Task<ActionResult> GetByGameId(int gameId)
         {
             var dtos = await _repository.GetByGameIdAsync(gameId);
+            if (dtos == null)
+                return NotFound(new { success = false, message = "No reviews found for this game" });
+
             return Ok(new
             {
                 success = true,
@@ -60,6 +66,9 @@ namespace GSWApi.Controllers.Games
         public async Task<ActionResult> GetByUserId(string userId)
         {
             var dtos = await _repository.GetByUserIdAsync(userId);
+            if (dtos == null)
+                return NotFound(new { success = false, message = "No reviews found for this user" });
+
             return Ok(new
             {
                 success = true,
@@ -70,6 +79,9 @@ namespace GSWApi.Controllers.Games
         [HttpPost]
         public async Task<ActionResult> Create([FromBody] GamesReviewDTO dto)
         {
+            if (dto == null)
+                return BadRequest(new { success = false, message = "Invalid review data" });
+
             var review = new GamesReview
             {
                 GameID = dto.GameID,
@@ -94,6 +106,9 @@ namespace GSWApi.Controllers.Games
         [HttpPut("{id}")]
         public async Task<ActionResult> Update(int id, [FromBody] GamesReviewDTO dto)
         {
+            if (dto == null)
+                return BadRequest(new { success = false, message = "Invalid review data" });
+
             var existing = await _repository.GetByIdAsync(id);
             if (existing == null)
                 return NotFound(new { success = false, message = "Review not found" });

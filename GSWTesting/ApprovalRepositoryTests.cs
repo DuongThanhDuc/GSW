@@ -14,8 +14,11 @@ namespace UnitTests.Repository
         {
             return new DbContextOptionsBuilder<DBContext>()
                 .UseInMemoryDatabase(Guid.NewGuid().ToString()) // ensures isolation
+                .ConfigureWarnings(x =>
+                    x.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.InMemoryEventId.TransactionIgnoredWarning)) // ✅ ignore transaction warnings
                 .Options;
         }
+
 
         [Test]
         public async Task ApproveGameAsync_GameExists_ShouldUpdateStatusAndAddHistory()
@@ -83,19 +86,29 @@ namespace UnitTests.Repository
         {
             // Arrange
             var options = CreateNewContextOptions();
+            int refundId;
+
             using (var context = new DBContext(options))
             {
-                context.Store_RefundRequests.Add(new StoreRefundRequest
+                var order = new StoreOrder
                 {
-                    ID = 1,
+                    OrderCode = "Order001",
+                    UserID = "TestUser",
+                    TotalAmount = 100m
+                };
+
+                var refund = new StoreRefundRequest
+                {
                     Status = "Pending",
-                    UserID = "TestUser",           // if required
-                    Reason = "Test reason",        // if required
-                    RequestDate = DateTime.UtcNow    // if required
-                });
+                    UserID = "TestUser",
+                    Reason = "Test reason",
+                    RequestDate = DateTime.UtcNow,
+                    Order = order
+                };
+                context.Store_RefundRequests.Add(refund);
                 await context.SaveChangesAsync();
 
-                await context.SaveChangesAsync();
+                refundId = refund.ID;   // ✅ Get the actual ID
             }
 
             using (var context = new DBContext(options))
@@ -103,23 +116,24 @@ namespace UnitTests.Repository
                 var repo = new ApprovalRepository(context);
 
                 // Act
-                var result = await repo.ApproveRefundAsync(1, "Approved", "User123", "Refund approved");
+                var result = await repo.ApproveRefundAsync(refundId, "Approved", "User123", "Refund approved");
 
                 // Assert
                 Assert.IsTrue(result);
 
-                var refund = await context.Store_RefundRequests.FindAsync(1);
+                var refund = await context.Store_RefundRequests.FindAsync(refundId);
                 Assert.AreEqual("Approved", refund.Status);
 
                 var history = await context.ApprovalHistories.FirstOrDefaultAsync();
                 Assert.NotNull(history);
                 Assert.AreEqual("Refund", history.EntityType);
-                Assert.AreEqual(1, history.EntityId);
+                Assert.AreEqual(refundId, history.EntityId);
                 Assert.AreEqual("Approved", history.Status);
                 Assert.AreEqual("User123", history.ChangedByUserId);
                 Assert.AreEqual("Refund approved", history.Note);
             }
         }
+
 
         [Test]
         public async Task ApproveRefundAsync_RefundDoesNotExist_ShouldReturnFalse()

@@ -4,6 +4,7 @@ using BusinessModel.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BusinessModel.Migrations
 {
     [DbContext(typeof(DBContext))]
-    partial class DBContextModelSnapshot : ModelSnapshot
+    [Migration("20250823074201_DeletedGamesUploadandGamesBanner")]
+    partial class DeletedGamesUploadandGamesBanner
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -35,7 +38,6 @@ namespace BusinessModel.Migrations
 
                     b.Property<string>("ChangedByUserId")
                         .IsRequired()
-                        .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<int>("EntityId")
@@ -43,8 +45,7 @@ namespace BusinessModel.Migrations
 
                     b.Property<string>("EntityType")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Note")
                         .IsRequired()
@@ -52,8 +53,7 @@ namespace BusinessModel.Migrations
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
@@ -78,8 +78,7 @@ namespace BusinessModel.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("ApprovedBy")
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
@@ -129,7 +128,6 @@ namespace BusinessModel.Migrations
 
                     b.Property<string>("CreatedBy")
                         .IsRequired()
-                        .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<int>("GameID")
@@ -156,16 +154,14 @@ namespace BusinessModel.Migrations
 
                     b.Property<string>("Code")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasMaxLength(512)
-                        .HasColumnType("nvarchar(512)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("EndDate")
                         .HasColumnType("datetime2");
@@ -211,23 +207,19 @@ namespace BusinessModel.Migrations
 
                     b.Property<string>("CreatedBy")
                         .IsRequired()
-                        .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasMaxLength(512)
-                        .HasColumnType("nvarchar(512)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("DeveloperId")
                         .IsRequired()
-                        .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Genre")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("InstallerFilePath")
                         .IsRequired()
@@ -244,13 +236,11 @@ namespace BusinessModel.Migrations
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasMaxLength(250)
-                        .HasColumnType("nvarchar(250)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
@@ -296,8 +286,7 @@ namespace BusinessModel.Migrations
 
                     b.Property<string>("MediaType")
                         .IsRequired()
-                        .HasMaxLength(25)
-                        .HasColumnType("nvarchar(25)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("MediaURL")
                         .IsRequired()
@@ -320,8 +309,7 @@ namespace BusinessModel.Migrations
 
                     b.Property<string>("Comment")
                         .IsRequired()
-                        .HasMaxLength(512)
-                        .HasColumnType("nvarchar(512)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
@@ -336,8 +324,7 @@ namespace BusinessModel.Migrations
 
                     b.Property<string>("UserID")
                         .IsRequired()
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("ID");
 
@@ -361,7 +348,6 @@ namespace BusinessModel.Migrations
 
                     b.Property<string>("CreatedBy")
                         .IsRequired()
-                        .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<int>("GameID")
@@ -403,13 +389,11 @@ namespace BusinessModel.Migrations
 
                     b.Property<string>("PaymentMethod")
                         .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("StoreOrderId")
                         .HasColumnType("int");
@@ -442,7 +426,6 @@ namespace BusinessModel.Migrations
 
                     b.Property<string>("UserID")
                         .IsRequired()
-                        .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
                     b.HasKey("ID");
@@ -472,7 +455,6 @@ namespace BusinessModel.Migrations
 
                     b.Property<string>("UserID")
                         .IsRequired()
-                        .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
                     b.HasKey("ID");
@@ -517,8 +499,7 @@ namespace BusinessModel.Migrations
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal>("TotalAmount")
                         .HasColumnType("decimal(18,2)");
@@ -580,8 +561,7 @@ namespace BusinessModel.Migrations
 
                     b.Property<string>("Reason")
                         .IsRequired()
-                        .HasMaxLength(512)
-                        .HasColumnType("nvarchar(512)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("RequestDate")
                         .ValueGeneratedOnAdd()
@@ -590,12 +570,10 @@ namespace BusinessModel.Migrations
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("UserID")
                         .IsRequired()
-                        .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
                     b.HasKey("ID");
@@ -622,21 +600,18 @@ namespace BusinessModel.Migrations
 
                     b.Property<string>("CreatedBy")
                         .IsRequired()
-                        .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("ThreadDescription")
                         .IsRequired()
-                        .HasMaxLength(250)
-                        .HasColumnType("nvarchar(250)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("ThreadImageUrl")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("ThreadTitle")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("UpvoteCount")
                         .HasColumnType("int");
@@ -666,13 +641,11 @@ namespace BusinessModel.Migrations
 
                     b.Property<string>("CreatedBy")
                         .IsRequired()
-                        .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("ThreadComment")
                         .IsRequired()
-                        .HasMaxLength(250)
-                        .HasColumnType("nvarchar(250)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("ThreadID")
                         .HasColumnType("int");
@@ -707,7 +680,6 @@ namespace BusinessModel.Migrations
 
                     b.Property<string>("UserId")
                         .IsRequired()
-                        .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
@@ -737,7 +709,6 @@ namespace BusinessModel.Migrations
 
                     b.Property<string>("UserID")
                         .IsRequired()
-                        .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
@@ -803,7 +774,6 @@ namespace BusinessModel.Migrations
 
                     b.Property<string>("UserId")
                         .IsRequired()
-                        .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
@@ -825,8 +795,7 @@ namespace BusinessModel.Migrations
 
                     b.Property<string>("CategoryName")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
@@ -835,7 +804,6 @@ namespace BusinessModel.Migrations
 
                     b.Property<string>("CreatedBy")
                         .IsRequired()
-                        .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
                     b.HasKey("ID");
@@ -849,35 +817,35 @@ namespace BusinessModel.Migrations
                         {
                             ID = 1,
                             CategoryName = "RPG",
-                            CreatedAt = new DateTime(2025, 9, 8, 12, 56, 50, 658, DateTimeKind.Utc).AddTicks(7897),
+                            CreatedAt = new DateTime(2025, 8, 23, 7, 42, 1, 144, DateTimeKind.Utc).AddTicks(8756),
                             CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af"
                         },
                         new
                         {
                             ID = 2,
                             CategoryName = "FPS",
-                            CreatedAt = new DateTime(2025, 9, 8, 12, 56, 50, 658, DateTimeKind.Utc).AddTicks(7899),
+                            CreatedAt = new DateTime(2025, 8, 23, 7, 42, 1, 144, DateTimeKind.Utc).AddTicks(8758),
                             CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af"
                         },
                         new
                         {
                             ID = 3,
                             CategoryName = "Puzzle",
-                            CreatedAt = new DateTime(2025, 9, 8, 12, 56, 50, 658, DateTimeKind.Utc).AddTicks(7900),
+                            CreatedAt = new DateTime(2025, 8, 23, 7, 42, 1, 144, DateTimeKind.Utc).AddTicks(8759),
                             CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af"
                         },
                         new
                         {
                             ID = 4,
                             CategoryName = "Simulation",
-                            CreatedAt = new DateTime(2025, 9, 8, 12, 56, 50, 658, DateTimeKind.Utc).AddTicks(7902),
+                            CreatedAt = new DateTime(2025, 8, 23, 7, 42, 1, 144, DateTimeKind.Utc).AddTicks(8760),
                             CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af"
                         },
                         new
                         {
                             ID = 5,
                             CategoryName = "Horror",
-                            CreatedAt = new DateTime(2025, 9, 8, 12, 56, 50, 658, DateTimeKind.Utc).AddTicks(7903),
+                            CreatedAt = new DateTime(2025, 8, 23, 7, 42, 1, 144, DateTimeKind.Utc).AddTicks(8761),
                             CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af"
                         });
                 });
@@ -896,7 +864,6 @@ namespace BusinessModel.Migrations
 
                     b.Property<string>("UserId")
                         .IsRequired()
-                        .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
@@ -922,13 +889,11 @@ namespace BusinessModel.Migrations
 
                     b.Property<string>("CreatedBy")
                         .IsRequired()
-                        .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("TagName")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("ID");
 
@@ -940,35 +905,35 @@ namespace BusinessModel.Migrations
                         new
                         {
                             ID = 1,
-                            CreatedAt = new DateTime(2025, 9, 8, 12, 56, 50, 658, DateTimeKind.Utc).AddTicks(7849),
+                            CreatedAt = new DateTime(2025, 8, 23, 7, 42, 1, 144, DateTimeKind.Utc).AddTicks(8712),
                             CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af",
                             TagName = "Action"
                         },
                         new
                         {
                             ID = 2,
-                            CreatedAt = new DateTime(2025, 9, 8, 12, 56, 50, 658, DateTimeKind.Utc).AddTicks(7850),
+                            CreatedAt = new DateTime(2025, 8, 23, 7, 42, 1, 144, DateTimeKind.Utc).AddTicks(8714),
                             CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af",
                             TagName = "Adventure"
                         },
                         new
                         {
                             ID = 3,
-                            CreatedAt = new DateTime(2025, 9, 8, 12, 56, 50, 658, DateTimeKind.Utc).AddTicks(7851),
+                            CreatedAt = new DateTime(2025, 8, 23, 7, 42, 1, 144, DateTimeKind.Utc).AddTicks(8715),
                             CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af",
                             TagName = "Multiplayer"
                         },
                         new
                         {
                             ID = 4,
-                            CreatedAt = new DateTime(2025, 9, 8, 12, 56, 50, 658, DateTimeKind.Utc).AddTicks(7853),
+                            CreatedAt = new DateTime(2025, 8, 23, 7, 42, 1, 144, DateTimeKind.Utc).AddTicks(8716),
                             CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af",
                             TagName = "Indie"
                         },
                         new
                         {
                             ID = 5,
-                            CreatedAt = new DateTime(2025, 9, 8, 12, 56, 50, 658, DateTimeKind.Utc).AddTicks(7854),
+                            CreatedAt = new DateTime(2025, 8, 23, 7, 42, 1, 144, DateTimeKind.Utc).AddTicks(8718),
                             CreatedBy = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af",
                             TagName = "Strategy"
                         });
@@ -991,7 +956,6 @@ namespace BusinessModel.Migrations
 
                     b.Property<string>("UserId")
                         .IsRequired()
-                        .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
@@ -1032,21 +996,21 @@ namespace BusinessModel.Migrations
                         new
                         {
                             Id = "b7b9181c-ff61-4d8f-8f6d-5edb3a6d3a11",
-                            ConcurrencyStamp = "9a95188b-d5e5-480d-899d-7e65902b27a6",
+                            ConcurrencyStamp = "c979c1e0-b169-4917-8bfa-92a037f27b71",
                             Name = "Admin",
                             NormalizedName = "ADMIN"
                         },
                         new
                         {
                             Id = "0f6781b2-4564-4bb3-8d85-92e4c194a2cb",
-                            ConcurrencyStamp = "90793a68-a050-4837-a902-76508d3a29fa",
+                            ConcurrencyStamp = "7956aec6-e632-4793-a65c-85a1cf9e655b",
                             Name = "Staff",
                             NormalizedName = "STAFF"
                         },
                         new
                         {
                             Id = "26e5f054-e9fd-489f-891f-cf2b57fa9a1c",
-                            ConcurrencyStamp = "7a67340c-1a42-41b5-b004-6a98aed24baa",
+                            ConcurrencyStamp = "5f6333cf-a572-4c6f-9d87-578120d915a8",
                             Name = "User",
                             NormalizedName = "USER"
                         });
@@ -1146,15 +1110,15 @@ namespace BusinessModel.Migrations
                         {
                             Id = "bcbccc35-9a88-42cb-82d7-0c9e67f9d9af",
                             AccessFailedCount = 0,
-                            ConcurrencyStamp = "899906da-099d-4a42-9e35-c40161a214fb",
+                            ConcurrencyStamp = "5e04b26f-af2c-4951-a927-31577e55370c",
                             Email = "admin@gameshop.com",
                             EmailConfirmed = true,
                             LockoutEnabled = false,
                             NormalizedEmail = "ADMIN@GAMESHOP.COM",
                             NormalizedUserName = "ADMIN",
-                            PasswordHash = "AQAAAAEAACcQAAAAEDKrnNqS8OFtpzgZF41lfkAs+TDe5t6Xnuvvq7NxzmsHRqOC/eQEhA2uQEAcg+6TTg==",
+                            PasswordHash = "AQAAAAEAACcQAAAAEBaIm5ofpNQsSNGr9q8u3imLeBBVWalSAYrL8MZBqKB8B1jJD6SU8a8zMwQwL60Dtg==",
                             PhoneNumberConfirmed = false,
-                            SecurityStamp = "a3a7612a-0ecd-4b6f-91e7-a0b07bb4ed48",
+                            SecurityStamp = "916ed8e6-69a4-40d7-adb3-48a6f57b424b",
                             TwoFactorEnabled = false,
                             UserName = "admin"
                         },
@@ -1162,15 +1126,15 @@ namespace BusinessModel.Migrations
                         {
                             Id = "bcbcdd33-9a99-75dv-82d7-0c9e67f9d9af",
                             AccessFailedCount = 0,
-                            ConcurrencyStamp = "9e2bbb5f-52df-40df-b7e4-3b45fb76ca52",
+                            ConcurrencyStamp = "383b6e91-d5c6-4fd1-81be-b7da937d8b7a",
                             Email = "trananhtuan180202@gmail.com",
                             EmailConfirmed = true,
                             LockoutEnabled = false,
                             NormalizedEmail = "TRANANHTUAN180202@GMAIL.COM",
                             NormalizedUserName = "TRANANHTUAN180202",
-                            PasswordHash = "AQAAAAEAACcQAAAAEEgRkRgpdZFyl2DFxTnOTdNooP3qZq+ZsdAgb1Ddaiqy3ZMyjNjOL4jabdeeunw42Q==",
+                            PasswordHash = "AQAAAAEAACcQAAAAEK5nMZf8/hUvm7SSIZZBxwBVfVslG+mlgGLQ0VnyTUWS2NSWE5PdpVX6z1avkRpleA==",
                             PhoneNumberConfirmed = false,
-                            SecurityStamp = "a2099c47-a37f-4b8a-8153-230f73df6b89",
+                            SecurityStamp = "0d63f5f8-28e8-4132-86f2-d252dd61beb9",
                             TwoFactorEnabled = false,
                             UserName = "trananhtuan180202"
                         },
@@ -1178,15 +1142,15 @@ namespace BusinessModel.Migrations
                         {
                             Id = "bcbcde35-9a98-75dv-82d7-0c9e67f9d9af",
                             AccessFailedCount = 0,
-                            ConcurrencyStamp = "dadeef75-3bf0-47d8-96df-8b84efe5224c",
+                            ConcurrencyStamp = "b8a7d921-a0de-46cc-925a-f653c6afb8b6",
                             Email = "phong260702@gmail.com",
                             EmailConfirmed = true,
                             LockoutEnabled = false,
                             NormalizedEmail = "PHONG260702@GMAIL.COM",
                             NormalizedUserName = "PHONG",
-                            PasswordHash = "AQAAAAEAACcQAAAAEG+f26hnrRxwQOM5umsgbEk2t0eqJU5MddElVt2kswhFIB4CfID9+/UOTRPMLdbcNg==",
+                            PasswordHash = "AQAAAAEAACcQAAAAEKzyTI648eQ3NzlHSnyZl4k+05L2GjuAwJDybDOq0P8fMabyUjV8SVniNDxHrUiUmg==",
                             PhoneNumberConfirmed = false,
-                            SecurityStamp = "6260064f-260c-4d5a-8a0c-cada88d24f8c",
+                            SecurityStamp = "aeab6672-d8e2-4d83-a033-cad18d416f2b",
                             TwoFactorEnabled = false,
                             UserName = "phong"
                         });
