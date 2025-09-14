@@ -28,7 +28,7 @@ namespace GSWApi.Controllers.Admin
             if (string.IsNullOrWhiteSpace(raw)) return null;
             var s = raw.Trim().ToLowerInvariant();
 
-            // map các biến thể thường gặp
+            
             if (s is "approve" or "approved" or "apporve") return "Approved";
             if (s is "reject" or "rejected") return "Rejected";
 
@@ -70,8 +70,7 @@ namespace GSWApi.Controllers.Admin
             if (string.IsNullOrEmpty(userId))
                 return Unauthorized(new { success = false, message = "You are not authorized or userId is missing." });
 
-            // Quan trọng: Repo sẽ vừa đổi trạng thái Refund, ghi lịch sử,
-            // và (sau khi bạn thêm code như đã gửi trước đó) tạo DepositWithdrawTransaction tương ứng.
+            
             var ok = await _approvalRepo.ApproveRefundAsync(id, normalized, userId, dto.Note);
             if (!ok)
                 return NotFound(new { success = false, message = "Refund request not found or not in Pending state." });
