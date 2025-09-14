@@ -1,6 +1,6 @@
 ﻿using BusinessModel.Model;
 using DataAccess.Repository.IRepository;
-using Microsoft.EntityFrameworkCore; // <-- thêm dòng này
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -22,6 +22,7 @@ namespace DataAccess.Repository
             if (game == null) return false;
 
             game.Status = status;
+
             _context.ApprovalHistories.Add(new ApprovalHistory
             {
                 EntityType = "Game",
@@ -31,6 +32,7 @@ namespace DataAccess.Repository
                 ChangedAt = DateTime.Now,
                 Note = note
             });
+
             await _context.SaveChangesAsync();
             return true;
         }
@@ -45,15 +47,14 @@ namespace DataAccess.Repository
 
             if (refund == null) return false;
 
-            // Chỉ cho phép xử lý khi đang Pending để tránh cộng ví 2 lần
+            // Chỉ xử lý khi đang Pending để tránh cộng ví hai lần
             if (!string.Equals(refund.Status, "Pending", StringComparison.OrdinalIgnoreCase))
                 return false;
 
-            // Bắt đầu transaction để đảm bảo atomic: đổi trạng thái + ghi history + cộng ví
-            using var tx = await _context.Database.BeginTransactionAsync();
+            await using var tx = await _context.Database.BeginTransactionAsync();
             try
             {
-                // Cập nhật trạng thái refund
+                // 1) Cập nhật trạng thái Refund + ghi lịch sử
                 refund.Status = status;
 
                 _context.ApprovalHistories.Add(new ApprovalHistory
@@ -66,66 +67,53 @@ namespace DataAccess.Repository
                     Note = note
                 });
 
-                // Nếu Approved -> cộng tiền vào ví
+                // 2) Nếu Approved -> cộng tiền vào ví + TẠO DepositWithdrawTransaction
                 if (string.Equals(status, "Approved", StringComparison.OrdinalIgnoreCase))
                 {
                     // Xác định user nhận hoàn: ưu tiên Refund.UserID, fallback Order.UserID
-                    // TODO: Đổi tên thuộc tính cho đúng schema của bạn nếu khác.
                     var beneficiaryUserId = refund.UserID ?? refund.Order?.UserID;
                     if (string.IsNullOrWhiteSpace(beneficiaryUserId))
                         throw new InvalidOperationException("Không xác định được người nhận hoàn tiền.");
 
-                    // Tính số tiền hoàn. Ưu tiên trường RefundAmount trên yêu cầu hoàn.
-                    // TODO: Nếu model của bạn dùng tên khác (vd: Amount), đổi lại cho đúng.
+                    // Tính số tiền hoàn
                     decimal amount = 0m;
 
-                    // 1) Ưu tiên số tiền hoàn ghi trên request
-                    var hasRefundAmountProp =
-                        refund.GetType().GetProperty("RefundAmount") != null ||
-                        refund.GetType().GetProperty("Amount") != null;
+                    // 2.1 Ưu tiên trường RefundAmount hoặc Amount trên request
+                    var refundAmountProp = refund.GetType().GetProperty("RefundAmount");
+                    var amountProp = refund.GetType().GetProperty("Amount");
+                    if (refundAmountProp != null)
+                        amount = (decimal?)refundAmountProp.GetValue(refund) ?? 0m;
+                    if (amount <= 0m && amountProp != null)
+                        amount = (decimal?)amountProp.GetValue(refund) ?? 0m;
 
-                    if (hasRefundAmountProp)
-                    {
-                        // Thử lấy theo thứ tự: RefundAmount -> Amount
-                        var refundAmountProp = refund.GetType().GetProperty("RefundAmount");
-                        var amountProp = refund.GetType().GetProperty("Amount");
-                        if (refundAmountProp != null)
-                            amount = (decimal?)(refundAmountProp.GetValue(refund) as decimal?) ?? 0m;
-                        if (amount <= 0m && amountProp != null)
-                            amount = (decimal?)(amountProp.GetValue(refund) as decimal?) ?? 0m;
-                    }
-
-                    // 2) Nếu chưa có, fallback: tổng OrderDetails hoặc TotalAmount
+                    // 2.2 Nếu vẫn 0, fallback: tổng OrderDetails (Quantity * UnitPrice) hoặc chỉ UnitPrice; nếu không có nữa, thử TotalAmount
                     if (amount <= 0m && refund.Order != null)
                     {
-                        // TODO: nếu có Quantity/UnitPrice thì nhân; nếu chỉ có UnitPrice thì Sum(UnitPrice)
                         if (refund.Order.OrderDetails != null && refund.Order.OrderDetails.Any())
                         {
-                            var qProp = refund.Order.OrderDetails.First().GetType().GetProperty("Quantity");
-                            var pProp = refund.Order.OrderDetails.First().GetType().GetProperty("UnitPrice");
+                            var sample = refund.Order.OrderDetails.First();
+                            var qProp = sample.GetType().GetProperty("Quantity");
+                            var pProp = sample.GetType().GetProperty("UnitPrice");
 
                             if (pProp != null)
                             {
                                 if (qProp != null)
                                 {
-                                    amount = refund.Order.OrderDetails
-                                        .Select(d =>
-                                        {
-                                            var q = (int?)qProp.GetValue(d) ?? 1;
-                                            var p = (decimal?)pProp.GetValue(d) ?? 0m;
-                                            return q * p;
-                                        }).Sum();
+                                    amount = refund.Order.OrderDetails.Sum(d =>
+                                    {
+                                        var q = (int?)(qProp.GetValue(d) as int?) ?? 1;
+                                        var p = (decimal?)(pProp.GetValue(d) as decimal?) ?? 0m;
+                                        return q * p;
+                                    });
                                 }
                                 else
                                 {
-                                    amount = refund.Order.OrderDetails
-                                        .Select(d => (decimal?)pProp.GetValue(d) ?? 0m)
-                                        .Sum();
+                                    amount = refund.Order.OrderDetails.Sum(d =>
+                                        (decimal?)(pProp.GetValue(d) as decimal?) ?? 0m);
                                 }
                             }
                         }
 
-                        // Nếu vẫn 0 -> thử TotalAmount trên Order (nếu có)
                         if (amount <= 0m)
                         {
                             var totalProp = refund.Order.GetType().GetProperty("TotalAmount");
@@ -137,9 +125,8 @@ namespace DataAccess.Repository
                     if (amount <= 0m)
                         throw new InvalidOperationException("Số tiền hoàn phải lớn hơn 0.");
 
-                    // Cập nhật ví
-                    // TODO: Đổi DbSet và model cho đúng (vd: _context.User_Wallets, entity UserWallet/User_Wallet)
-                    var wallet = await _context.Set<UserWallet>()
+                    // 2.3 Cập nhật ví (tạo ví nếu chưa có)
+                    var wallet = await _context.User_Wallets
                         .FirstOrDefaultAsync(w => w.UserId == beneficiaryUserId);
 
                     if (wallet == null)
@@ -150,14 +137,36 @@ namespace DataAccess.Repository
                             Balance = 0m,
                             UpdatedAt = DateTime.UtcNow
                         };
-                        _context.Set<UserWallet>().Add(wallet);
-                        await _context.SaveChangesAsync(); // đảm bảo có Id nếu cần
+                        _context.User_Wallets.Add(wallet);
+                        await _context.SaveChangesAsync(); 
                     }
 
                     wallet.Balance += amount;
                     wallet.UpdatedAt = DateTime.Now;
 
+                    // 2.4 GHI NHẬN vào bảng Deposit/Withdraw để phần UI hiển thị
+                    var dwTx = new DepositWithdrawTransaction
+                    {
+                        UserId = beneficiaryUserId,
+                        Amount = amount,
+                        Type = "DEPOSIT",          
+                        Status = "Approved",      
+                        CreatedAt = DateTime.Now,
+                        ApprovedAt = DateTime.Now,
+                        ApprovedBy = changedByUserId,
+                        Note = $"Refund for Order #{refund.OrderID} (Refund #{refundId})"
+                    };
+                    _context.DepositWithdrawTransactions.Add(dwTx);
                   
+                    _context.ApprovalHistories.Add(new ApprovalHistory
+                    {
+                        EntityType = "DepositWithdraw",
+                        
+                        Status = dwTx.Status,
+                        ChangedByUserId = changedByUserId,
+                        ChangedAt = DateTime.Now,
+                        Note = $"Auto-created by refund approval #{refundId}"
+                    });
                 }
 
                 await _context.SaveChangesAsync();
@@ -167,7 +176,7 @@ namespace DataAccess.Repository
             catch
             {
                 await tx.RollbackAsync();
-                throw; // để Controller trả 500 khi có lỗi nội bộ
+                throw;
             }
         }
     }
