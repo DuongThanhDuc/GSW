@@ -28,9 +28,9 @@ namespace GSWApi.Controllers.Admin
             if (string.IsNullOrWhiteSpace(raw)) return null;
             var s = raw.Trim().ToLowerInvariant();
 
-            
-            if (s is "approve" or "approved" or "apporve") return "Approved";
-            if (s is "reject" or "rejected") return "Rejected";
+
+            if (s is "success" or "successed") return "Successed";         
+            if (s is "fail" or "failed") return "Failed";
 
             return null;
         }
