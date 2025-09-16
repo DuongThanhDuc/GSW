@@ -21,21 +21,42 @@ namespace DataAccess.Repository
             var game = await _context.Games_Info.FindAsync(gameId);
             if (game == null) return false;
 
-            game.Status = status;
+            
+            if (status == "Successed" || status == "Success")
+            {
+                game.Status = "Purchased"; 
+            }
+            else if (status == "Failed" || status == "Failed")
+            {
+                game.Status = "Failed"; 
+            }
 
+            // Thêm lịch sử phê duyệt
             _context.ApprovalHistories.Add(new ApprovalHistory
             {
                 EntityType = "Game",
                 EntityId = gameId,
-                Status = status,
+                Status = game.Status,
                 ChangedByUserId = changedByUserId,
                 ChangedAt = DateTime.Now,
                 Note = note
             });
 
+            // Cập nhật quyền sở hữu game của người dùng trong bảng Store_Library
+            var userGame = await _context.Store_Library
+                .FirstOrDefaultAsync(sl => sl.GamesID == gameId && sl.UserID == changedByUserId);
+
+            if (userGame != null)
+            {            
+                _context.Store_Library.Remove(userGame); 
+            }
+
+            // Lưu thay đổi vào cơ sở dữ liệu
             await _context.SaveChangesAsync();
             return true;
         }
+
+
 
         public async Task<bool> ApproveRefundAsync(int refundId, string status, string changedByUserId, string note)
         {
