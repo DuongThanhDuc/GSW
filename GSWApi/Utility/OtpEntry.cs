@@ -30,7 +30,7 @@ namespace GSWApi.Utility
             {
                 if (entry.ExpireAt > DateTime.Now && entry.Otp == otp)
                 {
-                    otpStore.TryRemove(email, out _); // Xoá sau khi xác thực
+                    otpStore.TryRemove(email, out _); 
                     return true;
                 }
             }

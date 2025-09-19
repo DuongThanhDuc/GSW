@@ -21,12 +21,6 @@ namespace BusinessModel.Model
         [Required, MaxLength(64)]
         public string OrderCode { get; set; }
 
-        [MaxLength(256)]
-        [EmailAddress]
-        public string? BuyerEmail { get; set; }
-
-        [MaxLength(128)]
-        public string? BuyerName { get; set; }
 
         public ICollection<StoreOrderDetail> OrderDetails { get; set; }
         public ICollection<StoreTransaction> Transactions { get; set; }
