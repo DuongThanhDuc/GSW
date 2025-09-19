@@ -61,11 +61,11 @@ namespace UnitTests.Repository
                 var repo = new PaymentRepository(context);
 
                 // Act
-                var order = await repo.CreateProvisionalOrderAsync("ORD001", "User1", 100m);
+                var order = await repo.CreateProvisionalOrderAsync("ORD002", "UserX", 50m);
 
                 // Assert
                 Assert.NotNull(order);
-               
+
             }
         }
 
@@ -107,6 +107,7 @@ namespace UnitTests.Repository
                 context.PaymentTransactions.Add(new PaymentTransaction
                 {
                     StoreOrderId = order.ID,
+                    GatewayOrderId = order.OrderCode,   // ✅ fix
                     Amount = 300m,
                     PaymentMethod = "CreditCard",
                     Status = "Pending",
@@ -160,6 +161,8 @@ namespace UnitTests.Repository
         public async Task GrantGameToLibraryAsync_ShouldAddGamesToLibrary()
         {
             var options = CreateNewContextOptions();
+            int orderId;   // store the ID outside
+
             using (var context = new DBContext(options))
             {
                 var order = new StoreOrder
@@ -175,6 +178,8 @@ namespace UnitTests.Repository
                 context.Store_OrderDetails.Add(new StoreOrderDetail { OrderID = order.ID, GameID = 101 });
                 context.Store_OrderDetails.Add(new StoreOrderDetail { OrderID = order.ID, GameID = 102 });
                 await context.SaveChangesAsync();
+
+                orderId = order.ID;   // ✅ save the ID
             }
 
             using (var context = new DBContext(options))
@@ -182,7 +187,7 @@ namespace UnitTests.Repository
                 var repo = new PaymentRepository(context);
 
                 // Act
-                await repo.GrantGameToLibraryAsync(5);
+                await repo.GrantGameToLibraryAsync(orderId);   // ✅ use the saved ID
 
                 // Assert
                 var libs = await context.Store_Library.Where(l => l.UserID == "User123").ToListAsync();
@@ -191,6 +196,7 @@ namespace UnitTests.Repository
                 Assert.IsTrue(libs.Any(l => l.GamesID == 102));
             }
         }
+
 
     }
 }
