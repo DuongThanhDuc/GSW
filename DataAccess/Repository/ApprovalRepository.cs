@@ -166,6 +166,17 @@ namespace DataAccess.Repository
                     });
                 }
 
+                // update order 
+                var order = _context.Store_Orders.FirstOrDefault(x => x.ID == refund.OrderID);
+                if (order == null)
+                {
+                    throw new InvalidOperationException("Order not found.");
+                }
+                else
+                {
+                    order.Status = "Refunded";
+                }
+
                 await _context.SaveChangesAsync();
                 await tx.CommitAsync();
                 return true;

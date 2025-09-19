@@ -26,11 +26,16 @@ namespace GSWApi.Controllers.Admin
         private static string? NormalizeStatus(string? raw)
         {
             if (string.IsNullOrWhiteSpace(raw)) return null;
-            var s = raw.Trim().ToLowerInvariant();
+            var s = raw.Trim().ToUpperInvariant();
 
 
-            if (s is "success" or "successed") return "Successed";         
-            if (s is "fail" or "failed") return "Failed";
+            return s switch
+            {
+                "APPROVED" or "APPROVE" or "SUCCESS" or "SUCCESSED" => "APPROVED",
+                "REJECTED" or "REJECT" or "FAIL" or "FAILED" or "DENIED" => "REJECTED",
+                "PENDING" => "PENDING", 
+                _ => null
+            };
 
             return null;
         }
@@ -56,7 +61,6 @@ namespace GSWApi.Controllers.Admin
             return Ok(new { success = true, data = new { id, status = normalized } });
         }
 
-
         [HttpPost("refund/{id:int}")]
         public async Task<IActionResult> ApproveRefund(int id, [FromBody] ApprovalActionDTO dto)
         {
@@ -64,20 +68,44 @@ namespace GSWApi.Controllers.Admin
                 return BadRequest(new { success = false, message = "Status must not be empty." });
 
             var normalized = NormalizeStatus(dto.Status);
-            if (normalized is null)
-                return BadRequest(new { success = false, message = "Status must be 'Approved' or 'Rejected'." });
+            if (normalized is not ("APPROVED" or "REJECTED"))
+                return BadRequest(new { success = false, message = "Status must be 'APPROVED' or 'REJECTED'." });
 
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;          
             if (string.IsNullOrEmpty(userId))
                 return Unauthorized(new { success = false, message = "You are not authorized or userId is missing." });
 
-            
+            // 1) Gọi repo (nơi cập nhật Refund + ghi history)
             var ok = await _approvalRepo.ApproveRefundAsync(id, normalized, userId, dto.Note);
             if (!ok)
                 return NotFound(new { success = false, message = "Refund request not found or not in Pending state." });
 
-            return Ok(new { success = true, data = new { id, status = normalized } });
+            // 2) Reload để lấy trạng thái thực tế sau khi cập nhật
+            var refund = await _context.Store_RefundRequests.AsNoTracking().FirstOrDefaultAsync(r => r.ID == id);
+
+            
+            if (refund == null || !string.Equals(refund.Status, normalized, StringComparison.OrdinalIgnoreCase))
+            {
+                var r = await _context.Store_RefundRequests.FirstOrDefaultAsync(x => x.ID == id);
+                if (r != null)
+                {
+                    r.Status = normalized;
+                    await _context.SaveChangesAsync();
+                }
+                refund = await _context.Store_RefundRequests.AsNoTracking().FirstOrDefaultAsync(r => r.ID == id);
+            }
+
+            return Ok(new
+            {
+                success = true,
+                data = new
+                {
+                    id,
+                    status = refund?.Status ?? normalized 
+                }
+            });
         }
+
 
         [HttpGet("game/{id:int}/history")]
         public async Task<IActionResult> GetGameHistory(int id)
