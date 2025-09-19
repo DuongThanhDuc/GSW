@@ -67,7 +67,7 @@ namespace GSWApi.Controllers
                 var user = await _userManager.FindByEmailAsync(dto.Email);
                 if (user == null) return BadRequest("Account not found!");
 
-                user.EmailConfirmed = true; // mark email as confirmed
+                user.EmailConfirmed = true; 
                 await _userManager.UpdateAsync(user);
 
                 return Ok("Registration successful, your account has been activated!");
@@ -151,7 +151,7 @@ namespace GSWApi.Controllers
         [HttpPost("reset-password")]
         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDTO dto)
         {
-            var email = OtpManager.GetEmailByOtp(dto.Otp); //  custom method
+            var email = OtpManager.GetEmailByOtp(dto.Otp); 
             if (string.IsNullOrEmpty(email))
                 return BadRequest(new { success = false, message = "OTP is incorrect or has expired." });
 

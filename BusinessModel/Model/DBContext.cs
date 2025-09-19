@@ -372,8 +372,7 @@ namespace BusinessModel.Model
                 b.Property(x => x.OrderCode).HasMaxLength(64).IsRequired();
                 b.HasIndex(x => x.OrderCode).IsUnique();     
 
-                b.Property(x => x.BuyerEmail).HasMaxLength(256);
-                b.Property(x => x.BuyerName).HasMaxLength(128);
+                
             });
             modelBuilder.Entity<StoreCart>()
               .HasOne<IdentityUser>()

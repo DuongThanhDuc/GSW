@@ -101,7 +101,7 @@ public class StoreRefundRequestController : ControllerBase
         entity.OrderID = dto.OrderID;
         entity.UserID = dto.UserID;
         entity.Reason = dto.Reason;
-        entity.Status = dto.Status;  // Đây là trạng thái mà chúng ta cập nhật (ví dụ: 'accepted', 'rejected')
+        entity.Status = dto.Status;  
         entity.RequestDate = dto.RequestDate;
 
         // Cập nhật yêu cầu hoàn tiền
@@ -114,7 +114,7 @@ public class StoreRefundRequestController : ControllerBase
             var order = await _ctx.Store_Orders.FirstOrDefaultAsync(o => o.ID == entity.OrderID);
             if (order != null)
             {
-                order.Status = "refunded";  // Đặt trạng thái đơn hàng là 'refunded'
+                order.Status = "refunded";  
                 await _ctx.SaveChangesAsync();
             }
         }
