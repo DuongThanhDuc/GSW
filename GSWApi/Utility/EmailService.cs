@@ -5,8 +5,8 @@ namespace GSWApi.Utility
 {
     public class EmailService
     {
-        private readonly string _fromEmail = "phong260702@gmail.com"; // Thay bằng email thật
-        private readonly string _password = "hask ynuj eaxv koja";     // App password nếu dùng Gmail
+        private readonly string _fromEmail = "phong260702@gmail.com"; 
+        private readonly string _password = "hask ynuj eaxv koja";     
 
         public async Task SendOtpEmail(string toEmail, string otp)
         {
