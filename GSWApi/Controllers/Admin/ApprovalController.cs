@@ -71,29 +71,37 @@ namespace GSWApi.Controllers.Admin
             if (normalized is not ("APPROVED" or "REJECTED"))
                 return BadRequest(new { success = false, message = "Status must be 'APPROVED' or 'REJECTED'." });
 
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;          
+            // Nạp refund kèm order để chặn nếu đơn hàng còn PENDING
+            var refundWithOrder = await _context.Store_RefundRequests
+                .AsNoTracking()
+                .Include(r => r.Order)
+                .FirstOrDefaultAsync(r => r.ID == id);
+
+            if (refundWithOrder == null)
+                return NotFound(new { success = false, message = "Refund request not found." });
+
+            if (refundWithOrder.Order != null &&
+                string.Equals(refundWithOrder.Order.Status, "PENDING", StringComparison.OrdinalIgnoreCase))
+            {
+                return BadRequest(new
+                {
+                    success = false,
+                    message = "Order is still PENDING. You cannot approve/reject a refund for a pending order."
+                });
+            }
+
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;           
             if (string.IsNullOrEmpty(userId))
                 return Unauthorized(new { success = false, message = "You are not authorized or userId is missing." });
 
-            // 1) Gọi repo (nơi cập nhật Refund + ghi history)
             var ok = await _approvalRepo.ApproveRefundAsync(id, normalized, userId, dto.Note);
             if (!ok)
-                return NotFound(new { success = false, message = "Refund request not found or not in Pending state." });
-
-            // 2) Reload để lấy trạng thái thực tế sau khi cập nhật
-            var refund = await _context.Store_RefundRequests.AsNoTracking().FirstOrDefaultAsync(r => r.ID == id);
+                return BadRequest(new { success = false, message = "Refund request not processable (not found, not Pending, or blocked by business rule)." });
 
             
-            if (refund == null || !string.Equals(refund.Status, normalized, StringComparison.OrdinalIgnoreCase))
-            {
-                var r = await _context.Store_RefundRequests.FirstOrDefaultAsync(x => x.ID == id);
-                if (r != null)
-                {
-                    r.Status = normalized;
-                    await _context.SaveChangesAsync();
-                }
-                refund = await _context.Store_RefundRequests.AsNoTracking().FirstOrDefaultAsync(r => r.ID == id);
-            }
+            var refund = await _context.Store_RefundRequests
+                .AsNoTracking()
+                .FirstOrDefaultAsync(r => r.ID == id);
 
             return Ok(new
             {
@@ -101,11 +109,10 @@ namespace GSWApi.Controllers.Admin
                 data = new
                 {
                     id,
-                    status = refund?.Status ?? normalized 
+                    status = refund?.Status ?? normalized
                 }
             });
         }
-
 
         [HttpGet("game/{id:int}/history")]
         public async Task<IActionResult> GetGameHistory(int id)
