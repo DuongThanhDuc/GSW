@@ -56,7 +56,9 @@ namespace GSWApi.Controllers.PaymentMethod
                 return StatusCode(StatusCodes.Status403Forbidden,
                                   new { success = false, message = "You cannot pay for this order." });
 
-            if (string.Equals(order.Status, "COMPLETED", StringComparison.OrdinalIgnoreCase))
+            // Đã thanh toán trước đó 
+            if (string.Equals(order.Status, "Success", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(order.Status, "COMPLETED", StringComparison.OrdinalIgnoreCase))
             {
                 return Ok(new
                 {
@@ -69,18 +71,23 @@ namespace GSWApi.Controllers.PaymentMethod
             if (string.Equals(order.Status, "FAILED", StringComparison.OrdinalIgnoreCase))
                 return Conflict(new { success = false, message = "Order is FAILED. Please create a new order." });
 
-            var amountFromDetails = order.OrderDetails?.Sum(d => d.UnitPrice) ?? 0m;
-            var amount = amountFromDetails > 0 ? amountFromDetails : order.TotalAmount;
+            // BẮT BUỘC có item để có thể add vào Library
+            var details = order.OrderDetails?.ToList() ?? new List<StoreOrderDetail>();
+            if (details.Count == 0)
+                return BadRequest(new { success = false, message = "Order has no items to pay for." });
 
-            if (amount <= 0)
+            // Tính tiền từ chi tiết 
+            var amount = details.Sum(d => d.UnitPrice);
+            if (amount <= 0m)
                 return BadRequest(new { success = false, message = "Order total amount is invalid." });
 
-            if (amountFromDetails > 0 && order.TotalAmount != amountFromDetails)
-                order.TotalAmount = amountFromDetails;
+            if (order.TotalAmount != amount)
+                order.TotalAmount = amount;
 
             await using var dbtx = await _ctx.Database.BeginTransactionAsync(ct);
             try
             {
+                // Trừ ví nếu đủ 
                 var ok = await _walletRepo.DecreaseIfEnoughAsync(CurrentUserId, amount, ct);
                 if (!ok)
                 {
@@ -94,31 +101,31 @@ namespace GSWApi.Controllers.PaymentMethod
                     });
                 }
 
-                order.Status = "COMPLETED";
+               
+                order.Status = "Success";
                 await _ctx.SaveChangesAsync(ct);
 
-                var gameIds = order.OrderDetails?.Select(d => d.GameID).Distinct().ToList() ?? new List<int>();
-                if (gameIds.Count > 0)
+                // Thêm game vào Library (chỉ thêm những game chưa có)
+                var gameIds = details.Select(d => d.GameID).Distinct().ToList();
+
+                var existedGameIds = await _ctx.Store_Library
+                    .Where(x => x.UserID == CurrentUserId && gameIds.Contains(x.GamesID))
+                    .Select(x => x.GamesID)
+                    .ToListAsync(ct);
+
+                var toInsert = gameIds.Except(existedGameIds).ToList();
+                if (toInsert.Count > 0)
                 {
-                    var existedGameIds = await _ctx.Store_Library
-                        .Where(x => x.UserID == CurrentUserId && gameIds.Contains(x.GamesID))
-                        .Select(x => x.GamesID)
-                        .ToListAsync(ct);
-
-                    var toInsert = gameIds.Except(existedGameIds).ToList();
-                    if (toInsert.Count > 0)
+                    var now = DateTime.Now;
+                    var newLibs = toInsert.Select(gid => new StoreLibrary
                     {
-                        var now = DateTime.Now;
-                        var newLibs = toInsert.Select(gid => new StoreLibrary
-                        {
-                            UserID = CurrentUserId,
-                            GamesID = gid,
-                            CreatedAt = now
-                        });
+                        UserID = CurrentUserId,
+                        GamesID = gid,
+                        CreatedAt = now
+                    });
 
-                        await _ctx.Store_Library.AddRangeAsync(newLibs, ct);
-                        await _ctx.SaveChangesAsync(ct);
-                    }
+                    await _ctx.Store_Library.AddRangeAsync(newLibs, ct);
+                    await _ctx.SaveChangesAsync(ct);
                 }
 
                 await dbtx.CommitAsync(ct);
@@ -126,13 +133,7 @@ namespace GSWApi.Controllers.PaymentMethod
                 return Ok(new
                 {
                     success = true,
-                    data = new
-                    {
-                        orderId = order.ID,
-                        orderCode = order.OrderCode,
-                        status = order.Status,
-                        paidAmount = amount
-                    },
+                    data = new { orderId = order.ID, orderCode = order.OrderCode, status = order.Status, paidAmount = amount },
                     message = "Wallet payment succeeded."
                 });
             }
