@@ -33,7 +33,7 @@ namespace DataAccess.DTOs
         public string Status { get; set; }
         public DateTime RequestDate { get; set; }
 
-        public OrderMinDTO Order { get; set; }
-        public UserMinDTO User { get; set; } 
+        //public OrderMinDTO Order { get; set; }
+        //public UserMinDTO User { get; set; } 
     }
 }

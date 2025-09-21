@@ -1,6 +1,6 @@
 ﻿using DataAccess.DTOs;
 using BusinessModel.Model;
-using DataAccess.Repository; 
+using DataAccess.Repository;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 using DataAccess.Repository.IRepository;
@@ -11,25 +11,36 @@ using Microsoft.EntityFrameworkCore;
 public class StoreRefundRequestController : ControllerBase
 {
     private readonly IStoreRefundRequestRepository _repository;
+    private readonly IStoreOrderRepository _orderRepository;
     private readonly DBContext _ctx;
-    public StoreRefundRequestController(IStoreRefundRequestRepository repository, DBContext ctx)
+    public StoreRefundRequestController(IStoreRefundRequestRepository repository, IStoreOrderRepository orderRepository, DBContext ctx)
     {
         _repository = repository;
+        _orderRepository = orderRepository;
         _ctx = ctx;
     }
 
-    
+
     [HttpGet]
     public async Task<IActionResult> Get()
     {
-        var entities = await _repository.GetAllAsync();
-
+        var entities = await _ctx.Store_RefundRequests.Include(r => r.Order).ToListAsync();
         var data = entities.Select(x => new
         {
+            Id = x.ID,
             orderID = x.OrderID,
-            userID = x.UserID,        
+            userID = x.UserID,
             reason = x.Reason,
             status = x.Status,
+            order = new OrderMinDTO
+            {
+                Id = x.OrderID,
+                OrderCode = x.Order.OrderCode,
+                TotalAmount = x.Order.TotalAmount,
+                Status = x.Order.Status,
+                CreatedAt = x.Order.CreatedAt,
+            },
+
             requestDate = x.RequestDate
         }).ToList();
 
