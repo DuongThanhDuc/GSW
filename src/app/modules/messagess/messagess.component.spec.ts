@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { CommunityHeaderComponent } from './community-header.component';
+import { MessagessComponent } from './messagess.component';
 
-describe('CommunityHeaderComponent', () => {
-  let component: CommunityHeaderComponent;
-  let fixture: ComponentFixture<CommunityHeaderComponent>;
+describe('MessagessComponent', () => {
+  let component: MessagessComponent;
+  let fixture: ComponentFixture<MessagessComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [CommunityHeaderComponent]
+      imports: [MessagessComponent]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(CommunityHeaderComponent);
+    fixture = TestBed.createComponent(MessagessComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });
