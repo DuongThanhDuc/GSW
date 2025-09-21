@@ -26,11 +26,16 @@ namespace GSWApi.Controllers.Admin
         private static string? NormalizeStatus(string? raw)
         {
             if (string.IsNullOrWhiteSpace(raw)) return null;
-            var s = raw.Trim().ToLowerInvariant();
+            var s = raw.Trim().ToUpperInvariant();
 
 
-            if (s is "success" or "successed") return "Successed";         
-            if (s is "fail" or "failed") return "Failed";
+            return s switch
+            {
+                "APPROVED" or "APPROVE" or "SUCCESS" or "SUCCESSED" => "APPROVED",
+                "REJECTED" or "REJECT" or "FAIL" or "FAILED" or "DENIED" => "REJECTED",
+                "PENDING" => "PENDING", 
+                _ => null
+            };
 
             return null;
         }
@@ -56,7 +61,6 @@ namespace GSWApi.Controllers.Admin
             return Ok(new { success = true, data = new { id, status = normalized } });
         }
 
-
         [HttpPost("refund/{id:int}")]
         public async Task<IActionResult> ApproveRefund(int id, [FromBody] ApprovalActionDTO dto)
         {
@@ -64,19 +68,50 @@ namespace GSWApi.Controllers.Admin
                 return BadRequest(new { success = false, message = "Status must not be empty." });
 
             var normalized = NormalizeStatus(dto.Status);
-            if (normalized is null)
-                return BadRequest(new { success = false, message = "Status must be 'Approved' or 'Rejected'." });
+            if (normalized is not ("APPROVED" or "REJECTED"))
+                return BadRequest(new { success = false, message = "Status must be 'APPROVED' or 'REJECTED'." });
 
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            // Nạp refund kèm order để chặn nếu đơn hàng còn PENDING
+            var refundWithOrder = await _context.Store_RefundRequests
+                .AsNoTracking()
+                .Include(r => r.Order)
+                .FirstOrDefaultAsync(r => r.ID == id);
+
+            if (refundWithOrder == null)
+                return NotFound(new { success = false, message = "Refund request not found." });
+
+            if (refundWithOrder.Order != null &&
+                string.Equals(refundWithOrder.Order.Status, "PENDING", StringComparison.OrdinalIgnoreCase))
+            {
+                return BadRequest(new
+                {
+                    success = false,
+                    message = "Order is still PENDING. You cannot approve/reject a refund for a pending order."
+                });
+            }
+
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;           
             if (string.IsNullOrEmpty(userId))
                 return Unauthorized(new { success = false, message = "You are not authorized or userId is missing." });
 
-            
             var ok = await _approvalRepo.ApproveRefundAsync(id, normalized, userId, dto.Note);
             if (!ok)
-                return NotFound(new { success = false, message = "Refund request not found or not in Pending state." });
+                return BadRequest(new { success = false, message = "Refund request not processable (not found, not Pending, or blocked by business rule)." });
 
-            return Ok(new { success = true, data = new { id, status = normalized } });
+            
+            var refund = await _context.Store_RefundRequests
+                .AsNoTracking()
+                .FirstOrDefaultAsync(r => r.ID == id);
+
+            return Ok(new
+            {
+                success = true,
+                data = new
+                {
+                    id,
+                    status = refund?.Status ?? normalized
+                }
+            });
         }
 
         [HttpGet("game/{id:int}/history")]

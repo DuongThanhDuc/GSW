@@ -13,8 +13,8 @@ namespace BusinessModel.Model
     {
         public int Id { get; set; }
         [MaxLength(50)]
-        public string EntityType { get; set; }    // "Game", "Refund", ...
-        public int EntityId { get; set; }         // GamesInfo.Id hoặc StoreRefundRequest.ID
+        public string EntityType { get; set; }    
+        public int EntityId { get; set; }         
         [MaxLength(50)]
         public string Status { get; set; }
         [Required]
