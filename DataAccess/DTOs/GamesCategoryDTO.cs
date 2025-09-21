@@ -15,6 +15,8 @@ namespace DataAccess.DTOs
         public string CreatedBy { get; set; }
         public string? GameName { get; set; }
         public string? CategoryName { get; set; }
+        public string? Img { get; set; }
+
     }
 
     public class CreateGamesCategoryDTO

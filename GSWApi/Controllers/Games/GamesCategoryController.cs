@@ -31,6 +31,7 @@ namespace GSWApi.Controllers.Games
                 CreatedAt = x.CreatedAt,
                 CreatedBy = x.CreatedBy,
                 GameName = x.Game?.Title,
+                Img = x.Game?.CoverImagePath,
                 CategoryName = x.Category?.CategoryName
             });
 
