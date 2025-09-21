@@ -13,7 +13,6 @@ import { OrderHistoryComponent } from '../../components/order-history/order-hist
 import { RolepermissionService } from 'src/app/core/services/rolepermission.service';
 import { WalletService } from 'src/app/core/services/wallet.service';
 
-// Định nghĩa cấu trúc dữ liệu (giữ nguyên)
 interface UserProfile {
   username: string;
   realName: string;
@@ -113,7 +112,6 @@ public isAdmin : boolean = false
   }
 
   closeRefundRequests() {
-    // Close the refund requests modal
     this.showRefundList = false;
     this.onGetStoreRefund();
   }
@@ -145,8 +143,8 @@ public isAdmin : boolean = false
  fileChange(event: any) {
   console.log(event.target.files)
     if (event.target.files.length) {
-       const fileAllow = '.png,.jpg'; // Allowed file extensions
-      const sizeFileAllow = '10'; // Max file size in MB
+       const fileAllow = '.png,.jpg,.mp4'; 
+      const sizeFileAllow = '100'; 
 
       const arrayFileAllow = fileAllow.toLowerCase().split(',');
       // If not any setting
