@@ -25,10 +25,8 @@ namespace DataAccess.Repository
             var s = status?.Trim().ToUpperInvariant();
             string? newStatus = s switch
             {
-                
-                "APPROVED" or "SUCCESS" or "SUCCESSED" or "SUCCEEDED" => "Approved",
-                
-                "REJECTED" or "FAILED" or "FAIL" => "Rejected",
+                "ACTIVE" or "APPROVE" or "APPROVED" or "SUCCESS" or "SUCCESSED" or "SUCCEEDED" => "Active",
+                "INACTIVE" or "REJECT" or "REJECTED" or "FAIL" or "FAILED" or "DENIED" => "Inactive",
                 _ => null
             };
             if (newStatus == null) return false;
@@ -39,12 +37,13 @@ namespace DataAccess.Repository
                 game.Status = newStatus;
             }
 
-            
+            var eStatus = (newStatus == "Active") ? "Approved" : "Rejected";
+
             _context.ApprovalHistories.Add(new ApprovalHistory
             {
                 EntityType = "Game",
                 EntityId = gameId,
-                Status = newStatus,
+                Status = eStatus,
                 ChangedByUserId = changedByUserId,
                 ChangedAt = DateTime.Now,
                 Note = note
