@@ -107,7 +107,7 @@ namespace UnitTests.Repository
                 context.PaymentTransactions.Add(new PaymentTransaction
                 {
                     StoreOrderId = order.ID,
-                    GatewayOrderId = order.OrderCode,   // ✅ fix
+                    GatewayOrderId = order.OrderCode,   
                     Amount = 300m,
                     PaymentMethod = "CreditCard",
                     Status = "Pending",
@@ -161,7 +161,7 @@ namespace UnitTests.Repository
         public async Task GrantGameToLibraryAsync_ShouldAddGamesToLibrary()
         {
             var options = CreateNewContextOptions();
-            int orderId;   // store the ID outside
+            int orderId;   
 
             using (var context = new DBContext(options))
             {
@@ -179,7 +179,7 @@ namespace UnitTests.Repository
                 context.Store_OrderDetails.Add(new StoreOrderDetail { OrderID = order.ID, GameID = 102 });
                 await context.SaveChangesAsync();
 
-                orderId = order.ID;   // ✅ save the ID
+                orderId = order.ID;   
             }
 
             using (var context = new DBContext(options))
@@ -187,7 +187,7 @@ namespace UnitTests.Repository
                 var repo = new PaymentRepository(context);
 
                 // Act
-                await repo.GrantGameToLibraryAsync(orderId);   // ✅ use the saved ID
+                await repo.GrantGameToLibraryAsync(orderId);   
 
                 // Assert
                 var libs = await context.Store_Library.Where(l => l.UserID == "User123").ToListAsync();
