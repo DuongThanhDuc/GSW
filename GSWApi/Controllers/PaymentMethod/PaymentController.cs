@@ -154,7 +154,7 @@ public class PaymentController : ControllerBase
             }
         }
 
-        var feUrl = $"https://gsw-sep.web.app/notifications/{result}/{transaction.Status.ToLower()}";
+        var feUrl = $"http://localhost:4200/notifications/{result}/{transaction.Status.ToLower()}";
         return Redirect(feUrl);
     }
 

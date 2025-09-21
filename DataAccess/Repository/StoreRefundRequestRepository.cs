@@ -40,7 +40,14 @@ namespace DataAccess.Repository
             public async Task AddAsync(StoreRefundRequest entity)
             {
                 _context.Store_RefundRequests.Add(entity);
+
+                StoreOrder o = _context.Store_Orders.Find(entity.OrderID);
+                if (o != null)
+                {
+                    o.Status = "await";
+                }
                 await _context.SaveChangesAsync();
+
             }
 
             public async Task UpdateAsync(StoreRefundRequest entity)
