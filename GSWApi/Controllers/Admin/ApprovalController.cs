@@ -31,9 +31,9 @@ namespace GSWApi.Controllers.Admin
 
             return s switch
             {
-                "APPROVED" or "APPROVE" or "SUCCESS" or "SUCCESSED" => "APPROVED",
-                "REJECTED" or "REJECT" or "FAIL" or "FAILED" or "DENIED" => "REJECTED",
-                "PENDING" => "PENDING", 
+                "ACTIVE" or "APPROVED" or "APPROVE" or "SUCCESS" or "SUCCESSED" or "SUCCEEDED" => "APPROVED",
+                "INACTIVE" or "REJECTED" or "REJECT" or "FAIL" or "FAILED" or "DENIED" => "REJECTED",
+                "PENDING" => "PENDING",
                 _ => null
             };
 
