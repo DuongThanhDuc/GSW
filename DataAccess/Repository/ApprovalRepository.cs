@@ -37,7 +37,7 @@ namespace DataAccess.Repository
                 game.Status = newStatus;
             }
 
-            var eStatus = (newStatus == "Active") ? "Approved" : "Rejected";
+            var eStatus = (newStatus == "active") ? "Approved" : "Rejected";
 
             _context.ApprovalHistories.Add(new ApprovalHistory
             {
