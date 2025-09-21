@@ -92,12 +92,11 @@ public isAdmin : boolean = false;
   }
 fileChange(event: any) {
   if (event.target.files.length) {
-    const fileAllow = '.png,.jpg,.mp4'; // Allowed file extensions
-    const sizeFileAllow = '10'; // Max file size in MB
+    const fileAllow = '.png,.jpg,.mp4'; 
+    const sizeFileAllow = '10'; 
 
     const arrayFileAllow = fileAllow.toLowerCase().split(',');
 
-    // Loop through each selected file
     for (let file of event.target.files) {
       const fileExtension = `.${file.name.split('.').pop()}`;
 
@@ -107,14 +106,12 @@ fileChange(event: any) {
         return;
       }
 
-      // Check file size
-      const maxSizeInBytes = parseInt(sizeFileAllow) * 1024 * 1024; // Convert MB to Bytes
+      const maxSizeInBytes = parseInt(sizeFileAllow) * 1024 * 1024; 
       if (file.size > maxSizeInBytes) {
         this.toastService.warning('Dung lượng file quá lớn.');
         return;
       }
 
-      // Add file to the array of uploaded files
       this.uploadedFiles.push({
         file,
         mediaURL: file.name
@@ -130,17 +127,15 @@ fileChangeInstall(event: any) {
 
     const arrayFileAllow = fileAllow.toLowerCase().split(',');
 
-    // Lấy tệp đầu tiên được chọn
     const file = event.target.files[0];
     const fileExtension = `.${file.name.split('.').pop()}`;
 
-    // Kiểm tra phần mở rộng tệp
     if (!arrayFileAllow.includes(fileExtension.toLowerCase())) {
       this.toastService.warning('Loại file không được hỗ trợ. Chỉ chấp nhận file .zip');
       return;
     }
 
-    const maxSizeInBytes = parseInt(sizeFileAllow) * 1024 * 1024; // Convert MB to Bytes
+    const maxSizeInBytes = parseInt(sizeFileAllow) * 1024 * 1024; 
     if (file.size > maxSizeInBytes) {
       this.toastService.warning('Dung lượng file quá lớn. Vui lòng chọn tệp nhỏ hơn 100MB.');
       return;
@@ -259,7 +254,7 @@ fileChangeInstall(event: any) {
       this.gameService.createGame(createPayload).subscribe({
         next: (response) => {
           this.toastService.success('Thêm game mới thành công!');
-          // Upload files with media URLs
+      
           this.uploadedFiles.forEach((item) => {
             const formData = new FormData();
             formData.append('file', item.file);
