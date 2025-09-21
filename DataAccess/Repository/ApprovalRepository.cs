@@ -22,13 +22,21 @@ namespace DataAccess.Repository
             if (game == null) return false;
 
             
-            if (status == "Successed" || status == "Success")
+            var s = status?.Trim().ToUpperInvariant();
+            string? newStatus = s switch
             {
-                game.Status = "Purchased"; 
-            }
-            else if (status == "Failed" || status == "Failed")
+                
+                "APPROVED" or "SUCCESS" or "SUCCESSED" or "SUCCEEDED" => "Approved",
+                
+                "REJECTED" or "FAILED" or "FAIL" => "Rejected",
+                _ => null
+            };
+            if (newStatus == null) return false;
+
+            
+            if (!string.Equals(game.Status, newStatus, StringComparison.OrdinalIgnoreCase))
             {
-                game.Status = "Failed"; 
+                game.Status = newStatus;
             }
 
             
@@ -36,22 +44,12 @@ namespace DataAccess.Repository
             {
                 EntityType = "Game",
                 EntityId = gameId,
-                Status = game.Status,
+                Status = newStatus,
                 ChangedByUserId = changedByUserId,
                 ChangedAt = DateTime.Now,
                 Note = note
             });
 
-            // Cập nhật quyền sở hữu game của người dùng trong bảng Store_Library
-            var userGame = await _context.Store_Library
-                .FirstOrDefaultAsync(sl => sl.GamesID == gameId && sl.UserID == changedByUserId);
-
-            if (userGame != null)
-            {            
-                _context.Store_Library.Remove(userGame); 
-            }
-
-            // Lưu thay đổi vào cơ sở dữ liệu
             await _context.SaveChangesAsync();
             return true;
         }
