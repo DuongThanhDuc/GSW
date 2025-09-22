@@ -433,6 +433,11 @@ export class GameCategory {
 
   @JsonProperty('game', StringConverter, true)
   Game: string = '';
+
+   @JsonProperty('img', StringConverter, true)
+  img: string = '';
+
+
     @JsonProperty('gameName', StringConverter, true)
   GameName: string = '';
 
