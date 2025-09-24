@@ -81,6 +81,11 @@ export class MenuService implements OnDestroy {
         group: 'Quản trị',
         separator: true,
         items: [
+           {
+            icon: 'assets/icons/heroicons/outline/game-controller.svg',
+            label: 'Báo cáo doanh thu',
+            route: '/dashboard/report',
+          },
           {
             icon: 'assets/icons/heroicons/outline/home.svg',
             label: 'Quản lý người dùng',
@@ -155,6 +160,26 @@ export class MenuService implements OnDestroy {
             icon: 'assets/icons/heroicons/outline/calendar.svg',
             label: 'Quản lý giảm giá',
             route: '/dashboard/discount',
+          },
+          {
+            icon: 'assets/icons/heroicons/outline/calendar.svg',
+            label: 'Quản lý danh mục',
+            route: '/dashboard/category',
+          },
+           {
+            icon: 'assets/icons/heroicons/outline/game-controller.svg',
+            label: 'Game chờ duyệt',
+            route: '/dashboard/game-approve',
+          },
+          {
+            icon: 'assets/icons/heroicons/outline/calendar.svg',
+            label: 'Quản lý hastags',
+            route: '/dashboard/hastags',
+          },
+           {
+            icon: 'assets/icons/heroicons/outline/calendar.svg',
+            label: 'Quản lý đơn hàng',
+            route: '/dashboard/orders',
           },
            
          

@@ -24,7 +24,7 @@ export class TagsComponent implements OnInit {
 
   public isDialogOpen = false;
   public dialogMode: 'add' | 'edit' = 'add';
-  public tempTag = { id: 0, name: '', createdBy: '' };
+  public tempTag = { id: 0, name: '' };
   public tagDetail = new Tag();
 
   public userlogged = new UserLogged();
@@ -83,16 +83,14 @@ export class TagsComponent implements OnInit {
 
     if (mode === 'edit' && tag) {
       this.tagService.GetTagId(tag.Id).subscribe(res => {
-        this.tagDetail = res.data;
+        this.tagDetail = res.data[0];
         this.tempTag = {
           id: this.tagDetail.Id,
-          name: this.tagDetail.TagName,
-          createdBy : this.userlogged.getCurrentUser().userId
+          name: this.tagDetail.TagName
         };
-        console.log("tag",this.tempTag);
       });
     } else {
-      this.tempTag = { id: 0, name: '',  createdBy : this.userlogged.getCurrentUser().userId};
+      this.tempTag = { id: 0, name: '' };
     }
   }
 
@@ -131,13 +129,7 @@ export class TagsComponent implements OnInit {
         error: () => this.toastService.error("Có lỗi xảy ra!")
       });
     } else {
-      const formDataUpdate = {
-        id:this.tempTag.id,
-      tagName: this.tempTag.name,
-      createdBy: this.userlogged.getCurrentUser().userId,
-      createdAt: new Date()
-    };
-      this.tagService.updateTag(formDataUpdate, this.tempTag.id).subscribe({
+      this.tagService.updateTag(formData, this.tempTag.id).subscribe({
         next: () => {
           this.toastService.success("Cập nhật hashtag thành công!");
           this.onGetData();

@@ -43,7 +43,7 @@ export class NftComponent implements OnInit {
     if (this.useMockData) {
       this.gameService.getListGame().subscribe((data: any) =>{
     this.featuredGames = data.data.filter((x:any) => x.Discounts.length == 0 && x.Price > 0);
-    this.gameFree = data.data.filter((x:any) => x.Price == 0 && x.Status == "active" || x.Status == "Active");
+    this.gameFree = data.data.filter((x:any) => x.Price == 0 && x.Status == "active");
     
         
       }

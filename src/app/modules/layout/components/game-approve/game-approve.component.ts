@@ -34,7 +34,7 @@ export class GameApproveComponent implements OnInit{
   }
   onApproveGame(account: any) {
     let formData = {
-      status : "Approved",
+      status : "active",
       note: '',
     }
     this.gameService.gameApproved(formData,account.Id).subscribe(res => {

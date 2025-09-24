@@ -13,6 +13,7 @@ import { OrderHistoryComponent } from '../../components/order-history/order-hist
 import { RolepermissionService } from 'src/app/core/services/rolepermission.service';
 import { WalletService } from 'src/app/core/services/wallet.service';
 
+// Định nghĩa cấu trúc dữ liệu (giữ nguyên)
 interface UserProfile {
   username: string;
   realName: string;
@@ -112,6 +113,7 @@ public isAdmin : boolean = false
   }
 
   closeRefundRequests() {
+    // Close the refund requests modal
     this.showRefundList = false;
     this.onGetStoreRefund();
   }
@@ -143,20 +145,23 @@ public isAdmin : boolean = false
  fileChange(event: any) {
   console.log(event.target.files)
     if (event.target.files.length) {
-       const fileAllow = '.png,.jpg,.mp4'; 
-      const sizeFileAllow = '100'; 
+       const fileAllow = '.png,.jpg'; // Allowed file extensions
+      const sizeFileAllow = '10'; // Max file size in MB
 
       const arrayFileAllow = fileAllow.toLowerCase().split(',');
+      // If not any setting
       if (!fileAllow || !sizeFileAllow) {
         this.file = event.target.files[0].name;
         this.fileUpload = event.target.files[0];
         return;
       }
+      // Check File Extension
       const fileExtension = `.${event.target.files[0].name.split('.').pop()}`;
       if (arrayFileAllow.indexOf(fileExtension.toLowerCase()) === -1) {
         this.toastService.warning('Loại file không được hỗ trợ.');
         return;
       }
+      // Check File Size
       if (event.target.files[0].size > parseInt(sizeFileAllow) * 1024 * 1024) {
         this.toastService.warning('Dung lượng file quá lớn.');
         return;
@@ -177,19 +182,25 @@ onSaveProfile(): void {
     formData.append('DisplayName', updated.DisplayName);
 
 
+    // Append the image file if present
     if (this.fileUpload) {
       formData.append('imageFile', this.fileUpload);
     }
     this.userService.updateDisplayname(updated.DisplayName,this.userLogged.getCurrentUser().userId).subscribe();
+    // Call API to update the user profile
     this.userService.updateProfile(formData, this.userLogged.getCurrentUser().userId).subscribe({
       next: (res) => {
+        // Show success message
         this.toastService.success('Cập nhật thông tin thành công!');
         
+        // Refresh user info
         this.onGetUser();
 
+        // Close the profile dialog after successful update
         this.closeDialogs();
       },
       error: (err) => {
+        // Show error message in case of failure
         this.toastService.error('Có lỗi xảy ra, hãy kiểm tra lại', 'Thất bại');
         console.error(err);
       }

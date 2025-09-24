@@ -133,8 +133,6 @@ onCloseReason(){
         return 'Chờ hoàn tiền';
             case 'Refunded':
         return 'Đã hoàn tiền';
-        case 'REFUNDED':
-        return 'Đã hoàn tiền';
       default:
         return status;
     }
